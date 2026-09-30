@@ -20,15 +20,23 @@ export function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-border bg-panel px-4 py-2">
-        <img src="/logo.svg" alt="CWS" className="h-8 w-auto" />
-        <div className="min-w-0">
-          <h1 className="text-base font-bold leading-tight">Lead-Cockpit Nordwest</h1>
-          <p className="text-xs text-muted">
+      <header className="flex items-center gap-5 border-b border-border bg-panel px-4 py-2">
+        {/* Logo in Originalproportion 582 × 82, feste Maße verhindern Layoutsprünge beim Laden */}
+        <img
+          src="/logo.png"
+          alt="CWS Workwear"
+          width={582}
+          height={82}
+          className="h-9 w-auto shrink-0 select-none"
+          draggable={false}
+        />
+        <div className="min-w-0 flex-1 border-l border-border pl-5">
+          <h1 className="truncate text-base font-bold leading-tight">Lead-Cockpit Nordwest</h1>
+          <p className="truncate text-xs text-muted">
             New Business, Telefonassistenz · Quelle: {sourceLabel}
           </p>
         </div>
-        <nav role="tablist" aria-label="Bereiche" className="ml-auto flex gap-1">
+        <nav role="tablist" aria-label="Bereiche" className="ml-auto flex shrink-0 gap-1">
           {TABS.map((tab) => {
             const active = tab.id === activeTab;
             return (

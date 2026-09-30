@@ -141,5 +141,6 @@ greift nie automatisch, er muss übernommen und bestätigt werden. Details in
 ## Offene Punkte
 
 Siehe `docs/scoring.md`, Abschnitt 7, und `docs/datenmodell.md`, offene Zuordnungsfragen.
-Das Logo unter `public/logo.svg` ist ein Platzhalter und wird durch die freigegebene
-Logodatei ersetzt.
+Das Logo liegt unter `public/logo.png` (582 × 82 px), die Favicons unter
+`public/favicon-32.png` und `public/apple-touch-icon.png` sind aus der CWS-Wortmarke
+abgeleitet.
