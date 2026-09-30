@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { outcomeRepository } from './services';
+import { DEFAULT_BRIEFING_MODE, outcomeRepository, type BriefingMode } from './services';
 import { MockProvider } from '@/data/providers/mockProvider';
 import {
   emptyReport,
@@ -32,6 +32,7 @@ export interface AppState {
   weights: Weights;
   corridorKm: number;
   controlEnabled: boolean;
+  briefingMode: BriefingMode;
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
 
@@ -40,6 +41,7 @@ export interface AppState {
   resetWeights(): void;
   setCorridorKm(km: number): void;
   setControlEnabled(enabled: boolean): void;
+  setBriefingMode(mode: BriefingMode): void;
   selectLead(id: string | null): void;
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
@@ -60,6 +62,7 @@ export function createAppStore(repository: OutcomeRepository) {
     weights: { ...DEFAULT_WEIGHTS },
     corridorKm: DEFAULT_CORRIDOR_KM,
     controlEnabled: true,
+    briefingMode: DEFAULT_BRIEFING_MODE,
     selectedLeadId: null,
     outcomes: [],
 
@@ -69,6 +72,7 @@ export function createAppStore(repository: OutcomeRepository) {
     setCorridorKm: (km) =>
       set({ corridorKm: Math.max(CORRIDOR_MIN_KM, Math.min(CORRIDOR_MAX_KM, km)) }),
     setControlEnabled: (controlEnabled) => set({ controlEnabled }),
+    setBriefingMode: (briefingMode) => set({ briefingMode }),
     selectLead: (selectedLeadId) => set({ selectedLeadId }),
 
     async loadFromProvider(provider, report) {

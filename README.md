@@ -66,6 +66,7 @@ src/
     providers/    Mock, CSV, Clay, D&B, Salesforce
     repository.ts Ablage der Anrufergebnisse
   styles/         Marken-Tokens und Basisstile
+server/           Briefing-Proxy für den Vite-Server
 docs/
   architektur.md  Aufbau, Datenfluss, Anbindung Clay, D&B und CRM
   scoring.md      Scoring-Regeln in Prosa und offene Abstimmungspunkte
@@ -105,6 +106,22 @@ oder Komma.
 
 An Nominatim gehen nur Straße, PLZ und Ort, keine Firmennamen. Optional eine
 Kontaktadresse in `.env.local` hinterlegen, siehe `.env.example`.
+
+## Briefing über Sprachmodell
+
+Standard ist das regelbasierte Briefing. Im Reiter Scoring lässt sich auf „Sprachmodell“
+umschalten. Dafür in `.env.local` einen OpenAI-kompatiblen Endpunkt eintragen:
+
+```bash
+LLM_API_URL=https://…/v1/chat/completions
+LLM_API_KEY=…
+LLM_MODEL=…
+```
+
+Der Schlüssel bleibt im lokalen Vite-Server und gelangt nicht in den Browser. An das Modell
+gehen keine Firmennamen, Ansprechpartner oder Telefonnummern. Ist nichts konfiguriert oder
+fällt der Aufruf aus, greift automatisch das regelbasierte Briefing. Details in
+`docs/architektur.md`.
 
 ## Bewusst nicht enthalten
 

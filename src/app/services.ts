@@ -1,3 +1,7 @@
+import { FallbackBriefingGenerator } from '@/data/briefing/fallbackGenerator';
+import { LlmBriefingGenerator } from '@/data/briefing/llmGenerator';
+import { RuleBasedBriefingGenerator } from '@/data/briefing/ruleBasedGenerator';
+import type { BriefingGenerator } from '@/data/briefing/types';
 import { AppDatabase } from '@/data/db';
 import { createGeocoder } from '@/data/geocoding';
 import { DexieGeocodeCache, InMemoryGeocodeCache, type GeocodeCache } from '@/data/geocoding/cache';
@@ -33,3 +37,16 @@ export const geocoder: Geocoder = createGeocoder({
   cache: geocodeCache,
   nominatimEmail: import.meta.env.VITE_NOMINATIM_EMAIL || undefined,
 });
+
+export const ruleBasedBriefing = new RuleBasedBriefingGenerator();
+
+/** Sprachmodell mit automatischem Rückfall auf die Regeln */
+export const llmBriefing: BriefingGenerator = new FallbackBriefingGenerator(
+  new LlmBriefingGenerator({ endpoint: import.meta.env.VITE_BRIEFING_ENDPOINT || undefined }),
+  ruleBasedBriefing,
+);
+
+export type BriefingMode = 'rules' | 'llm';
+
+export const DEFAULT_BRIEFING_MODE: BriefingMode =
+  import.meta.env.VITE_BRIEFING_MODE === 'llm' ? 'llm' : 'rules';

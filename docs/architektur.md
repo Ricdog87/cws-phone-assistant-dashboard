@@ -126,12 +126,56 @@ eine Quelle analog zum `LeadProvider` ergänzt (`RouteProvider`) und die Route i
 über eine Setter-Aktion gesetzt. Alle Berechnungen arbeiten bereits mit beliebigen
 Polylines.
 
-### Briefing und Kalibrierung
+### Briefing
 
-- Das Briefing ist regelbasiert in `src/domain/briefing.ts`. Ein austauschbarer Generator
-  kann dieselbe Rückgabe (`Briefing`) liefern.
-- Eine spätere Kalibrierung liest die gespeicherten `CallOutcome`-Datensätze. Diese
-  enthalten Dimensionen, Gewichte und die Kennzeichnung der Kontrollstichprobe.
+Austauschbar über die Schnittstelle `BriefingGenerator` (`src/data/briefing/types.ts`):
+
+| Implementierung              | Datei                   | Verhalten                                         |
+| ---------------------------- | ----------------------- | ------------------------------------------------- |
+| `RuleBasedBriefingGenerator` | `ruleBasedGenerator.ts` | Standard, Regeln aus `src/domain/briefing.ts`     |
+| `LlmBriefingGenerator`       | `llmGenerator.ts`       | Sprachmodell über den eigenen Proxy               |
+| `FallbackBriefingGenerator`  | `fallbackGenerator.ts`  | versucht das Modell, sonst automatisch die Regeln |
+
+Ablauf beim Sprachmodell:
+
+```
+Browser                         Vite-Server (Proxy)                Modell-Endpunkt
+buildBriefingRequest ──POST──▶  /api/briefing                      (OpenAI-kompatibel)
+  nur Merkmale, keine Namen     Zod prüft Anfrage (strikt)
+                                Schlüssel aus .env ──────────────▶ response_format json_schema
+                                Zod prüft Antwort (strikt) ◀──────
+fillPlaceholders ◀── JSON ────
+  setzt {{firma}} und
+  {{ansprechpartner}} ein
+```
+
+- **Schlüssel**: `LLM_API_KEY` ohne `VITE_`-Präfix, wird nur in `vite.config.ts` über
+  `loadEnv` gelesen und an den Proxy übergeben. Er gelangt nie ins Browser-Bundle.
+- **Datensparsamkeit**: An das Modell gehen Branche, Ort, Größenangaben und Signale. Firmenname,
+  Ansprechpartner, Telefon und Straße bleiben im Browser und werden erst dort eingesetzt.
+- **Antwortformat**: striktes JSON-Schema mit `aufhaenger[]`, `einstiegssatz`,
+  `einwandbehandlung[]` (`src/data/briefing/schema.ts`). Abweichende Antworten werden
+  verworfen.
+- **Rückfall**: Fehlende Konfiguration (503), Fehler des Modells (502), Zeitüberschreitung
+  (504), Netzwerkfehler oder ungültige Antwort führen automatisch zum regelbasierten Briefing.
+  Die Oberfläche zeigt den Grund an.
+- **Log**: Der Proxy protokolliert nur Ereignis, Status und Dauer. Im Browser erscheint bei
+  einem Rückfall nur die Fehlerkategorie. Weder Lead-Daten noch Modellantworten noch der
+  Schlüssel werden protokolliert. Tests prüfen das.
+- **Kosten**: Anfragen starten erst nach 400 ms Verweildauer auf einem Lead, gleiche
+  Merkmale werden nicht erneut angefragt.
+
+Für den Betrieb hinter statischem Hosting wird `handleBriefingRequest` aus
+`server/briefingHandler.ts` unverändert als Serverless-Funktion unter `/api/briefing`
+bereitgestellt, oder `VITE_BRIEFING_ENDPOINT` zeigt auf den Ort der Funktion.
+
+Einen anderen Anbieter ohne OpenAI-kompatible Schnittstelle bindet man im Proxy an
+(`handleBriefingRequest`), nicht im Browser. Der Vertrag zum Browser bleibt gleich.
+
+### Kalibrierung
+
+Eine spätere Kalibrierung liest die gespeicherten `CallOutcome`-Datensätze. Diese
+enthalten Dimensionen, Gewichte und die Kennzeichnung der Kontrollstichprobe.
 
 ## Karte
 

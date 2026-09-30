@@ -3,10 +3,11 @@ import { Button } from '@/components/Button';
 import { ControlTag } from '@/components/ControlTag';
 import { Meter } from '@/components/Meter';
 import { formatDateTime, formatKm, formatMin } from '@/components/format';
-import { buildBriefing } from '@/domain/briefing';
+import { contactLabel } from '@/domain/briefing';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
 import type { CallOutcome, OutcomeType, QueueEntry } from '@/domain/types';
+import { useBriefing } from './useBriefing';
 
 interface BriefingPanelProps {
   entry: QueueEntry;
@@ -17,7 +18,7 @@ interface BriefingPanelProps {
 
 export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelProps) {
   const { lead } = entry;
-  const briefing = buildBriefing(entry);
+  const { briefing, pending } = useBriefing(entry);
 
   return (
     <article aria-label={`Briefing ${lead.name}`} className="flex flex-col gap-5">
@@ -52,7 +53,7 @@ export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelPr
         <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">
           Ansprechpartner
         </h3>
-        <p className="text-sm">{briefing.contact}</p>
+        <p className="text-sm">{contactLabel(entry)}</p>
         {lead.phone && (
           <p className="text-sm">
             <a href={`tel:${lead.phone.replace(/\s/g, '')}`} className="font-bold underline">
@@ -63,19 +64,40 @@ export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelPr
         )}
       </section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">Aufhänger</h3>
-        <ul className="list-disc space-y-1 pl-5 text-sm">
-          {briefing.hooks.map((hook) => (
-            <li key={hook.kind}>{hook.text}</li>
-          ))}
-        </ul>
-      </section>
+      <div aria-live="polite" aria-busy={pending} className="flex flex-col gap-5">
+        <p className="text-xs text-muted">
+          {briefingSourceText(briefing.source, briefing.fallbackReason, pending)}
+        </p>
 
-      <section>
-        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">Einstiegssatz</h3>
-        <p className="rounded bg-surface p-3 text-sm leading-relaxed">{briefing.openingLine}</p>
-      </section>
+        <section>
+          <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">Aufhänger</h3>
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            {briefing.hooks.map((hook, i) => (
+              <li key={i}>{hook}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">
+            Einstiegssatz
+          </h3>
+          <p className="rounded bg-surface p-3 text-sm leading-relaxed">{briefing.openingLine}</p>
+        </section>
+
+        {briefing.objectionHandling.length > 0 && (
+          <section>
+            <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">
+              Einwandbehandlung
+            </h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {briefing.objectionHandling.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
 
       <section aria-label="Ergebnis erfassen">
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Ergebnis</h3>
@@ -105,4 +127,16 @@ export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelPr
       </section>
     </article>
   );
+}
+
+function briefingSourceText(
+  source: 'rules' | 'llm',
+  fallbackReason: string | undefined,
+  pending: boolean,
+): string {
+  if (pending) return 'Briefing über Sprachmodell wird erstellt, bis dahin regelbasiert.';
+  if (source === 'llm') return 'Briefing: Sprachmodell. Vor dem Anruf auf Plausibilität prüfen.';
+  if (fallbackReason)
+    return `Briefing: regelbasiert, Sprachmodell nicht verfügbar (${fallbackReason}).`;
+  return 'Briefing: regelbasiert.';
 }

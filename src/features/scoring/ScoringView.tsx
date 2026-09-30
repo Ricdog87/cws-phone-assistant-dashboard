@@ -1,4 +1,5 @@
 import { useQueue } from '@/app/selectors';
+import type { BriefingMode } from '@/app/services';
 import { useAppStore } from '@/app/store';
 import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
@@ -22,6 +23,15 @@ import {
 
 const PREVIEW_SIZE = 12;
 
+const BRIEFING_OPTIONS: { mode: BriefingMode; label: string; hint: string }[] = [
+  { mode: 'rules', label: 'Regelbasiert', hint: 'Standard, ohne Netzwerk, sofort verfügbar' },
+  {
+    mode: 'llm',
+    label: 'Sprachmodell',
+    hint: 'Über den konfigurierten Endpunkt, ohne Namen und Telefonnummern. Fällt der Aufruf aus, greifen automatisch die Regeln.',
+  },
+];
+
 export function ScoringView() {
   const weights = useAppStore((s) => s.weights);
   const corridorKm = useAppStore((s) => s.corridorKm);
@@ -30,6 +40,8 @@ export function ScoringView() {
   const resetWeights = useAppStore((s) => s.resetWeights);
   const setCorridorKm = useAppStore((s) => s.setCorridorKm);
   const setControlEnabled = useAppStore((s) => s.setControlEnabled);
+  const briefingMode = useAppStore((s) => s.briefingMode);
+  const setBriefingMode = useAppStore((s) => s.setBriefingMode);
   const queue = useQueue();
   const normalized = normalizeWeights(weights);
   const preview = queue.slice(0, PREVIEW_SIZE);
@@ -77,6 +89,27 @@ export function ScoringView() {
                 hint={`${Math.round(CONTROL_SHARE * 100)} % der Warteschlange aus Band B und C, gleichmäßig eingestreut`}
               />
             </div>
+          </Panel>
+
+          <Panel title="Briefing">
+            <fieldset className="space-y-2">
+              <legend className="sr-only">Briefing-Variante</legend>
+              {BRIEFING_OPTIONS.map((option) => (
+                <label key={option.mode} className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="radio"
+                    name="briefing-mode"
+                    checked={briefingMode === option.mode}
+                    onChange={() => setBriefingMode(option.mode)}
+                    className="mt-0.5 accent-[var(--brand-primary)]"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold">{option.label}</span>
+                    <span className="block text-xs text-muted">{option.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
           </Panel>
         </div>
 
