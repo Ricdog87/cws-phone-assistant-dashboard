@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+*.local
+.env*
+.DS_Store
+.vite
+
+# Werkzeugverzeichnisse
+.claude/
+CLAUDE.md
+.specstory/
+.aider*
