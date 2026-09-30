@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapCsvRows, parseBoolean, parseNumber, suggestMapping } from '@/data/csvMapping';
+import { mappingProblems, parseBoolean, parseNumber, suggestMapping } from '@/data/csvMapping';
 import { parseCsvText } from '@/data/providers/csvProvider';
 
 describe('parseNumber', () => {
@@ -13,46 +13,46 @@ describe('parseNumber', () => {
 });
 
 describe('parseBoolean', () => {
-  it('erkennt ja, x und 1', () => {
+  it('erkennt ja und nein, unbekannte Werte ergeben null', () => {
     expect(parseBoolean('Ja')).toBe(true);
     expect(parseBoolean('x')).toBe(true);
     expect(parseBoolean('1')).toBe(true);
     expect(parseBoolean('nein')).toBe(false);
+    expect(parseBoolean('')).toBe(false);
     expect(parseBoolean(undefined)).toBe(false);
+    expect(parseBoolean('vielleicht')).toBeNull();
   });
 });
 
-describe('CSV-Import', () => {
-  const content =
-    '\uFEFFFirma;Ort;Breitengrad;Längengrad;Trägerzahl;Durchwahl\n' +
-    'Betrieb A;Leer;53,23;7,46;120;ja\n' +
-    'Betrieb B;Emden;;;80;nein\n' +
-    ';Oldenburg;53,14;8,21;50;\n';
-
-  it('schlägt die Spaltenzuordnung vor und verwirft Zeilen ohne Koordinaten', () => {
-    const csv = parseCsvText(content);
-    const mapping = suggestMapping(csv.headers);
-    expect(mapping).toMatchObject({
+describe('suggestMapping', () => {
+  it('erkennt deutsche Spaltennamen', () => {
+    const csv = parseCsvText(
+      '\uFEFFFirma;Ort;Breitengrad;Längengrad;Trägerzahl\nA;Leer;53,2;7,4;10\n',
+    );
+    expect(suggestMapping(csv.headers)).toMatchObject({
       name: 'Firma',
       city: 'Ort',
       lat: 'Breitengrad',
       lng: 'Längengrad',
+      wearerCount: 'Trägerzahl',
     });
+  });
+});
 
-    const { leads, report } = mapCsvRows(csv.rows, mapping);
-    expect(report).toEqual({
-      total: 3,
-      loaded: 1,
-      rejectedMissingCoordinates: 1,
-      rejectedOther: 1,
-    });
-    expect(leads[0]).toMatchObject({
-      name: 'Betrieb A',
-      lat: 53.23,
-      lng: 7.46,
-      wearerCount: 120,
-      hasDirectDial: true,
-      id: 'CSV-0001',
-    });
+describe('suggestMapping ohne Mehrfachbelegung', () => {
+  it('ordnet eine Spalte nur einem Zielfeld zu', () => {
+    const mapping = suggestMapping(['Kunde', 'Bestandskunde', 'Stellen']);
+    expect(mapping).toEqual({ isCustomer: 'Bestandskunde', openPositions: 'Stellen' });
+  });
+});
+
+describe('mappingProblems', () => {
+  it('verlangt Firmenname und Koordinaten oder Adresse', () => {
+    expect(mappingProblems({})).toHaveLength(2);
+    expect(mappingProblems({ name: 'Firma', city: 'Ort' })).toEqual([]);
+    expect(mappingProblems({ name: 'Firma', lat: 'Lat', lng: 'Lng' })).toEqual([]);
+    expect(mappingProblems({ name: 'Firma', city: 'Ort', lat: 'Lat' })).toEqual([
+      'Breiten- und Längengrad nur gemeinsam zuordnen.',
+    ]);
   });
 });

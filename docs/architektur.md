@@ -17,6 +17,8 @@ Zustand als Store, Dexie für IndexedDB, react-leaflet mit OpenStreetMap-Kacheln
                               ┌──────────────────┐
                               │ OutcomeRepository│  Dexie (IndexedDB)
                               └──────────────────┘
+
+IndexedDB-Tabellen (src/data/db.ts): outcomes, columnMappings, geocodeCache
 ```
 
 ## Schichten
@@ -61,6 +63,31 @@ interface LeadProvider {
 Schritte: `ProviderId` erweitern, Klasse unter `src/data/providers/` anlegen,
 in `src/data/providers/index.ts` bei `PROVIDER_OPTIONS` und `createProvider` eintragen.
 Die Umwandlung in `Lead` gehört in den Provider, nicht in die Oberfläche.
+
+### CSV-Import und Geocoding
+
+- `src/data/csvMapping.ts`: Zielfelder, Namensvorschläge, Zahl- und Ja/Nein-Werte.
+- `src/data/csvImport.ts`: Zod-Schema je Zeile, `validateCsvRows` für die Vorprüfung,
+  `importCsvRows` für den Import mit Geocoding, Fehlerliste je Zeile.
+- `src/data/mappingRepository.ts`: gespeicherte Spaltenzuordnungen in IndexedDB,
+  Schlüssel ist die Kopfzeile unabhängig von Reihenfolge und Schreibweise.
+- `src/data/geocoding/`: austauschbarer Geocoder. Aufbau von außen nach innen:
+
+  ```
+  CachedGeocoder (IndexedDB) → RateLimitedGeocoder (1 Anfrage / 1,1 s) → NominatimGeocoder
+  ```
+
+  Treffer aus dem Zwischenspeicher belasten das Rate-Limit nicht. Nicht gefundene
+  Adressen werden 7 Tage lang nicht erneut angefragt. Nach drei Dienstfehlern in Folge
+  bricht der Import das Nachschlagen ab und listet die übrigen Zeilen als nicht gefunden.
+
+Einen anderen Dienst anbinden (etwa einen eigenen Geocoding-Server für große Mengen):
+Klasse mit der Schnittstelle `Geocoder` aus `src/data/geocoding/types.ts` anlegen, in
+`createGeocoder()` in `src/data/geocoding/index.ts` eintragen und in `src/app/services.ts`
+auswählen. Zwischenspeicher und Rate-Limit lassen sich unverändert davorschalten.
+
+`src/app/services.ts` ist die zentrale Stelle, an der Repository, Zuordnungsspeicher,
+Zwischenspeicher und Geocoder erzeugt werden.
 
 ### Anbindung Clay
 

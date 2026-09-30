@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { AppDatabase } from '@/data/db';
 import { DexieOutcomeRepository, InMemoryOutcomeRepository } from '@/data/repository';
 import { makeOutcome } from './fixtures';
 
+const freshDb = () => new AppDatabase(`test-${Math.random()}`);
+
 describe.each([
-  ['Dexie', () => new DexieOutcomeRepository(`test-${Math.random()}`)],
+  ['Dexie', () => new DexieOutcomeRepository(freshDb())],
   ['InMemory', () => new InMemoryOutcomeRepository()],
 ])('%s-Repository', (_name, create) => {
   it('speichert, listet chronologisch und leert', async () => {
@@ -19,8 +22,8 @@ describe.each([
 describe('Dexie-Persistenz', () => {
   it('überlebt eine neue Instanz auf derselben Datenbank', async () => {
     const name = `persist-${Math.random()}`;
-    await new DexieOutcomeRepository(name).add(makeOutcome({ id: 'x' }));
-    const reloaded = await new DexieOutcomeRepository(name).list();
+    await new DexieOutcomeRepository(new AppDatabase(name)).add(makeOutcome({ id: 'x' }));
+    const reloaded = await new DexieOutcomeRepository(new AppDatabase(name)).list();
     expect(reloaded.map((o) => o.id)).toEqual(['x']);
   });
 });

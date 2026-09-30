@@ -90,9 +90,21 @@ stehen in `docs/architektur.md`.
 
 ## CSV-Import
 
-Erste Zeile mit Spaltennamen, Trennzeichen Komma oder Semikolon, Zahlen mit Punkt oder
-Komma. Pflicht sind Firmenname, Breitengrad und Längengrad. Übliche deutsche
-Spaltennamen werden automatisch zugeordnet, die Zuordnung lässt sich je Feld ändern.
+Erste Zeile mit Spaltennamen, Trennzeichen Komma, Semikolon oder Tab, Zahlen mit Punkt
+oder Komma.
+
+1. Datei wählen. Die Zuordnung der Spalten wird vorgeschlagen: aus einem früheren Import
+   mit denselben Spalten, sonst aus üblichen Spaltennamen.
+2. Je Zielfeld die Quellspalte prüfen. Pflicht ist der Firmenname, dazu Breiten- und
+   Längengrad oder Ort bzw. PLZ. Die Vorprüfung zeigt sofort, wie viele Zeilen gültig sind.
+3. Importieren. Die Zuordnung wird gespeichert und beim nächsten Import vorgeschlagen.
+   Zeilen ohne Koordinaten werden über OpenStreetMap Nominatim nachgeschlagen
+   (abschaltbar, höchstens eine Anfrage pro Sekunde, lokaler Zwischenspeicher).
+4. Fehlerhafte Zeilen stehen in der Fehlerliste mit Zeilennummer, Feld, Wert und Grund
+   und lassen sich als CSV exportieren.
+
+An Nominatim gehen nur Straße, PLZ und Ort, keine Firmennamen. Optional eine
+Kontaktadresse in `.env.local` hinterlegen, siehe `.env.example`.
 
 ## Bewusst nicht enthalten
 

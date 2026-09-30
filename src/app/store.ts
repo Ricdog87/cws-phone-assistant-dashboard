@@ -1,12 +1,14 @@
 import { create } from 'zustand';
+import { outcomeRepository } from './services';
 import { MockProvider } from '@/data/providers/mockProvider';
-import type { LeadProvider, LoadReport, ProviderId } from '@/data/providers/types';
-import { MOCK_ROUTE } from '@/data/mockRoute';
 import {
-  DexieOutcomeRepository,
-  InMemoryOutcomeRepository,
-  type OutcomeRepository,
-} from '@/data/repository';
+  emptyReport,
+  type LeadProvider,
+  type LoadReport,
+  type ProviderId,
+} from '@/data/providers/types';
+import { MOCK_ROUTE } from '@/data/mockRoute';
+import type { OutcomeRepository } from '@/data/repository';
 import {
   CORRIDOR_MAX_KM,
   CORRIDOR_MIN_KM,
@@ -77,12 +79,7 @@ export function createAppStore(repository: OutcomeRepository) {
           leads,
           sourceId: provider.id,
           sourceLabel: provider.label,
-          loadReport: report?.() ?? {
-            total: leads.length,
-            loaded: leads.length,
-            rejectedMissingCoordinates: 0,
-            rejectedOther: 0,
-          },
+          loadReport: report?.() ?? emptyReport(leads.length),
           selectedLeadId: null,
           loading: false,
         });
@@ -110,13 +107,7 @@ export function createAppStore(repository: OutcomeRepository) {
   }));
 }
 
-function createRepository(): OutcomeRepository {
-  return typeof indexedDB === 'undefined'
-    ? new InMemoryOutcomeRepository()
-    : new DexieOutcomeRepository();
-}
-
-export const useAppStore = createAppStore(createRepository());
+export const useAppStore = createAppStore(outcomeRepository);
 
 /** Startdaten laden: Demo-Leads und gespeicherte Anrufergebnisse */
 export async function bootstrap(): Promise<void> {
