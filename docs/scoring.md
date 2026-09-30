@@ -33,6 +33,8 @@ Fit = Branchengrundwert × Größenfaktor, höchstens 100.
 | 20 bis 39 oder 251 bis 399 | 0,85         |
 | alle anderen               | 0,60         |
 
+Die Grundwerte je Branche stehen in `src/domain/branchen.json`. Sie sind vorläufig und vom Vertrieb zu bestätigen. `npm run export:branchen` schreibt sie nach `export/branchengrundwerte.csv`.
+
 **Nähe** misst, wie gut der Lead in die Route passt.
 Nähe = 100 − (Umweg − 2) × 9, nicht unter 0. Ein Lead direkt an der Route (Umweg 2 Minuten)
 erhält 100, ab rund 13 Minuten Umweg 0.
@@ -108,8 +110,8 @@ Die Stichprobe lässt sich im Reiter Scoring abschalten, etwa für Schulungen.
 Der Einzeldatei-Prototyp lag bei der Umsetzung nicht vor. Die folgenden Punkte sind daher
 als Annahme umgesetzt und mit dem Prototyp beziehungsweise dem Fachbereich abzugleichen:
 
-1. **Branchengrundwerte** (`INDUSTRY_BASE_SCORES`): Werte sind Platzhalter. Unbekannte
-   Branchen erhalten 50.
+1. **Branchengrundwerte** (`src/domain/branchen.json`): Werte sind Platzhalter und vom
+   Vertrieb zu bestätigen. Unbekannte Branchen erhalten 50.
 2. **Nähe auf gerundetem Umweg**: Die Nähe wird aus dem auf eine Nachkommastelle gerundeten
    Umweg berechnet.
 3. **Alle Gewichte auf null**: Dann werden alle vier Dimensionen gleich gewichtet (je 25).

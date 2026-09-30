@@ -11,7 +11,7 @@ export type Band = 'A' | 'B' | 'C';
 export interface Lead {
   id: string;
   name: string;
-  /** Branchenschlüssel, siehe INDUSTRY_BASE_SCORES in scoring.ts */
+  /** Branchenschlüssel, siehe src/domain/branchen.json */
   industry: string;
   street: string;
   postalCode: string;

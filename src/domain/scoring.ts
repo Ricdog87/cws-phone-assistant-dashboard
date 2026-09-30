@@ -1,3 +1,4 @@
+import branchen from './branchen.json';
 import { detourMinutes, distanceToPolylineKm } from './geo';
 import type { Band, DimensionKey, Dimensions, Lead, Route, ScoredLead, Weights } from './types';
 
@@ -26,24 +27,15 @@ export const DEFAULT_CORRIDOR_KM = 2;
 export const CORRIDOR_MIN_KM = 1;
 export const CORRIDOR_MAX_KM = 10;
 
-/**
- * Branchengrundwerte für die Dimension Fit.
- * Offener Abstimmungspunkt: Werte mit den Angaben aus dem Prototyp abgleichen,
- * siehe docs/scoring.md.
- */
-export const INDUSTRY_BASE_SCORES: Record<string, number> = {
-  Fleischverarbeitung: 95,
-  Lebensmittelproduktion: 92,
-  Metallbau: 88,
-  Chemie: 86,
-  Maschinenbau: 85,
-  'Gesundheit und Pflege': 82,
-  Logistik: 80,
-  'Kfz-Werkstatt': 78,
-  Bau: 75,
-  Gastronomie: 70,
-  Handel: 55,
-};
+/** Grundwerte aus branchen.json. Begründung und Status stehen dort. */
+export const INDUSTRY_BASE_SCORES: Record<string, number> = Object.entries(branchen).reduce<
+  Record<string, number>
+>((scores, [industry, entry]) => {
+  scores[industry] = entry.grundwert;
+  return scores;
+}, {});
+
+/** Fallback für Branchen, die in branchen.json nicht vorkommen. */
 export const INDUSTRY_FALLBACK_SCORE = 50;
 
 export function industryBaseScore(industry: string): number {

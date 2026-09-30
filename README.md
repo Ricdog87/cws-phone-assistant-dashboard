@@ -21,13 +21,14 @@ npm run dev          # http://localhost:5173
 
 Weitere Befehle:
 
-| Befehl            | Zweck                            |
-| ----------------- | -------------------------------- |
-| `npm run build`   | Typprüfung und Produktions-Build |
-| `npm run preview` | Build lokal ansehen              |
-| `npm run test`    | Unit- und Komponententests       |
-| `npm run lint`    | ESLint und Prettier-Prüfung      |
-| `npm run format`  | Formatierung anwenden            |
+| Befehl                    | Zweck                                     |
+| ------------------------- | ----------------------------------------- |
+| `npm run build`           | Typprüfung und Produktions-Build          |
+| `npm run preview`         | Build lokal ansehen                       |
+| `npm run test`            | Unit- und Komponententests                |
+| `npm run lint`            | ESLint und Prettier-Prüfung               |
+| `npm run format`          | Formatierung anwenden                     |
+| `npm run export:branchen` | Branchengrundwerte als CSV nach `export/` |
 
 Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
+    "export:branchen": "node scripts/export-branchen.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

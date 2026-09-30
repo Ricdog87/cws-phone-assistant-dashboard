@@ -6,6 +6,9 @@ coverage
 .DS_Store
 .vite
 
+# Erzeugter Vertriebs-Export
+export/
+
 # Werkzeugverzeichnisse
 .specstory/
 .aider*

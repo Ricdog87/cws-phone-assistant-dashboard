@@ -1,0 +1,57 @@
+{
+  "Fleischverarbeitung": {
+    "grundwert": 95,
+    "begruendung": "Schlachterei und Zerlegung brauchen dichte Schutz- und Hygienekleidung im täglichen Wechsel.",
+    "status": "vorlaeufig"
+  },
+  "Lebensmittelproduktion": {
+    "grundwert": 92,
+    "begruendung": "Produktionsbetriebe unterliegen Hygienevorgaben und tauschen Berufsbekleidung regelmäßig.",
+    "status": "vorlaeufig"
+  },
+  "Metallbau": {
+    "grundwert": 88,
+    "begruendung": "Funken, Öl und Verschleiß erzeugen einen hohen Bedarf an robuster Schutzkleidung.",
+    "status": "vorlaeufig"
+  },
+  "Chemie": {
+    "grundwert": 86,
+    "begruendung": "Vorgeschriebene Schutzkleidung macht den Bedarf planbar und hoch.",
+    "status": "vorlaeufig"
+  },
+  "Maschinenbau": {
+    "grundwert": 85,
+    "begruendung": "Werkstatt und Fertigung statten Beschäftigte laufend mit Berufsbekleidung aus.",
+    "status": "vorlaeufig"
+  },
+  "Gesundheit und Pflege": {
+    "grundwert": 82,
+    "begruendung": "Schichtbetrieb und Hygienevorschriften halten den Bedarf an Berufskleidung hoch.",
+    "status": "vorlaeufig"
+  },
+  "Logistik": {
+    "grundwert": 80,
+    "begruendung": "Lager und Auslieferung nutzen einheitliche Arbeitskleidung, der Anspruch liegt unter der Industrie.",
+    "status": "vorlaeufig"
+  },
+  "Kfz-Werkstatt": {
+    "grundwert": 78,
+    "begruendung": "Öl, Schmutz und Verschleiß sprechen für Mietkleidung, die Betriebe bleiben oft kleiner.",
+    "status": "vorlaeufig"
+  },
+  "Bau": {
+    "grundwert": 75,
+    "begruendung": "Baustellen brauchen robuste Kleidung, die Einsätze wechseln häufig den Standort.",
+    "status": "vorlaeufig"
+  },
+  "Gastronomie": {
+    "grundwert": 70,
+    "begruendung": "Servicekleidung ist üblich, Volumen und Wechsel liegen unter der produzierenden Industrie.",
+    "status": "vorlaeufig"
+  },
+  "Handel": {
+    "grundwert": 55,
+    "begruendung": "Nur Teile des Handels tragen Berufsbekleidung, deshalb bleibt der Fit begrenzt.",
+    "status": "vorlaeufig"
+  }
+}

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import branchen from '@/domain/branchen.json';
 import {
   DEFAULT_WEIGHTS,
   INDUSTRY_FALLBACK_SCORE,
@@ -45,6 +46,18 @@ const route: Route = {
     { lat: 53.2, lng: 8.0 },
   ],
 };
+
+describe('Branchengrundwerte', () => {
+  it('liegt je Branche zwischen 0 und 100 und hat eine Begründung', () => {
+    const entries = Object.entries(branchen);
+    expect(entries.length).toBeGreaterThan(0);
+    for (const [name, entry] of entries) {
+      expect(entry.grundwert, name).toBeGreaterThanOrEqual(0);
+      expect(entry.grundwert, name).toBeLessThanOrEqual(100);
+      expect(entry.begruendung.trim(), name).not.toBe('');
+    }
+  });
+});
 
 describe('sizeFactor', () => {
   it.each([
