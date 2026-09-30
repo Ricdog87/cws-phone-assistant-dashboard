@@ -174,8 +174,12 @@ Einen anderen Anbieter ohne OpenAI-kompatible Schnittstelle bindet man im Proxy 
 
 ### Kalibrierung
 
-Eine spätere Kalibrierung liest die gespeicherten `CallOutcome`-Datensätze. Diese
-enthalten Dimensionen, Gewichte und die Kennzeichnung der Kontrollstichprobe.
+`src/domain/calibration.ts` ist eine reine Funktion: Sie liest die gespeicherten
+`CallOutcome`-Datensätze, rechnet Terminquoten je Band und Dimension und ab 300 Anrufen
+eine logistische Regression (Newton-Verfahren, eigene Lineare Algebra ohne
+Zusatzbibliothek). `CalibrationPanel` im Reiter Scoring zeigt das Ergebnis. Die Gewichte
+ändert nur die Aktion `setWeights` im Store, ausgelöst durch die Bestätigung im UI.
+Regeln und Begründung stehen in `docs/scoring.md`, Abschnitt 6.
 
 ## Karte
 

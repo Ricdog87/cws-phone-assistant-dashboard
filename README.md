@@ -33,13 +33,13 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 
 ## Bedienung
 
-| Reiter     | Inhalt                                                                         |
-| ---------- | ------------------------------------------------------------------------------ |
-| Anrufliste | Warteschlange links, Briefing rechts, Ergebnis mit Taste 1 bis 4 buchen        |
-| Karte      | Route, Korridor, Leads nach Band, Bestandskunden separat                       |
-| Dashboard  | Anrufe, Termine, Termine je 100 Anrufe, Quote nach Band, Kontrolle, CSV-Export |
-| Scoring    | Gewichte, Korridorbreite, Kontrollstichprobe, Rangfolgevorschau                |
-| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                       |
+| Reiter     | Inhalt                                                                             |
+| ---------- | ---------------------------------------------------------------------------------- |
+| Anrufliste | Warteschlange links, Briefing rechts, Ergebnis mit Taste 1 bis 4 buchen            |
+| Karte      | Route, Korridor, Leads nach Band, Bestandskunden separat                           |
+| Dashboard  | Anrufe, Termine, Termine je 100 Anrufe, Quote nach Band, Kontrolle, CSV-Export     |
+| Scoring    | Gewichte, Korridor, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung |
+| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           |
 
 Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin vereinbart,
 2 Wiedervorlage, 3 Nicht erreicht, 4 Kein Interesse. Nach dem Buchen springt die Auswahl
@@ -123,6 +123,13 @@ gehen keine Firmennamen, Ansprechpartner oder Telefonnummern. Ist nichts konfigu
 fällt der Aufruf aus, greift automatisch das regelbasierte Briefing. Details in
 `docs/architektur.md`.
 
+## Kalibrierung
+
+Der Reiter Scoring zeigt die tatsächliche Terminquote je Band und je Dimension. Ab 300
+erfassten Anrufen schlägt eine logistische Regression neue Gewichte vor. Der Vorschlag
+greift nie automatisch, er muss übernommen und bestätigt werden. Details in
+`docs/scoring.md`, Abschnitt 6.
+
 ## Bewusst nicht enthalten
 
 - keine Bonitäts- oder Zahlungsdatenbewertung
@@ -133,6 +140,6 @@ fällt der Aufruf aus, greift automatisch das regelbasierte Briefing. Details in
 
 ## Offene Punkte
 
-Siehe `docs/scoring.md`, Abschnitt 6, und `docs/datenmodell.md`, offene Zuordnungsfragen.
+Siehe `docs/scoring.md`, Abschnitt 7, und `docs/datenmodell.md`, offene Zuordnungsfragen.
 Das Logo unter `public/logo.svg` ist ein Platzhalter und wird durch die freigegebene
 Logodatei ersetzt.

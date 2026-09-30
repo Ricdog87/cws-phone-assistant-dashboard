@@ -39,6 +39,8 @@ export interface AppState {
   setTab(tab: TabId): void;
   setWeight(key: DimensionKey, value: number): void;
   resetWeights(): void;
+  /** Setzt alle Gewichte auf einmal, etwa nach bestätigtem Kalibrierungsvorschlag */
+  setWeights(weights: Weights): void;
   setCorridorKm(km: number): void;
   setControlEnabled(enabled: boolean): void;
   setBriefingMode(mode: BriefingMode): void;
@@ -69,6 +71,15 @@ export function createAppStore(repository: OutcomeRepository) {
     setTab: (activeTab) => set({ activeTab }),
     setWeight: (key, value) => set({ weights: { ...get().weights, [key]: clampWeight(value) } }),
     resetWeights: () => set({ weights: { ...DEFAULT_WEIGHTS } }),
+    setWeights: (weights) =>
+      set({
+        weights: {
+          fit: clampWeight(weights.fit),
+          proximity: clampWeight(weights.proximity),
+          potential: clampWeight(weights.potential),
+          reachability: clampWeight(weights.reachability),
+        },
+      }),
     setCorridorKm: (km) =>
       set({ corridorKm: Math.max(CORRIDOR_MIN_KM, Math.min(CORRIDOR_MAX_KM, km)) }),
     setControlEnabled: (controlEnabled) => set({ controlEnabled }),

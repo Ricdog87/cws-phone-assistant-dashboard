@@ -20,6 +20,7 @@ import {
   WEIGHT_MIN,
   normalizeWeights,
 } from '@/domain/scoring';
+import { CalibrationPanel } from './CalibrationPanel';
 
 const PREVIEW_SIZE = 12;
 
@@ -113,49 +114,52 @@ export function ScoringView() {
           </Panel>
         </div>
 
-        <Panel title={`Rangfolge, erste ${PREVIEW_SIZE} von ${queue.length}`}>
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs text-muted">
-              <tr>
-                <th className="py-1 font-normal">#</th>
-                <th className="py-1 font-normal">Band</th>
-                <th className="py-1 font-normal">Firma</th>
-                {DIMENSION_KEYS.map((key) => (
-                  <th key={key} className="py-1 pl-3 text-right font-normal">
-                    {DIMENSION_LABELS[key]}
-                  </th>
-                ))}
-                <th className="py-1 pl-3 text-right font-normal">Umweg</th>
-                <th className="py-1 pl-3 text-right font-normal">Score</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {preview.map((entry) => (
-                <tr key={entry.lead.id}>
-                  <td className="py-1.5 tabular-nums text-muted">{entry.position}</td>
-                  <td className="py-1.5">
-                    <BandBadge band={entry.band} />
-                  </td>
-                  <td className="py-1.5">
-                    <div className="flex items-center gap-2">
-                      <span>{entry.lead.name}</span>
-                      {entry.isControl && <ControlTag />}
-                    </div>
-                  </td>
+        <div className="space-y-4">
+          <Panel title={`Rangfolge, erste ${PREVIEW_SIZE} von ${queue.length}`}>
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs text-muted">
+                <tr>
+                  <th className="py-1 font-normal">#</th>
+                  <th className="py-1 font-normal">Band</th>
+                  <th className="py-1 font-normal">Firma</th>
                   {DIMENSION_KEYS.map((key) => (
-                    <td key={key} className="py-1.5 pl-3 text-right tabular-nums">
-                      {Math.round(entry.dimensions[key])}
-                    </td>
+                    <th key={key} className="py-1 pl-3 text-right font-normal">
+                      {DIMENSION_LABELS[key]}
+                    </th>
                   ))}
-                  <td className="py-1.5 pl-3 text-right tabular-nums">
-                    {formatMin(entry.detourMinutes)}
-                  </td>
-                  <td className="py-1.5 pl-3 text-right font-bold tabular-nums">{entry.score}</td>
+                  <th className="py-1 pl-3 text-right font-normal">Umweg</th>
+                  <th className="py-1 pl-3 text-right font-normal">Score</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </Panel>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {preview.map((entry) => (
+                  <tr key={entry.lead.id}>
+                    <td className="py-1.5 tabular-nums text-muted">{entry.position}</td>
+                    <td className="py-1.5">
+                      <BandBadge band={entry.band} />
+                    </td>
+                    <td className="py-1.5">
+                      <div className="flex items-center gap-2">
+                        <span>{entry.lead.name}</span>
+                        {entry.isControl && <ControlTag />}
+                      </div>
+                    </td>
+                    {DIMENSION_KEYS.map((key) => (
+                      <td key={key} className="py-1.5 pl-3 text-right tabular-nums">
+                        {Math.round(entry.dimensions[key])}
+                      </td>
+                    ))}
+                    <td className="whitespace-nowrap py-1.5 pl-3 text-right tabular-nums">
+                      {formatMin(entry.detourMinutes)}
+                    </td>
+                    <td className="py-1.5 pl-3 text-right font-bold tabular-nums">{entry.score}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Panel>
+          <CalibrationPanel />
+        </div>
       </div>
     </div>
   );
