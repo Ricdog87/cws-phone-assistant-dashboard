@@ -84,7 +84,7 @@ export const MOCK_LEADS: Lead[] = [
     certification: null,
     siteExpansion: false,
     managementChange: true,
-    isCustomer: false,
+    isCustomer: true,
   },
   {
     id: 'DEMO-005',
@@ -462,7 +462,7 @@ export const MOCK_LEADS: Lead[] = [
     certification: 'HACCP',
     siteExpansion: false,
     managementChange: false,
-    isCustomer: false,
+    isCustomer: true,
   },
   {
     id: 'DEMO-023',
@@ -1071,7 +1071,7 @@ export const MOCK_LEADS: Lead[] = [
     certification: null,
     siteExpansion: false,
     managementChange: false,
-    isCustomer: false,
+    isCustomer: true,
   },
   {
     id: 'DEMO-052',
@@ -1260,7 +1260,7 @@ export const MOCK_LEADS: Lead[] = [
     certification: 'ISO 9001',
     siteExpansion: false,
     managementChange: true,
-    isCustomer: false,
+    isCustomer: true,
   },
   {
     id: 'DEMO-061',

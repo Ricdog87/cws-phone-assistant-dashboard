@@ -1,0 +1,20 @@
+/* Marken-Tokens. Komponenten verwenden ausschließlich diese Variablen. */
+:root {
+  --brand-primary: #eb0045;
+  --brand-accent: #f9e244;
+  --brand-ink: #231f20;
+  --surface: #f4f4f5;
+  --border: #e2e2e4;
+  --muted: #6e6e75;
+
+  --panel: #ffffff;
+  --on-primary: #ffffff;
+
+  /* Abgeleitete Farben für Bänder und Karte */
+  --band-a: var(--brand-primary);
+  --band-b: var(--brand-accent);
+  --band-c: var(--muted);
+  --customer: #1f5fa8;
+  --route: var(--brand-ink);
+  --corridor: var(--brand-accent);
+}

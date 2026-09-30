@@ -1,0 +1,63 @@
+/* Kartenelemente werden über Klassen eingefärbt, damit keine Farbwerte im Quelltext stehen */
+.map-route {
+  stroke: var(--route);
+}
+
+.map-corridor {
+  stroke: var(--corridor);
+  stroke-opacity: 0.35;
+}
+
+.lead-marker {
+  stroke: var(--brand-ink);
+  stroke-width: 1;
+  fill-opacity: 0.9;
+}
+
+.lead-marker--a {
+  fill: var(--band-a);
+}
+
+.lead-marker--b {
+  fill: var(--band-b);
+}
+
+.lead-marker--c {
+  fill: var(--band-c);
+}
+
+.lead-marker--outside {
+  fill-opacity: 0.25;
+  stroke-opacity: 0.3;
+}
+
+.lead-marker--selected {
+  stroke-width: 3;
+}
+
+.customer-marker {
+  fill: var(--customer);
+  stroke: var(--panel);
+  stroke-width: 2;
+  fill-opacity: 1;
+}
+
+.legend-swatch--a {
+  background: var(--band-a);
+}
+
+.legend-swatch--b {
+  background: var(--band-b);
+}
+
+.legend-swatch--c {
+  background: var(--band-c);
+}
+
+.legend-swatch--customer {
+  background: var(--customer);
+}
+
+.legend-swatch--corridor {
+  background: var(--corridor);
+}

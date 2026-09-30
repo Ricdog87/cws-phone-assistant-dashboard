@@ -21,12 +21,7 @@ export default {
           c: 'var(--band-c)',
         },
         customer: 'var(--customer)',
-        outcome: {
-          appointment: 'var(--outcome-appointment)',
-          callback: 'var(--outcome-callback)',
-          notreached: 'var(--outcome-not-reached)',
-          notinterested: 'var(--outcome-not-interested)',
-        },
+        'on-primary': 'var(--on-primary)',
       },
       fontFamily: {
         sans: ['Arial', 'system-ui', 'sans-serif'],
