@@ -1,0 +1,23 @@
+@import './tokens.css';
+@import './map.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--surface);
+  color: var(--brand-ink);
+  font-family: Arial, system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 2px;
+}

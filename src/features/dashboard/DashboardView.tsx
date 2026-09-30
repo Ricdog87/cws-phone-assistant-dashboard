@@ -1,0 +1,148 @@
+import { useMemo } from 'react';
+import { useAppStore } from '@/app/store';
+import { Button } from '@/components/Button';
+import { Meter } from '@/components/Meter';
+import { Panel } from '@/components/Panel';
+import { StatTile } from '@/components/StatTile';
+import { formatDateTime, formatInt, formatOne } from '@/components/format';
+import { outcomesToCsv } from '@/domain/export';
+import { OUTCOME_LABELS, computeMetrics, type RateStats } from '@/domain/outcomes';
+import type { Band } from '@/domain/types';
+
+const BAND_BAR: Record<Band, string> = {
+  A: 'bg-band-a',
+  B: 'bg-band-b',
+  C: 'bg-band-c',
+};
+
+function rateLabel(stats: RateStats): string {
+  return `${formatOne(stats.per100)} je 100 · ${stats.appointments} von ${stats.calls}`;
+}
+
+function downloadCsv(content: string, filename: string): void {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function DashboardView() {
+  const outcomes = useAppStore((s) => s.outcomes);
+  const clearOutcomes = useAppStore((s) => s.clearOutcomes);
+  const metrics = useMemo(() => computeMetrics(outcomes), [outcomes]);
+
+  const bandMax = Math.max(10, ...(['A', 'B', 'C'] as const).map((b) => metrics.byBand[b].per100));
+  const compareMax = Math.max(10, metrics.control.per100, metrics.regular.per100);
+  const recent = [...outcomes].reverse().slice(0, 10);
+
+  function exportCsv() {
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCsv(outcomesToCsv(outcomes), `anrufergebnisse-${date}.csv`);
+  }
+
+  function reset() {
+    if (window.confirm('Alle erfassten Anrufergebnisse endgültig löschen?')) void clearOutcomes();
+  }
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl space-y-4 p-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatTile label="Anrufe" value={formatInt(metrics.total.calls)} />
+          <StatTile label="Termine" value={formatInt(metrics.total.appointments)} />
+          <StatTile
+            label="Termine je 100 Anrufe"
+            value={formatOne(metrics.total.per100)}
+            hint="Alle erfassten Anrufe"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Panel title="Terminquote nach Band">
+            <div className="space-y-4">
+              {(['A', 'B', 'C'] as const).map((band) => (
+                <Meter
+                  key={band}
+                  label={`Band ${band}`}
+                  value={metrics.byBand[band].per100}
+                  max={bandMax}
+                  valueLabel={rateLabel(metrics.byBand[band])}
+                  barClassName={BAND_BAR[band]}
+                />
+              ))}
+            </div>
+          </Panel>
+
+          <Panel title="Kontrollstichprobe gegen regulär">
+            <div className="space-y-4">
+              <Meter
+                label="Kontrollstichprobe"
+                value={metrics.control.per100}
+                max={compareMax}
+                valueLabel={rateLabel(metrics.control)}
+              />
+              <Meter
+                label="Regulär bearbeitet"
+                value={metrics.regular.per100}
+                max={compareMax}
+                valueLabel={rateLabel(metrics.regular)}
+              />
+            </div>
+            <p className="mt-4 text-xs text-muted">
+              Die Kontrollstichprobe zeigt, wie Leads abschneiden, die ohne Stichprobe kaum
+              angerufen würden. Aussagekräftig erst ab einigen hundert Anrufen.
+            </p>
+          </Panel>
+        </div>
+
+        <Panel
+          title="Anrufergebnisse"
+          actions={
+            <div className="flex gap-2">
+              <Button onClick={reset} disabled={outcomes.length === 0}>
+                Löschen
+              </Button>
+              <Button variant="primary" onClick={exportCsv} disabled={outcomes.length === 0}>
+                CSV exportieren
+              </Button>
+            </div>
+          }
+        >
+          {recent.length === 0 ? (
+            <p className="text-sm text-muted">Noch keine Ergebnisse erfasst.</p>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs text-muted">
+                <tr>
+                  <th className="py-1 font-normal">Zeitpunkt</th>
+                  <th className="py-1 font-normal">Firma</th>
+                  <th className="py-1 font-normal">Band</th>
+                  <th className="py-1 font-normal">Ergebnis</th>
+                  <th className="py-1 font-normal">Kontrolle</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {recent.map((o) => (
+                  <tr key={o.id}>
+                    <td className="py-1 tabular-nums">{formatDateTime(o.recordedAt)}</td>
+                    <td className="py-1">{o.leadName}</td>
+                    <td className="py-1">{o.band}</td>
+                    <td className="py-1">{OUTCOME_LABELS[o.outcome]}</td>
+                    <td className="py-1">{o.isControl ? 'ja' : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <p className="mt-3 text-xs text-muted">
+            Export mit Semikolon und BOM, öffnet direkt in Excel. Die letzten zehn Ergebnisse sind
+            oben aufgeführt.
+          </p>
+        </Panel>
+      </div>
+    </div>
+  );
+}

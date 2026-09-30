@@ -1,0 +1,47 @@
+# Konventionen Lead-Cockpit Nordwest
+
+## Sprache
+- Oberfläche vollständig auf Deutsch.
+- Bezeichner, Dateinamen und Typen auf Englisch.
+- Kommentare auf Deutsch, knapp, nur wo sie etwas erklären, das der Code nicht selbst sagt.
+- Commit-Nachrichten auf Deutsch, Conventional Commits (feat, fix, docs, test, refactor, chore), ohne Emojis.
+
+## Architektur
+- src/domain/ enthält ausschließlich reine Funktionen ohne React-, DOM-, Dexie- oder Leaflet-Bezug. ESLint erzwingt das.
+- Fachregeln stehen nur in src/domain/. Komponenten rechnen nicht selbst.
+- Abgeleitete Werte (Score, Warteschlange) nie im Store ablegen, sondern über Selektoren mit useMemo berechnen.
+- Datenquellen implementieren LeadProvider (src/data/providers/types.ts). Keine Quelle direkt in Komponenten ansprechen.
+- Anrufergebnisse nur über OutcomeRepository speichern.
+- Keine neuen fachlichen Regeln ohne Abstimmung. Offene Punkte in docs/scoring.md festhalten.
+
+## Fachlogik (nicht ändern ohne Abstimmung)
+- Umweg-Minuten = round((2 * km / 45 * 60 + 2) * 10) / 10.
+- fit = min(100, Branchengrundwert * Größenfaktor), Faktor 1.0 bei 40–250, 0.85 bei 20–39 oder 251–399, sonst 0.6.
+- naehe = max(0, 100 - (umweg - 2) * 9); potenzial = min(100, traeger / 2.2).
+- erreichbarkeit = Durchwahl 34 + Ansprechpartner 26 + min(22, Stellen * 3.5) + Zertifizierung 6 + Erweiterung 7 + GF-Wechsel 5, max 100.
+- Gewichte 0–50, Standard 30/30/25/15, normiert auf 100. Band A ab 78, B ab 58.
+- Korridor Standard 2 km, 1–10 km. Bestandskunden nie in der Warteschlange.
+- Kontrollstichprobe 8 % aus Band B und C, fester Seed, gleichmäßig eingestreut.
+
+## Oberfläche
+- Reiter: Anrufliste, Karte, Dashboard, Scoring, Daten.
+- Tastatur in der Anrufliste: Pfeil hoch/runter wechselt den Lead, 1–4 bucht das Ergebnis.
+- Nach dem Buchen zum nächsten offenen Lead springen. Bearbeitete Leads bleiben sichtbar, abgeblendet.
+- Karte: invalidateSize vor fitBounds, erst wenn der Reiter sichtbar ist.
+- Hinweis „Demo-Daten“ nur ausblenden, wenn eine andere Quelle als der Mock aktiv ist.
+- CSV-Export mit Semikolon, Dezimalkomma und BOM.
+
+## Gestaltung
+- Farben ausschließlich über CSS-Variablen aus src/styles/tokens.css, nie Hex-Werte in Komponenten.
+  --brand-primary #EB0045, --brand-accent #F9E244, --brand-ink #231F20,
+  --surface #F4F4F5, --border #E2E2E4, --muted #6E6E75.
+- Leaflet-Pfade über CSS-Klassen einfärben (src/styles/map.css).
+- Schrift Arial bzw. system-ui. Ruhige Flächen, keine Verläufe, keine dekorativen Akzentstreifen, keine Emojis.
+- Logo als Datei unter public/ per img-Tag, nie als Base64.
+
+## Qualität
+- TypeScript strict, kein any, kein ts-ignore, noUncheckedIndexedAccess ist aktiv.
+- Unit-Tests für jede Änderung in src/domain/ mit festen Erwartungswerten.
+- Vor jedem Commit: npm run lint, npm run test, npm run build fehlerfrei.
+- Keine echten Kundendaten im Repository. Zugangsdaten nur über .env, nie im Quelltext.
+- Keine Hinweise auf verwendete Werkzeuge oder Assistenten in Commits, Code, Kommentaren oder Dokumenten.
