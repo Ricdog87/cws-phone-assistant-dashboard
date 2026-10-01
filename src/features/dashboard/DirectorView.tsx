@@ -3,12 +3,16 @@ import { Panel } from '@/components/Panel';
 import { StatTile } from '@/components/StatTile';
 import { formatInt, formatOne } from '@/components/format';
 import { AssistantBrick } from './AssistantBrick';
+import { MemberDetail } from './MemberDetail';
+import { useCardSelection } from './useCardSelection';
 import { useDirectorStanding } from './useTeamStanding';
 
 export function DirectorView() {
   const { regions, standing } = useDirectorStanding();
   const director = DEMO_PERSONAS.director;
   const appointmentGap = Math.max(0, standing.weeklyAppointmentGoal - standing.weekAppointments);
+  // Schlüssel aus Region und Person, damit die Auswahl in ihrer Region bleibt
+  const { selectedKey, toggle, close, cardRef } = useCardSelection();
 
   return (
     <div className="h-full overflow-y-auto">
@@ -51,6 +55,9 @@ export function DirectorView() {
             0,
             region.standing.weeklyAppointmentGoal - region.standing.weekAppointments,
           );
+          const keyOf = (memberId: string) => `${region.id}:${memberId}`;
+          const selected = region.standing.members.find((m) => keyOf(m.id) === selectedKey);
+          const detailId = `region-${region.id}-member-detail`;
           return (
             <Panel key={region.id} title={`Region ${region.name}`}>
               <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
@@ -68,9 +75,27 @@ export function DirectorView() {
                   {gap === 0 ? 'Ziel erreicht' : `Lücke ${formatInt(gap)} Termine`}
                 </p>
               </div>
+              {selected && (
+                <div className="mb-4">
+                  <MemberDetail
+                    id={detailId}
+                    member={selected}
+                    groupLabel={`Region ${region.name}`}
+                    onClose={close}
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {region.standing.members.map((member) => (
-                  <AssistantBrick key={member.id} member={member} compact />
+                  <AssistantBrick
+                    key={member.id}
+                    ref={cardRef(keyOf(member.id))}
+                    member={member}
+                    compact
+                    selected={keyOf(member.id) === selectedKey}
+                    detailId={detailId}
+                    onSelect={() => toggle(keyOf(member.id))}
+                  />
                 ))}
               </div>
             </Panel>

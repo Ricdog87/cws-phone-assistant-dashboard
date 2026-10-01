@@ -2,12 +2,17 @@ import { daypartGreeting, DEMO_PERSONAS } from '@/app/demoUser';
 import { StatTile } from '@/components/StatTile';
 import { formatInt, formatOne } from '@/components/format';
 import { AssistantBrick } from './AssistantBrick';
+import { MemberDetail } from './MemberDetail';
+import { useCardSelection } from './useCardSelection';
 import { useTeamStanding } from './useTeamStanding';
 
 export function TeamLeadView() {
   const team = useTeamStanding();
   const lead = DEMO_PERSONAS.teamLead;
   const appointmentGap = Math.max(0, team.weeklyAppointmentGoal - team.weekAppointments);
+  const { selectedKey, toggle, close, cardRef } = useCardSelection();
+  const selected = team.members.find((member) => member.id === selectedKey);
+  const detailId = 'team-member-detail';
 
   return (
     <div className="h-full overflow-y-auto">
@@ -44,9 +49,25 @@ export function TeamLeadView() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {selected && (
+          <MemberDetail
+            id={detailId}
+            member={selected}
+            groupLabel={`Team ${team.teamName}`}
+            onClose={close}
+          />
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {team.members.map((member) => (
-            <AssistantBrick key={member.id} member={member} />
+            <AssistantBrick
+              key={member.id}
+              ref={cardRef(member.id)}
+              member={member}
+              selected={member.id === selectedKey}
+              detailId={detailId}
+              onSelect={() => toggle(member.id)}
+            />
           ))}
         </div>
       </div>
