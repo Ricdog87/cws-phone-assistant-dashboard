@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react';
 import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
 import { ControlTag } from '@/components/ControlTag';
 import { Meter } from '@/components/Meter';
-import { formatDateTime, formatKm, formatMin } from '@/components/format';
+import { formatDateTime, formatInt, formatKm, formatMin } from '@/components/format';
 import { buildBriefing } from '@/domain/briefing';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
@@ -12,15 +13,18 @@ interface BriefingPanelProps {
   entry: QueueEntry;
   latest: CallOutcome | undefined;
   busy: boolean;
+  callerName: string;
   onRecord(outcome: OutcomeType): void;
 }
 
-export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelProps) {
+export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: BriefingPanelProps) {
   const { lead } = entry;
-  const briefing = buildBriefing(entry);
+  const briefing = buildBriefing(entry, callerName);
+
+  const phoneHref = lead.phone.replace(/\s/g, '');
 
   return (
-    <article aria-label={`Briefing ${lead.name}`} className="flex flex-col gap-5">
+    <article aria-label={`Briefing ${lead.name}`} className="flex flex-col gap-4">
       <header className="flex items-start gap-3">
         <BandBadge band={entry.band} />
         <div className="min-w-0 flex-1">
@@ -29,11 +33,7 @@ export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelPr
             {entry.isControl && <ControlTag />}
           </div>
           <p className="text-sm text-muted">
-            {lead.industry || 'Branche unbekannt'} · {lead.street}, {lead.postalCode} {lead.city}
-          </p>
-          <p className="text-sm text-muted">
-            {formatKm(entry.distanceKm)} Luftlinie zur Route · {formatMin(entry.detourMinutes)}{' '}
-            Umweg · {lead.commercialEmployees} gewerbliche Mitarbeitende · {lead.wearerCount} Träger
+            {lead.industry || 'Branche unbekannt'} · {lead.city}
           </p>
         </div>
         <div className="text-right">
@@ -42,44 +42,66 @@ export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelPr
         </div>
       </header>
 
-      <section aria-label="Dimensionen" className="grid grid-cols-2 gap-x-6 gap-y-3">
+      <section
+        aria-label="Dimensionen"
+        className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-x-6 gap-y-2"
+      >
         {DIMENSION_KEYS.map((key) => (
           <Meter key={key} label={DIMENSION_LABELS[key]} value={entry.dimensions[key]} />
         ))}
       </section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">
-          Ansprechpartner
-        </h3>
-        <p className="text-sm">{briefing.contact}</p>
-        {lead.phone && (
-          <p className="text-sm">
-            <a href={`tel:${lead.phone.replace(/\s/g, '')}`} className="font-bold underline">
-              {lead.phone}
-            </a>
-            {lead.hasDirectDial ? ' · Durchwahl' : ' · Zentrale'}
-          </p>
-        )}
-      </section>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-4">
+        <section className="rounded border border-border bg-panel p-4">
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">Kundendaten</h3>
+          <dl className="grid grid-cols-[8.5rem_1fr] gap-y-1.5 text-sm">
+            <Fact label="Ansprechpartner">{briefing.contact}</Fact>
+            <Fact label="Telefon">
+              {lead.phone ? (
+                <>
+                  <a href={`tel:${phoneHref}`} className="underline">
+                    {lead.phone}
+                  </a>
+                  <span className="font-normal text-muted">
+                    {lead.hasDirectDial ? ' · Durchwahl' : ' · Zentrale'}
+                  </span>
+                </>
+              ) : (
+                <span className="font-normal text-muted">keine Angabe</span>
+              )}
+            </Fact>
+            <Fact label="Adresse">
+              {lead.street}, {lead.postalCode} {lead.city}
+            </Fact>
+            <Fact label="Branche">{lead.industry || 'unbekannt'}</Fact>
+            <Fact label="Mitarbeitende">{formatInt(lead.commercialEmployees)}</Fact>
+            <Fact label="Träger">{formatInt(lead.wearerCount)}</Fact>
+            <Fact label="Luftlinie">{formatKm(entry.distanceKm)}</Fact>
+            <Fact label="Umweg">{formatMin(entry.detourMinutes)}</Fact>
+          </dl>
+        </section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">Aufhänger</h3>
-        <ul className="list-disc space-y-1 pl-5 text-sm">
-          {briefing.hooks.map((hook) => (
-            <li key={hook.kind}>{hook.text}</li>
-          ))}
-        </ul>
-      </section>
+        <section className="rounded border border-border bg-panel p-4">
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">Aufhänger</h3>
+          <ol className="space-y-2 text-sm">
+            {briefing.hooks.map((hook, index) => (
+              <li key={hook.kind} className="flex gap-2">
+                <span className="w-4 shrink-0 font-bold tabular-nums text-muted">{index + 1}</span>
+                <span>{hook.text}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
 
-      <section>
-        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted">Einstiegssatz</h3>
-        <p className="rounded bg-surface p-3 text-sm leading-relaxed">{briefing.openingLine}</p>
+      <section className="rounded border border-brand-ink bg-panel p-4">
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Leitfaden</h3>
+        <p className="text-base leading-relaxed">{briefing.openingLine}</p>
       </section>
 
       <section aria-label="Ergebnis erfassen">
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Ergebnis</h3>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2">
           {OUTCOME_TYPES.map((type, index) => (
             <Button
               key={type}
@@ -104,5 +126,14 @@ export function BriefingPanel({ entry, latest, busy, onRecord }: BriefingPanelPr
         )}
       </section>
     </article>
+  );
+}
+
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <>
+      <dt className="text-muted">{label}</dt>
+      <dd className="font-bold">{children}</dd>
+    </>
   );
 }

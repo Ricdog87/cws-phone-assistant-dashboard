@@ -88,7 +88,10 @@ export function contactLabel(entry: Pick<QueueEntry, 'lead'>): string {
   return contactRole ? `${contactName}, ${contactRole}` : contactName;
 }
 
-export function buildBriefing(entry: Pick<QueueEntry, 'lead' | 'detourMinutes'>): Briefing {
+export function buildBriefing(
+  entry: Pick<QueueEntry, 'lead' | 'detourMinutes'>,
+  callerName = '[Name]',
+): Briefing {
   const hooks = buildHooks(entry);
   const greeting = entry.lead.contactName ? `Guten Tag ${entry.lead.contactName}` : 'Guten Tag';
   const first = hooks[0];
@@ -96,7 +99,7 @@ export function buildBriefing(entry: Pick<QueueEntry, 'lead' | 'detourMinutes'>)
   return {
     contact: contactLabel(entry),
     hooks,
-    openingLine: `${greeting}, hier ist [Name] von CWS Workwear,${opener} Hätten Sie diese Woche 15 Minuten für einen kurzen Termin vor Ort?`,
+    openingLine: `${greeting}, hier ist ${callerName} von CWS Workwear,${opener} Hätten Sie diese Woche 15 Minuten für einen kurzen Termin vor Ort?`,
   };
 }
 

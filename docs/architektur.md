@@ -43,6 +43,12 @@ Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 4. Ein gebuchtes Ergebnis wird als `CallOutcome` mit allen Merkmalen zum Zeitpunkt des
    Anrufs gespeichert und über das `OutcomeRepository` in IndexedDB abgelegt.
 5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen.
+6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
+   Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
+   0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine
+   (`WEEKLY_APPOINTMENT_GOAL`). Das Tagesziel sind etwa 50 Anrufe (`DAILY_CALL_GOAL`).
+   Anrufliste und Dashboard zeigen den Stand, dazu Wochentag, Datum und die restlichen
+   Tage bis Sonntag. Abgelegt wird das nicht im Store.
 
 ## Erweiterungspunkte
 

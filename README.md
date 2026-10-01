@@ -106,5 +106,3 @@ Spaltennamen werden automatisch zugeordnet, die Zuordnung lässt sich je Feld ä
 ## Offene Punkte
 
 Siehe `docs/scoring.md`, Abschnitt 6, und `docs/datenmodell.md`, offene Zuordnungsfragen.
-Das Logo unter `public/logo.svg` ist ein Platzhalter und wird durch die freigegebene
-Logodatei ersetzt.

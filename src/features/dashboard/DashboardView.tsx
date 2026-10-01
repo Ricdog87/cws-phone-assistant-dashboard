@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
+import { useCallDay, useGoalProgress } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
+import { DirectorView } from './DirectorView';
+import { TeamLeadView } from './TeamLeadView';
 import { Button } from '@/components/Button';
+import { GoalStrip } from '@/components/GoalStrip';
 import { Meter } from '@/components/Meter';
 import { Panel } from '@/components/Panel';
 import { StatTile } from '@/components/StatTile';
@@ -30,9 +34,18 @@ function downloadCsv(content: string, filename: string): void {
 }
 
 export function DashboardView() {
+  const level = useAppStore((s) => s.viewLevel);
+  if (level === 'director') return <DirectorView />;
+  if (level === 'teamLead') return <TeamLeadView />;
+  return <AssistantDashboard />;
+}
+
+function AssistantDashboard() {
   const outcomes = useAppStore((s) => s.outcomes);
   const clearOutcomes = useAppStore((s) => s.clearOutcomes);
   const metrics = useMemo(() => computeMetrics(outcomes), [outcomes]);
+  const goals = useGoalProgress();
+  const today = useCallDay();
 
   const bandMax = Math.max(10, ...(['A', 'B', 'C'] as const).map((b) => metrics.byBand[b].per100));
   const compareMax = Math.max(10, metrics.control.per100, metrics.regular.per100);
@@ -50,9 +63,29 @@ export function DashboardView() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-5xl space-y-4 p-6">
+        <Panel title="Tages- und Wochenziel">
+          <GoalStrip
+            dayCalls={goals.day.calls}
+            dayAppointments={goals.day.appointments}
+            weekCalls={goals.week.calls}
+            weekAppointments={goals.week.appointments}
+            dailyCallGoal={goals.dailyCallGoal}
+            weeklyGoal={goals.weeklyAppointmentGoal}
+            weekday={today.weekday}
+            dateLabel={today.dateLabel}
+            daysRemaining={today.daysRemaining}
+            weekEndLabel={today.weekEndLabel}
+          />
+          <p className="mt-4 text-xs text-muted">
+            Tagesziel: etwa {formatInt(goals.dailyCallGoal)} Anrufe. Wochenziel:{' '}
+            {formatInt(goals.weeklyAppointmentGoal)} vereinbarte Termine. Jeder erfasste Anruf
+            zählt. Die Woche beginnt am Montag.
+          </p>
+        </Panel>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatTile label="Anrufe" value={formatInt(metrics.total.calls)} />
-          <StatTile label="Termine" value={formatInt(metrics.total.appointments)} />
+          <StatTile label="Anrufe gesamt" value={formatInt(metrics.total.calls)} />
+          <StatTile label="Termine gesamt" value={formatInt(metrics.total.appointments)} />
           <StatTile
             label="Termine je 100 Anrufe"
             value={formatOne(metrics.total.per100)}

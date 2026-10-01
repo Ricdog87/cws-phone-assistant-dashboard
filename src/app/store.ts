@@ -15,6 +15,7 @@ import {
   clampWeight,
 } from '@/domain/scoring';
 import type { CallOutcome, DimensionKey, Lead, Route, Weights } from '@/domain/types';
+import type { ViewLevel } from './demoUser';
 
 export type TabId = 'queue' | 'map' | 'dashboard' | 'scoring' | 'data';
 
@@ -32,8 +33,10 @@ export interface AppState {
   controlEnabled: boolean;
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
+  viewLevel: ViewLevel;
 
   setTab(tab: TabId): void;
+  setViewLevel(level: ViewLevel): void;
   setWeight(key: DimensionKey, value: number): void;
   resetWeights(): void;
   setCorridorKm(km: number): void;
@@ -47,7 +50,7 @@ export interface AppState {
 
 export function createAppStore(repository: OutcomeRepository) {
   return create<AppState>()((set, get) => ({
-    activeTab: 'queue',
+    activeTab: 'dashboard',
     sourceId: 'mock',
     sourceLabel: 'Demo-Daten',
     leads: [],
@@ -60,8 +63,14 @@ export function createAppStore(repository: OutcomeRepository) {
     controlEnabled: true,
     selectedLeadId: null,
     outcomes: [],
+    viewLevel: 'teamLead',
 
     setTab: (activeTab) => set({ activeTab }),
+    setViewLevel: (viewLevel) =>
+      set({
+        viewLevel,
+        activeTab: viewLevel === 'assistant' ? 'queue' : 'dashboard',
+      }),
     setWeight: (key, value) => set({ weights: { ...get().weights, [key]: clampWeight(value) } }),
     resetWeights: () => set({ weights: { ...DEFAULT_WEIGHTS } }),
     setCorridorKm: (km) =>

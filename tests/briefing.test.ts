@@ -41,6 +41,17 @@ describe('buildBriefing', () => {
     );
   });
 
+  it('nennt die anrufende Person, wenn der Name übergeben wird', () => {
+    const briefing = buildBriefing(
+      {
+        lead: makeLead({ contactName: 'Frau Janssen', openPositions: 2 }),
+        detourMinutes: 9,
+      },
+      'Martina Weidmann',
+    );
+    expect(briefing.openingLine).toContain('hier ist Martina Weidmann von CWS Workwear');
+  });
+
   it('weist ohne Ansprechpartner auf die Zentrale hin', () => {
     expect(contactLabel({ lead: makeLead() })).toMatch(/Zentrale/);
   });

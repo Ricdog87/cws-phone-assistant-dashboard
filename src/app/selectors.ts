@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { callDay, goalProgress, type CallDay, type GoalProgress } from '@/domain/goals';
 import { latestOutcomeByLead } from '@/domain/outcomes';
 import { buildQueue } from '@/domain/queue';
 import { scoreLeads } from '@/domain/scoring';
@@ -26,4 +27,15 @@ export function useQueue(): QueueEntry[] {
 export function useLatestOutcomes(): Map<string, CallOutcome> {
   const outcomes = useAppStore((s) => s.outcomes);
   return useMemo(() => latestOutcomeByLead(outcomes), [outcomes]);
+}
+
+/** Tages- und Wochenziel aus den gespeicherten Anrufergebnissen. */
+export function useGoalProgress(): GoalProgress {
+  const outcomes = useAppStore((s) => s.outcomes);
+  return useMemo(() => goalProgress(outcomes), [outcomes]);
+}
+
+/** Wochentag und restliche Tage bis Sonntag. Bewusst ohne Memo, damit Mitternacht zählt. */
+export function useCallDay(): CallDay {
+  return callDay(new Date());
 }
