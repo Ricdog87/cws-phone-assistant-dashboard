@@ -72,6 +72,58 @@ export interface QueueEntry extends ScoredLead {
 
 export type OutcomeType = 'appointment' | 'callback' | 'not_reached' | 'not_interested';
 
+export type ContactRole = 'decisionMaker' | 'gatekeeper' | 'other';
+
+export type CurrentSolution =
+  'rental' | 'purchaseCompanyWash' | 'purchaseEmployeeWash' | 'none' | 'unknown';
+
+export type Requirement =
+  'hygiene' | 'hiVis' | 'protective' | 'corporateWear' | 'washroomHygiene' | 'fireSafety';
+
+export type CoDecisionMaker =
+  'md' | 'purchasing' | 'safety' | 'hr' | 'worksCouncil' | 'plantManager';
+
+export interface QualificationAnswers {
+  contactRole: ContactRole | null;
+  currentSolution: CurrentSolution | null;
+  competitor: string | null;
+  /** Monat des Vertragsendes, Format YYYY-MM */
+  contractEnd: string | null;
+  wearers: number | null;
+  wearersSource: 'estimate' | 'call';
+  requirements: Requirement[];
+  coDecisionMakers: CoDecisionMaker[];
+  decisionMakerAtMeeting: boolean | null;
+  /** Höchstens 200 Zeichen, ohne Namen oder private Angaben */
+  painPoint: string | null;
+  updatedAt: string;
+}
+
+export type QualificationStatus = 'open' | 'qualified' | 'partial' | 'unqualified';
+
+export interface ContactUpdate {
+  leadId: string;
+  name: string | null;
+  role: string | null;
+  directDial: string | null;
+  email: string | null;
+  source: 'call';
+  capturedAt: string;
+}
+
+export interface HunterFeedback {
+  appointmentId: string;
+  happened: 'yes' | 'noShow' | 'rescheduled' | 'cancelled';
+  fit: 'good' | 'partial' | 'poor' | null;
+  reason:
+    'tooSmall' | 'noDecisionMaker' | 'contractRunning' | 'noNeed' | 'wrongContact' | 'other' | null;
+  ratedAt: string;
+}
+
+export type PilotArm = 'enriched' | 'standard';
+
+export type RecallReason = 'contractEnd' | 'callback';
+
 /** Ein erfasstes Anrufergebnis. Enthält alle Merkmale zum Zeitpunkt des Anrufs als Trainingsdaten. */
 export interface CallOutcome {
   id: string;
@@ -88,4 +140,10 @@ export interface CallOutcome {
   isControl: boolean;
   queuePosition: number;
   sourceId: string;
+  qualification?: QualificationAnswers;
+  qualificationStatus?: QualificationStatus;
+  contactUpdateId?: string | null;
+  recallReason?: RecallReason | null;
+  /** Nur im Pilot-Arm standard, Sekunden Recherche vor dem Anruf */
+  researchSeconds?: number;
 }
