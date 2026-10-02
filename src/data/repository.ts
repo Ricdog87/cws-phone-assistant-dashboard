@@ -1,5 +1,5 @@
-import Dexie, { type Table } from 'dexie';
 import type { CallOutcome } from '@/domain/types';
+import { AppDatabase } from './db';
 
 /** Ablage der Anrufergebnisse. Austauschbar, etwa gegen einen CRM-Rückkanal. */
 export interface OutcomeRepository {
@@ -8,23 +8,8 @@ export interface OutcomeRepository {
   clear(): Promise<void>;
 }
 
-class OutcomeDatabase extends Dexie {
-  outcomes!: Table<CallOutcome, string>;
-
-  constructor(name: string) {
-    super(name);
-    this.version(1).stores({
-      outcomes: 'id, leadId, recordedAt, outcome, band, isControl',
-    });
-  }
-}
-
 export class DexieOutcomeRepository implements OutcomeRepository {
-  private readonly db: OutcomeDatabase;
-
-  constructor(databaseName = 'cws-lead-cockpit') {
-    this.db = new OutcomeDatabase(databaseName);
-  }
+  constructor(private readonly db: AppDatabase = new AppDatabase()) {}
 
   async add(outcome: CallOutcome): Promise<void> {
     await this.db.outcomes.put(outcome);

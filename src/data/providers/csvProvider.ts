@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import type { Lead } from '@/domain/types';
-import { mapCsvRows, type ColumnMapping } from '../csvMapping';
+import { importCsvRows, type ImportOptions } from '../csvImport';
+import type { ColumnMapping } from '../csvMapping';
 import type { LeadProvider, LoadReport } from './types';
 
 export interface ParsedCsv {
@@ -8,7 +9,7 @@ export interface ParsedCsv {
   rows: Record<string, string>[];
 }
 
-/** Liest eine CSV-Datei. Trennzeichen (Komma oder Semikolon) wird automatisch erkannt. */
+/** Liest eine CSV-Datei. Trennzeichen (Komma, Semikolon, Tab) wird automatisch erkannt. */
 export function parseCsvText(content: string): ParsedCsv {
   const result = Papa.parse<Record<string, string>>(content.replace(/^\uFEFF/, ''), {
     header: true,
@@ -31,10 +32,11 @@ export class CsvProvider implements LeadProvider {
   constructor(
     private readonly csv: ParsedCsv,
     private readonly mapping: ColumnMapping,
+    private readonly options: ImportOptions,
   ) {}
 
   async load(): Promise<Lead[]> {
-    const { leads, report } = mapCsvRows(this.csv.rows, this.mapping);
+    const { leads, report } = await importCsvRows(this.csv.rows, this.mapping, this.options);
     this.report = report;
     return leads;
   }

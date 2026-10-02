@@ -4,10 +4,11 @@ import { Button } from '@/components/Button';
 import { ControlTag } from '@/components/ControlTag';
 import { Meter } from '@/components/Meter';
 import { formatDateTime, formatInt, formatKm, formatMin } from '@/components/format';
-import { buildBriefing } from '@/domain/briefing';
+import { buildBriefing, contactLabel } from '@/domain/briefing';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
 import type { CallOutcome, OutcomeType, QueueEntry } from '@/domain/types';
+import { useBriefing } from './useBriefing';
 
 interface BriefingPanelProps {
   entry: QueueEntry;
@@ -19,8 +20,10 @@ interface BriefingPanelProps {
 
 export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: BriefingPanelProps) {
   const { lead } = entry;
-  const briefing = buildBriefing(entry, callerName);
-
+  const { briefing, pending } = useBriefing(entry);
+  const named = buildBriefing(entry, callerName);
+  const openingLine = briefing.source === 'rules' ? named.openingLine : briefing.openingLine;
+  const hooks = briefing.source === 'rules' ? named.hooks.map((hook) => hook.text) : briefing.hooks;
   const phoneHref = lead.phone.replace(/\s/g, '');
 
   return (
@@ -55,7 +58,7 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
         <section className="rounded border border-border bg-panel p-4">
           <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">Kundendaten</h3>
           <dl className="grid grid-cols-[8.5rem_1fr] gap-y-1.5 text-sm">
-            <Fact label="Ansprechpartner">{briefing.contact}</Fact>
+            <Fact label="Ansprechpartner">{contactLabel(entry)}</Fact>
             <Fact label="Telefon">
               {lead.phone ? (
                 <>
@@ -84,19 +87,43 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
         <section className="rounded border border-border bg-panel p-4">
           <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted">Aufhänger</h3>
           <ol className="space-y-2 text-sm">
-            {briefing.hooks.map((hook, index) => (
-              <li key={hook.kind} className="flex gap-2">
+            {hooks.map((hook, index) => (
+              <li key={`${index}-${hook}`} className="flex gap-2">
                 <span className="w-4 shrink-0 font-bold tabular-nums text-muted">{index + 1}</span>
-                <span>{hook.text}</span>
+                <span>{hook}</span>
               </li>
             ))}
           </ol>
         </section>
       </div>
 
-      <section className="rounded border border-brand-ink bg-panel p-4">
+      <section
+        className="rounded border border-brand-ink bg-panel p-4"
+        aria-live="polite"
+        aria-busy={pending}
+      >
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Leitfaden</h3>
-        <p className="text-base leading-relaxed">{briefing.openingLine}</p>
+        <p className="text-xs text-muted">
+          {briefingSourceText(briefing.source, briefing.fallbackReason, pending)}
+        </p>
+        <p className="mt-2 text-base leading-relaxed">{openingLine}</p>
+        {briefing.objectionHandling.length > 0 && (
+          <div className="mt-4">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">
+              Einwandbehandlung
+            </h4>
+            <ol className="space-y-2 text-sm">
+              {briefing.objectionHandling.map((item, index) => (
+                <li key={`${index}-${item}`} className="flex gap-2">
+                  <span className="w-4 shrink-0 font-bold tabular-nums text-muted">
+                    {index + 1}
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </section>
 
       <section aria-label="Ergebnis erfassen">
@@ -136,4 +163,16 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
       <dd className="font-bold">{children}</dd>
     </>
   );
+}
+
+function briefingSourceText(
+  source: 'rules' | 'llm',
+  fallbackReason: string | undefined,
+  pending: boolean,
+): string {
+  if (pending) return 'Briefing über Sprachmodell wird erstellt, bis dahin regelbasiert.';
+  if (source === 'llm') return 'Briefing: Sprachmodell. Vor dem Anruf auf Plausibilität prüfen.';
+  if (fallbackReason)
+    return `Briefing: regelbasiert, Sprachmodell nicht verfügbar (${fallbackReason}).`;
+  return 'Briefing: regelbasiert.';
 }

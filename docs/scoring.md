@@ -105,7 +105,43 @@ Voraussetzung dafür, dass eine spätere Kalibrierung überhaupt aussagekräftig
 
 Die Stichprobe lässt sich im Reiter Scoring abschalten, etwa für Schulungen.
 
-## 6. Offene Abstimmungspunkte
+## 6. Kalibrierung
+
+Umsetzung: `src/domain/calibration.ts`, Anzeige im Reiter Scoring.
+
+**Was ausgewertet wird.** Alle erfassten Anrufergebnisse. Jedes Ergebnis enthält die vier
+Dimensionswerte zum Zeitpunkt des Anrufs. Angezeigt werden die tatsächliche Terminquote je
+Band und je Dimension, Letztere getrennt nach den Wertebereichen 0–25, 25–50, 50–75 und
+75–100.
+
+**Wann ein Vorschlag entsteht.** Ab 300 erfassten Anrufen. Zusätzlich müssen Anrufe mit
+und ohne Termin vorliegen, sonst ist keine Schätzung möglich.
+
+**Wie der Vorschlag entsteht.**
+
+1. Logistische Regression: Zielgröße „Termin vereinbart“ (1) gegen alle anderen Ergebnisse
+   (0), Einflussgrößen die vier Dimensionen auf 0 bis 1 skaliert. Schätzung per
+   Newton-Verfahren mit leichter L2-Regularisierung (λ = 1), damit einzelne Ausreißer den
+   Vorschlag nicht kippen.
+2. Die vorgeschlagenen Gewichte sind proportional zu den positiven Koeffizienten, normiert
+   auf Summe 100. Damit sortiert der gewichtete Score die Leads genau so wie das Modell.
+3. Dimensionen mit negativem Koeffizienten erhalten Gewicht 0, weil der Score keine Abzüge
+   kennt. Wirkt keine Dimension positiv, gibt es keinen Vorschlag.
+4. Für die Regler wird das größte Gewicht auf 50 gesetzt, die übrigen im selben Verhältnis.
+
+**Entscheidungshilfe.** Je Dimension werden Koeffizient und Standardfehler angezeigt.
+„Unsicher“ heißt, der Effekt ist kleiner als zwei Standardfehler. Die Trennschärfe (AUC)
+vergleicht aktuelle und vorgeschlagene Gewichte auf denselben Anrufen. Da der Vorschlag
+aus genau diesen Daten stammt, fällt der Vergleich eher zu günstig für den Vorschlag aus.
+
+**Übernahme.** Der Vorschlag greift nie automatisch. Er wird erst nach „Vorschlag
+übernehmen“ und „Bestätigen“ gesetzt und lässt sich über „Standard“ zurücknehmen.
+
+**Warum die Kontrollstichprobe hier zählt.** Ohne sie liegen fast nur Ergebnisse aus Band A
+vor, die Regression sieht kaum schwache Leads und überschätzt die heutigen Gewichte. Der
+Anteil der Kontrollanrufe wird deshalb mit angezeigt.
+
+## 7. Offene Abstimmungspunkte
 
 Der Einzeldatei-Prototyp lag bei der Umsetzung nicht vor. Die folgenden Punkte sind daher
 als Annahme umgesetzt und mit dem Prototyp beziehungsweise dem Fachbereich abzugleichen:
@@ -120,3 +156,7 @@ als Annahme umgesetzt und mit dem Prototyp beziehungsweise dem Fachbereich abzug
 5. **Seed** der Stichprobe: 20240611.
 6. **Briefing-Texte** (`src/domain/briefing.ts`): Formulierungen der Aufhänger und des
    Einstiegssatzes sowie die Grenze „an der Route“ (bis 5 Minuten Umweg).
+7. **Zielgröße der Kalibrierung**: Wiedervorlagen zählen als „kein Termin“, auch wenn
+   daraus später ein Termin wird. „Nicht erreicht“ zählt ebenfalls mit, weil die
+   Erreichbarkeit Teil des Scores ist. Alternative: nur erreichte Gespräche auswerten.
+8. **Regularisierung** (λ = 1) und die Mindestmenge von 300 Anrufen.

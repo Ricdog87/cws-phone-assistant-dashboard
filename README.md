@@ -34,13 +34,13 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 
 ## Bedienung
 
-| Reiter     | Inhalt                                                                         |
-| ---------- | ------------------------------------------------------------------------------ |
-| Anrufliste | Warteschlange links, Briefing rechts, Ergebnis mit Taste 1 bis 4 buchen        |
-| Karte      | Route, Korridor, Leads nach Band, Bestandskunden separat                       |
-| Dashboard  | Anrufe, Termine, Termine je 100 Anrufe, Quote nach Band, Kontrolle, CSV-Export |
-| Scoring    | Gewichte, Korridorbreite, Kontrollstichprobe, Rangfolgevorschau                |
-| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                       |
+| Reiter     | Inhalt                                                                             |
+| ---------- | ---------------------------------------------------------------------------------- |
+| Anrufliste | Warteschlange links, Briefing rechts, Ergebnis mit Taste 1 bis 4 buchen            |
+| Karte      | Route, Korridor, Leads nach Band, Bestandskunden separat                           |
+| Dashboard  | Anrufe, Termine, Termine je 100 Anrufe, Quote nach Band, Kontrolle, CSV-Export     |
+| Scoring    | Gewichte, Korridor, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung |
+| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           |
 
 Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin vereinbart,
 2 Wiedervorlage, 3 Nicht erreicht, 4 Kein Interesse. Nach dem Buchen springt die Auswahl
@@ -67,6 +67,7 @@ src/
     providers/    Mock, CSV, Clay, D&B, Salesforce
     repository.ts Ablage der Anrufergebnisse
   styles/         Marken-Tokens und Basisstile
+server/           Briefing-Proxy für den Vite-Server
 docs/
   architektur.md  Aufbau, Datenfluss, Anbindung Clay, D&B und CRM
   scoring.md      Scoring-Regeln in Prosa und offene Abstimmungspunkte
@@ -91,9 +92,44 @@ stehen in `docs/architektur.md`.
 
 ## CSV-Import
 
-Erste Zeile mit Spaltennamen, Trennzeichen Komma oder Semikolon, Zahlen mit Punkt oder
-Komma. Pflicht sind Firmenname, Breitengrad und Längengrad. Übliche deutsche
-Spaltennamen werden automatisch zugeordnet, die Zuordnung lässt sich je Feld ändern.
+Erste Zeile mit Spaltennamen, Trennzeichen Komma, Semikolon oder Tab, Zahlen mit Punkt
+oder Komma.
+
+1. Datei wählen. Die Zuordnung der Spalten wird vorgeschlagen: aus einem früheren Import
+   mit denselben Spalten, sonst aus üblichen Spaltennamen.
+2. Je Zielfeld die Quellspalte prüfen. Pflicht ist der Firmenname, dazu Breiten- und
+   Längengrad oder Ort bzw. PLZ. Die Vorprüfung zeigt sofort, wie viele Zeilen gültig sind.
+3. Importieren. Die Zuordnung wird gespeichert und beim nächsten Import vorgeschlagen.
+   Zeilen ohne Koordinaten werden über OpenStreetMap Nominatim nachgeschlagen
+   (abschaltbar, höchstens eine Anfrage pro Sekunde, lokaler Zwischenspeicher).
+4. Fehlerhafte Zeilen stehen in der Fehlerliste mit Zeilennummer, Feld, Wert und Grund
+   und lassen sich als CSV exportieren.
+
+An Nominatim gehen nur Straße, PLZ und Ort, keine Firmennamen. Optional eine
+Kontaktadresse in `.env.local` hinterlegen, siehe `.env.example`.
+
+## Briefing über Sprachmodell
+
+Standard ist das regelbasierte Briefing. Im Reiter Scoring lässt sich auf „Sprachmodell“
+umschalten. Dafür in `.env.local` einen OpenAI-kompatiblen Endpunkt eintragen:
+
+```bash
+LLM_API_URL=https://…/v1/chat/completions
+LLM_API_KEY=…
+LLM_MODEL=…
+```
+
+Der Schlüssel bleibt im lokalen Vite-Server und gelangt nicht in den Browser. An das Modell
+gehen keine Firmennamen, Ansprechpartner oder Telefonnummern. Ist nichts konfiguriert oder
+fällt der Aufruf aus, greift automatisch das regelbasierte Briefing. Details in
+`docs/architektur.md`.
+
+## Kalibrierung
+
+Der Reiter Scoring zeigt die tatsächliche Terminquote je Band und je Dimension. Ab 300
+erfassten Anrufen schlägt eine logistische Regression neue Gewichte vor. Der Vorschlag
+greift nie automatisch, er muss übernommen und bestätigt werden. Details in
+`docs/scoring.md`, Abschnitt 6.
 
 ## Bewusst nicht enthalten
 
@@ -105,4 +141,7 @@ Spaltennamen werden automatisch zugeordnet, die Zuordnung lässt sich je Feld ä
 
 ## Offene Punkte
 
-Siehe `docs/scoring.md`, Abschnitt 6, und `docs/datenmodell.md`, offene Zuordnungsfragen.
+Siehe `docs/scoring.md`, Abschnitt 7, und `docs/datenmodell.md`, offene Zuordnungsfragen.
+Das Logo liegt unter `public/logo.png` (582 × 82 px), die Favicons unter
+`public/favicon-32.png` und `public/apple-touch-icon.png` sind aus der CWS-Wortmarke
+abgeleitet.

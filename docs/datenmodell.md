@@ -25,7 +25,27 @@ Zentrales Modell aller Quellen, definiert in `src/domain/types.ts`.
 | `managementChange`    | ja/nein        | Wechsel in der Geschäftsführung                 | nein    |
 | `isCustomer`          | ja/nein        | Bestandskunde                                   | nein    |
 
-Datensätze ohne gültige Koordinaten werden verworfen und im Reiter Daten gezählt.
+## Validierung beim CSV-Import
+
+Jede Zeile wird mit einem Zod-Schema geprüft (`src/data/csvImport.ts`). Eine Zeile kann
+mehrere Fehler haben, alle erscheinen in der Fehlerliste mit Zeilennummer (Kopfzeile = 1),
+Feld, Wert und Grund.
+
+| Regel                                                                   | Folge                       |
+| ----------------------------------------------------------------------- | --------------------------- |
+| Firmenname leer                                                         | Zeile fehlerhaft            |
+| Zahl nicht lesbar                                                       | Zeile fehlerhaft            |
+| Mitarbeitende, Träger, offene Stellen negativ oder mit Nachkommastellen | Zeile fehlerhaft            |
+| Breitengrad außerhalb ±90, Längengrad außerhalb ±180                    | Zeile fehlerhaft            |
+| Ja/Nein-Feld mit unbekanntem Wert                                       | Zeile fehlerhaft            |
+| ID doppelt                                                              | spätere Zeile fehlerhaft    |
+| Keine Koordinaten, aber Ort oder PLZ                                    | wird nachgeschlagen         |
+| Keine Koordinaten und keine Adresse                                     | verworfen, ohne Koordinaten |
+| Adresse nicht gefunden                                                  | verworfen, ohne Koordinaten |
+
+Leere Zahlenfelder zählen als 0, leere Ja/Nein-Felder als nein. Koordinaten 0/0 gelten
+als fehlend. Ja-Werte: ja, j, x, 1, true, wahr, yes, y. Nein-Werte: nein, n, 0, false,
+falsch, no, -.
 
 ## CallOutcome
 

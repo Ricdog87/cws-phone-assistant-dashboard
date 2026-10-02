@@ -7,6 +7,7 @@ import { formatInt } from '@/components/format';
 import { PROVIDER_OPTIONS, createProvider } from '@/data/providers';
 import type { ProviderId } from '@/data/providers/types';
 import { CsvImport } from './CsvImport';
+import { RowErrorList } from './RowErrorList';
 
 export function DataView() {
   const sourceId = useAppStore((s) => s.sourceId);
@@ -50,18 +51,15 @@ export function DataView() {
         <div className="space-y-4">
           <Panel title={`Aktiv: ${sourceLabel}`}>
             {report ? (
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                 <StatTile label="Datensätze gelesen" value={formatInt(report.total)} />
                 <StatTile label="Geladen" value={formatInt(report.loaded)} />
+                <StatTile label="Davon nachgeschlagen" value={formatInt(report.geocoded)} />
                 <StatTile
                   label="Verworfen, ohne Koordinaten"
                   value={formatInt(report.rejectedMissingCoordinates)}
                 />
-                <StatTile
-                  label="Verworfen, sonstige"
-                  value={formatInt(report.rejectedOther)}
-                  hint="z. B. ohne Firmenname"
-                />
+                <StatTile label="Verworfen, fehlerhaft" value={formatInt(report.rejectedInvalid)} />
               </div>
             ) : (
               <p className="text-sm text-muted">Noch keine Daten geladen.</p>
@@ -72,6 +70,12 @@ export function DataView() {
               </p>
             )}
           </Panel>
+
+          {report && report.rowErrors.length > 0 && (
+            <Panel title="Fehlerliste je Zeile">
+              <RowErrorList errors={report.rowErrors} />
+            </Panel>
+          )}
 
           {choice === 'csv' ? (
             <Panel title="CSV-Import">

@@ -1,5 +1,4 @@
 import type { Lead } from '@/domain/types';
-import type { LoadReport } from './providers/types';
 
 /** Zielfelder des CSV-Imports mit deutscher Bezeichnung */
 export type CsvTargetField = Exclude<keyof Lead, 'id'> | 'id';
@@ -53,14 +52,14 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
   {
     field: 'lat',
     label: 'Breitengrad',
-    required: true,
+    required: false,
     kind: 'number',
     aliases: ['lat', 'latitude', 'breitengrad', 'breite'],
   },
   {
     field: 'lng',
     label: 'Längengrad',
-    required: true,
+    required: false,
     kind: 'number',
     aliases: ['lng', 'lon', 'longitude', 'längengrad', 'laengengrad', 'länge'],
   },
@@ -139,18 +138,25 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
     label: 'Bestandskunde',
     required: false,
     kind: 'boolean',
-    aliases: ['bestandskunde', 'kunde', 'customer'],
+    aliases: ['bestandskunde', 'ist kunde', 'existing customer'],
   },
 ];
 
 /** Zielfeld auf Quellspalte, leerer Wert heißt nicht zugeordnet */
 export type ColumnMapping = Partial<Record<CsvTargetField, string>>;
 
+/** Vorschlag aus den Spaltennamen. Jede Quellspalte wird höchstens einem Zielfeld zugeordnet. */
 export function suggestMapping(headers: readonly string[]): ColumnMapping {
   const mapping: ColumnMapping = {};
+  const used = new Set<string>();
   for (const spec of CSV_FIELDS) {
-    const match = headers.find((h) => spec.aliases.includes(h.trim().toLowerCase()));
-    if (match) mapping[spec.field] = match;
+    const match = headers.find(
+      (h) => !used.has(h) && spec.aliases.includes(h.trim().toLowerCase()),
+    );
+    if (match) {
+      mapping[spec.field] = match;
+      used.add(match);
+    }
   }
   return mapping;
 }
@@ -165,89 +171,33 @@ export function parseNumber(raw: string | undefined): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-export function parseBoolean(raw: string | undefined): boolean {
-  if (raw === undefined) return false;
-  return ['1', 'ja', 'j', 'x', 'true', 'wahr', 'yes', 'y'].includes(raw.trim().toLowerCase());
+export const TRUE_VALUES = ['1', 'ja', 'j', 'x', 'true', 'wahr', 'yes', 'y'];
+export const FALSE_VALUES = ['0', 'nein', 'n', 'false', 'falsch', 'no', '-'];
+
+/** Ja/Nein-Wert, leer ergibt nein, unbekannte Werte ergeben null */
+export function parseBoolean(raw: string | undefined): boolean | null {
+  const value = raw?.trim().toLowerCase() ?? '';
+  if (value === '') return false;
+  if (TRUE_VALUES.includes(value)) return true;
+  if (FALSE_VALUES.includes(value)) return false;
+  return null;
 }
 
-function text(raw: string | undefined): string {
-  return raw?.trim() ?? '';
+export function fieldLabel(field: CsvTargetField): string {
+  return CSV_FIELDS.find((f) => f.field === field)?.label ?? field;
 }
 
-function isValidCoordinate(lat: number | null, lng: number | null): boolean {
-  return (
-    lat !== null &&
-    lng !== null &&
-    Math.abs(lat) <= 90 &&
-    Math.abs(lng) <= 180 &&
-    !(lat === 0 && lng === 0)
-  );
-}
-
-export interface CsvMappingResult {
-  leads: Lead[];
-  report: LoadReport;
-}
-
-/** Wandelt CSV-Zeilen anhand der Spaltenzuordnung in Leads um. Zeilen ohne Koordinaten werden verworfen. */
-export function mapCsvRows(
-  rows: readonly Record<string, string>[],
-  mapping: ColumnMapping,
-): CsvMappingResult {
-  const leads: Lead[] = [];
-  let rejectedMissingCoordinates = 0;
-  let rejectedOther = 0;
-
-  const get = (row: Record<string, string>, field: CsvTargetField): string | undefined => {
-    const column = mapping[field];
-    return column ? row[column] : undefined;
-  };
-
-  rows.forEach((row, index) => {
-    const lat = parseNumber(get(row, 'lat'));
-    const lng = parseNumber(get(row, 'lng'));
-    if (!isValidCoordinate(lat, lng)) {
-      rejectedMissingCoordinates++;
-      return;
-    }
-    const name = text(get(row, 'name'));
-    if (name === '') {
-      rejectedOther++;
-      return;
-    }
-    const contactName = text(get(row, 'contactName'));
-    const contactRole = text(get(row, 'contactRole'));
-    const certification = text(get(row, 'certification'));
-    leads.push({
-      id: text(get(row, 'id')) || `CSV-${String(index + 1).padStart(4, '0')}`,
-      name,
-      industry: text(get(row, 'industry')),
-      street: text(get(row, 'street')),
-      postalCode: text(get(row, 'postalCode')),
-      city: text(get(row, 'city')),
-      lat: lat as number,
-      lng: lng as number,
-      commercialEmployees: parseNumber(get(row, 'commercialEmployees')) ?? 0,
-      wearerCount: parseNumber(get(row, 'wearerCount')) ?? 0,
-      phone: text(get(row, 'phone')),
-      hasDirectDial: parseBoolean(get(row, 'hasDirectDial')),
-      contactName: contactName || null,
-      contactRole: contactRole || null,
-      openPositions: parseNumber(get(row, 'openPositions')) ?? 0,
-      certification: certification || null,
-      siteExpansion: parseBoolean(get(row, 'siteExpansion')),
-      managementChange: parseBoolean(get(row, 'managementChange')),
-      isCustomer: parseBoolean(get(row, 'isCustomer')),
-    });
-  });
-
-  return {
-    leads,
-    report: {
-      total: rows.length,
-      loaded: leads.length,
-      rejectedMissingCoordinates,
-      rejectedOther,
-    },
-  };
+/** Prüft, ob die Zuordnung für einen Import ausreicht. Liefert Hinweise für die Oberfläche. */
+export function mappingProblems(mapping: ColumnMapping): string[] {
+  const problems: string[] = [];
+  if (!mapping.name) problems.push('Firmenname ist nicht zugeordnet.');
+  const hasCoordinates = Boolean(mapping.lat && mapping.lng);
+  const hasAddress = Boolean(mapping.city || mapping.postalCode);
+  if (!hasCoordinates && !hasAddress) {
+    problems.push('Weder Breiten- und Längengrad noch Ort oder PLZ sind zugeordnet.');
+  }
+  if (Boolean(mapping.lat) !== Boolean(mapping.lng)) {
+    problems.push('Breiten- und Längengrad nur gemeinsam zuordnen.');
+  }
+  return problems;
 }

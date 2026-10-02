@@ -1,4 +1,5 @@
 import { useQueue } from '@/app/selectors';
+import type { BriefingMode } from '@/app/services';
 import { useAppStore } from '@/app/store';
 import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
@@ -19,8 +20,18 @@ import {
   WEIGHT_MIN,
   normalizeWeights,
 } from '@/domain/scoring';
+import { CalibrationPanel } from './CalibrationPanel';
 
 const PREVIEW_SIZE = 12;
+
+const BRIEFING_OPTIONS: { mode: BriefingMode; label: string; hint: string }[] = [
+  { mode: 'rules', label: 'Regelbasiert', hint: 'Standard, ohne Netzwerk, sofort verfügbar' },
+  {
+    mode: 'llm',
+    label: 'Sprachmodell',
+    hint: 'Über den konfigurierten Endpunkt, ohne Namen und Telefonnummern. Fällt der Aufruf aus, greifen automatisch die Regeln.',
+  },
+];
 
 export function ScoringView() {
   const weights = useAppStore((s) => s.weights);
@@ -30,6 +41,8 @@ export function ScoringView() {
   const resetWeights = useAppStore((s) => s.resetWeights);
   const setCorridorKm = useAppStore((s) => s.setCorridorKm);
   const setControlEnabled = useAppStore((s) => s.setControlEnabled);
+  const briefingMode = useAppStore((s) => s.briefingMode);
+  const setBriefingMode = useAppStore((s) => s.setBriefingMode);
   const queue = useQueue();
   const normalized = normalizeWeights(weights);
   const preview = queue.slice(0, PREVIEW_SIZE);
@@ -78,51 +91,75 @@ export function ScoringView() {
               />
             </div>
           </Panel>
+
+          <Panel title="Briefing">
+            <fieldset className="space-y-2">
+              <legend className="sr-only">Briefing-Variante</legend>
+              {BRIEFING_OPTIONS.map((option) => (
+                <label key={option.mode} className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="radio"
+                    name="briefing-mode"
+                    checked={briefingMode === option.mode}
+                    onChange={() => setBriefingMode(option.mode)}
+                    className="mt-0.5 accent-[var(--brand-primary)]"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold">{option.label}</span>
+                    <span className="block text-xs text-muted">{option.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          </Panel>
         </div>
 
-        <Panel title={`Rangfolge, erste ${PREVIEW_SIZE} von ${queue.length}`}>
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs text-muted">
-              <tr>
-                <th className="py-1 font-normal">#</th>
-                <th className="py-1 font-normal">Band</th>
-                <th className="py-1 font-normal">Firma</th>
-                {DIMENSION_KEYS.map((key) => (
-                  <th key={key} className="py-1 pl-3 text-right font-normal">
-                    {DIMENSION_LABELS[key]}
-                  </th>
-                ))}
-                <th className="py-1 pl-3 text-right font-normal">Umweg</th>
-                <th className="py-1 pl-3 text-right font-normal">Score</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {preview.map((entry) => (
-                <tr key={entry.lead.id}>
-                  <td className="py-1.5 tabular-nums text-muted">{entry.position}</td>
-                  <td className="py-1.5">
-                    <BandBadge band={entry.band} />
-                  </td>
-                  <td className="py-1.5">
-                    <div className="flex items-center gap-2">
-                      <span>{entry.lead.name}</span>
-                      {entry.isControl && <ControlTag />}
-                    </div>
-                  </td>
+        <div className="space-y-4">
+          <Panel title={`Rangfolge, erste ${PREVIEW_SIZE} von ${queue.length}`}>
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs text-muted">
+                <tr>
+                  <th className="py-1 font-normal">#</th>
+                  <th className="py-1 font-normal">Band</th>
+                  <th className="py-1 font-normal">Firma</th>
                   {DIMENSION_KEYS.map((key) => (
-                    <td key={key} className="py-1.5 pl-3 text-right tabular-nums">
-                      {Math.round(entry.dimensions[key])}
-                    </td>
+                    <th key={key} className="py-1 pl-3 text-right font-normal">
+                      {DIMENSION_LABELS[key]}
+                    </th>
                   ))}
-                  <td className="py-1.5 pl-3 text-right tabular-nums">
-                    {formatMin(entry.detourMinutes)}
-                  </td>
-                  <td className="py-1.5 pl-3 text-right font-bold tabular-nums">{entry.score}</td>
+                  <th className="py-1 pl-3 text-right font-normal">Umweg</th>
+                  <th className="py-1 pl-3 text-right font-normal">Score</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </Panel>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {preview.map((entry) => (
+                  <tr key={entry.lead.id}>
+                    <td className="py-1.5 tabular-nums text-muted">{entry.position}</td>
+                    <td className="py-1.5">
+                      <BandBadge band={entry.band} />
+                    </td>
+                    <td className="py-1.5">
+                      <div className="flex items-center gap-2">
+                        <span>{entry.lead.name}</span>
+                        {entry.isControl && <ControlTag />}
+                      </div>
+                    </td>
+                    {DIMENSION_KEYS.map((key) => (
+                      <td key={key} className="py-1.5 pl-3 text-right tabular-nums">
+                        {Math.round(entry.dimensions[key])}
+                      </td>
+                    ))}
+                    <td className="whitespace-nowrap py-1.5 pl-3 text-right tabular-nums">
+                      {formatMin(entry.detourMinutes)}
+                    </td>
+                    <td className="py-1.5 pl-3 text-right font-bold tabular-nums">{entry.score}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Panel>
+          <CalibrationPanel />
+        </div>
       </div>
     </div>
   );

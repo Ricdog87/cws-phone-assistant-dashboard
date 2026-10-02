@@ -23,6 +23,16 @@
 - Korridor Standard 2 km, 1–10 km. Bestandskunden nie in der Warteschlange.
 - Kontrollstichprobe 8 % aus Band B und C, fester Seed, gleichmäßig eingestreut.
 
+## Daten, Briefing, Kalibrierung
+- Implementierungen (Repository, Geocoder, Briefing-Generator) werden nur in src/app/services.ts ausgewählt.
+- Geocoder über die Schnittstelle Geocoder, Nominatim nur hinter RateLimitedGeocoder und CachedGeocoder. An Geocoder nur Adressen senden, nie Firmennamen.
+- CSV-Zeilen mit Zod validieren, Fehler je Zeile mit Zeilennummer, Feld, Wert und Grund melden.
+- API-Schlüssel nur ohne VITE_-Präfix in .env, nur im Proxy (server/) lesen. Nie im Browser-Code.
+- An Sprachmodelle keine Namen, Telefonnummern oder Straßen senden, Platzhalter {{firma}} und {{ansprechpartner}} verwenden.
+- Keine Lead-Daten, Modellantworten oder Schlüssel ins Log. Nur Ereignis, Status, Dauer.
+- Jeder Fehler beim Sprachmodell führt automatisch zum regelbasierten Briefing.
+- Kalibrierungsvorschläge nie automatisch anwenden, nur nach Bestätigung im UI.
+
 ## Oberfläche
 - Reiter: Anrufliste, Karte, Dashboard, Scoring, Daten.
 - Tastatur in der Anrufliste: Pfeil hoch/runter wechselt den Lead, 1–4 bucht das Ergebnis.

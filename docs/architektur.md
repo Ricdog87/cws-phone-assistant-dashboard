@@ -17,6 +17,8 @@ Zustand als Store, Dexie für IndexedDB, react-leaflet mit OpenStreetMap-Kacheln
                               ┌──────────────────┐
                               │ OutcomeRepository│  Dexie (IndexedDB)
                               └──────────────────┘
+
+IndexedDB-Tabellen (src/data/db.ts): outcomes, columnMappings, geocodeCache
 ```
 
 ## Schichten
@@ -68,6 +70,31 @@ Schritte: `ProviderId` erweitern, Klasse unter `src/data/providers/` anlegen,
 in `src/data/providers/index.ts` bei `PROVIDER_OPTIONS` und `createProvider` eintragen.
 Die Umwandlung in `Lead` gehört in den Provider, nicht in die Oberfläche.
 
+### CSV-Import und Geocoding
+
+- `src/data/csvMapping.ts`: Zielfelder, Namensvorschläge, Zahl- und Ja/Nein-Werte.
+- `src/data/csvImport.ts`: Zod-Schema je Zeile, `validateCsvRows` für die Vorprüfung,
+  `importCsvRows` für den Import mit Geocoding, Fehlerliste je Zeile.
+- `src/data/mappingRepository.ts`: gespeicherte Spaltenzuordnungen in IndexedDB,
+  Schlüssel ist die Kopfzeile unabhängig von Reihenfolge und Schreibweise.
+- `src/data/geocoding/`: austauschbarer Geocoder. Aufbau von außen nach innen:
+
+  ```
+  CachedGeocoder (IndexedDB) → RateLimitedGeocoder (1 Anfrage / 1,1 s) → NominatimGeocoder
+  ```
+
+  Treffer aus dem Zwischenspeicher belasten das Rate-Limit nicht. Nicht gefundene
+  Adressen werden 7 Tage lang nicht erneut angefragt. Nach drei Dienstfehlern in Folge
+  bricht der Import das Nachschlagen ab und listet die übrigen Zeilen als nicht gefunden.
+
+Einen anderen Dienst anbinden (etwa einen eigenen Geocoding-Server für große Mengen):
+Klasse mit der Schnittstelle `Geocoder` aus `src/data/geocoding/types.ts` anlegen, in
+`createGeocoder()` in `src/data/geocoding/index.ts` eintragen und in `src/app/services.ts`
+auswählen. Zwischenspeicher und Rate-Limit lassen sich unverändert davorschalten.
+
+`src/app/services.ts` ist die zentrale Stelle, an der Repository, Zuordnungsspeicher,
+Zwischenspeicher und Geocoder erzeugt werden.
+
 ### Anbindung Clay
 
 - Datei: `src/data/providers/clayProvider.ts`, Feldzuordnung `CLAY_FIELD_MAPPING`.
@@ -105,12 +132,60 @@ eine Quelle analog zum `LeadProvider` ergänzt (`RouteProvider`) und die Route i
 über eine Setter-Aktion gesetzt. Alle Berechnungen arbeiten bereits mit beliebigen
 Polylines.
 
-### Briefing und Kalibrierung
+### Briefing
 
-- Das Briefing ist regelbasiert in `src/domain/briefing.ts`. Ein austauschbarer Generator
-  kann dieselbe Rückgabe (`Briefing`) liefern.
-- Eine spätere Kalibrierung liest die gespeicherten `CallOutcome`-Datensätze. Diese
-  enthalten Dimensionen, Gewichte und die Kennzeichnung der Kontrollstichprobe.
+Austauschbar über die Schnittstelle `BriefingGenerator` (`src/data/briefing/types.ts`):
+
+| Implementierung              | Datei                   | Verhalten                                         |
+| ---------------------------- | ----------------------- | ------------------------------------------------- |
+| `RuleBasedBriefingGenerator` | `ruleBasedGenerator.ts` | Standard, Regeln aus `src/domain/briefing.ts`     |
+| `LlmBriefingGenerator`       | `llmGenerator.ts`       | Sprachmodell über den eigenen Proxy               |
+| `FallbackBriefingGenerator`  | `fallbackGenerator.ts`  | versucht das Modell, sonst automatisch die Regeln |
+
+Ablauf beim Sprachmodell:
+
+```
+Browser                         Vite-Server (Proxy)                Modell-Endpunkt
+buildBriefingRequest ──POST──▶  /api/briefing                      (OpenAI-kompatibel)
+  nur Merkmale, keine Namen     Zod prüft Anfrage (strikt)
+                                Schlüssel aus .env ──────────────▶ response_format json_schema
+                                Zod prüft Antwort (strikt) ◀──────
+fillPlaceholders ◀── JSON ────
+  setzt {{firma}} und
+  {{ansprechpartner}} ein
+```
+
+- **Schlüssel**: `LLM_API_KEY` ohne `VITE_`-Präfix, wird nur in `vite.config.ts` über
+  `loadEnv` gelesen und an den Proxy übergeben. Er gelangt nie ins Browser-Bundle.
+- **Datensparsamkeit**: An das Modell gehen Branche, Ort, Größenangaben und Signale. Firmenname,
+  Ansprechpartner, Telefon und Straße bleiben im Browser und werden erst dort eingesetzt.
+- **Antwortformat**: striktes JSON-Schema mit `aufhaenger[]`, `einstiegssatz`,
+  `einwandbehandlung[]` (`src/data/briefing/schema.ts`). Abweichende Antworten werden
+  verworfen.
+- **Rückfall**: Fehlende Konfiguration (503), Fehler des Modells (502), Zeitüberschreitung
+  (504), Netzwerkfehler oder ungültige Antwort führen automatisch zum regelbasierten Briefing.
+  Die Oberfläche zeigt den Grund an.
+- **Log**: Der Proxy protokolliert nur Ereignis, Status und Dauer. Im Browser erscheint bei
+  einem Rückfall nur die Fehlerkategorie. Weder Lead-Daten noch Modellantworten noch der
+  Schlüssel werden protokolliert. Tests prüfen das.
+- **Kosten**: Anfragen starten erst nach 400 ms Verweildauer auf einem Lead, gleiche
+  Merkmale werden nicht erneut angefragt.
+
+Für den Betrieb hinter statischem Hosting wird `handleBriefingRequest` aus
+`server/briefingHandler.ts` unverändert als Serverless-Funktion unter `/api/briefing`
+bereitgestellt, oder `VITE_BRIEFING_ENDPOINT` zeigt auf den Ort der Funktion.
+
+Einen anderen Anbieter ohne OpenAI-kompatible Schnittstelle bindet man im Proxy an
+(`handleBriefingRequest`), nicht im Browser. Der Vertrag zum Browser bleibt gleich.
+
+### Kalibrierung
+
+`src/domain/calibration.ts` ist eine reine Funktion: Sie liest die gespeicherten
+`CallOutcome`-Datensätze, rechnet Terminquoten je Band und Dimension und ab 300 Anrufen
+eine logistische Regression (Newton-Verfahren, eigene Lineare Algebra ohne
+Zusatzbibliothek). `CalibrationPanel` im Reiter Scoring zeigt das Ergebnis. Die Gewichte
+ändert nur die Aktion `setWeights` im Store, ausgelöst durch die Bestätigung im UI.
+Regeln und Begründung stehen in `docs/scoring.md`, Abschnitt 6.
 
 ## Karte
 

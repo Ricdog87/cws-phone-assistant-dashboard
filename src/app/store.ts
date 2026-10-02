@@ -1,12 +1,14 @@
 import { create } from 'zustand';
+import { DEFAULT_BRIEFING_MODE, outcomeRepository, type BriefingMode } from './services';
 import { MockProvider } from '@/data/providers/mockProvider';
-import type { LeadProvider, LoadReport, ProviderId } from '@/data/providers/types';
-import { MOCK_ROUTE } from '@/data/mockRoute';
 import {
-  DexieOutcomeRepository,
-  InMemoryOutcomeRepository,
-  type OutcomeRepository,
-} from '@/data/repository';
+  emptyReport,
+  type LeadProvider,
+  type LoadReport,
+  type ProviderId,
+} from '@/data/providers/types';
+import { MOCK_ROUTE } from '@/data/mockRoute';
+import type { OutcomeRepository } from '@/data/repository';
 import {
   CORRIDOR_MAX_KM,
   CORRIDOR_MIN_KM,
@@ -31,6 +33,7 @@ export interface AppState {
   weights: Weights;
   corridorKm: number;
   controlEnabled: boolean;
+  briefingMode: BriefingMode;
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
   viewLevel: ViewLevel;
@@ -39,8 +42,11 @@ export interface AppState {
   setViewLevel(level: ViewLevel): void;
   setWeight(key: DimensionKey, value: number): void;
   resetWeights(): void;
+  /** Setzt alle Gewichte auf einmal, etwa nach bestätigtem Kalibrierungsvorschlag */
+  setWeights(weights: Weights): void;
   setCorridorKm(km: number): void;
   setControlEnabled(enabled: boolean): void;
+  setBriefingMode(mode: BriefingMode): void;
   selectLead(id: string | null): void;
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
@@ -61,6 +67,7 @@ export function createAppStore(repository: OutcomeRepository) {
     weights: { ...DEFAULT_WEIGHTS },
     corridorKm: DEFAULT_CORRIDOR_KM,
     controlEnabled: true,
+    briefingMode: DEFAULT_BRIEFING_MODE,
     selectedLeadId: null,
     outcomes: [],
     viewLevel: 'teamLead',
@@ -73,9 +80,19 @@ export function createAppStore(repository: OutcomeRepository) {
       }),
     setWeight: (key, value) => set({ weights: { ...get().weights, [key]: clampWeight(value) } }),
     resetWeights: () => set({ weights: { ...DEFAULT_WEIGHTS } }),
+    setWeights: (weights) =>
+      set({
+        weights: {
+          fit: clampWeight(weights.fit),
+          proximity: clampWeight(weights.proximity),
+          potential: clampWeight(weights.potential),
+          reachability: clampWeight(weights.reachability),
+        },
+      }),
     setCorridorKm: (km) =>
       set({ corridorKm: Math.max(CORRIDOR_MIN_KM, Math.min(CORRIDOR_MAX_KM, km)) }),
     setControlEnabled: (controlEnabled) => set({ controlEnabled }),
+    setBriefingMode: (briefingMode) => set({ briefingMode }),
     selectLead: (selectedLeadId) => set({ selectedLeadId }),
 
     async loadFromProvider(provider, report) {
@@ -86,12 +103,7 @@ export function createAppStore(repository: OutcomeRepository) {
           leads,
           sourceId: provider.id,
           sourceLabel: provider.label,
-          loadReport: report?.() ?? {
-            total: leads.length,
-            loaded: leads.length,
-            rejectedMissingCoordinates: 0,
-            rejectedOther: 0,
-          },
+          loadReport: report?.() ?? emptyReport(leads.length),
           selectedLeadId: null,
           loading: false,
         });
@@ -119,13 +131,7 @@ export function createAppStore(repository: OutcomeRepository) {
   }));
 }
 
-function createRepository(): OutcomeRepository {
-  return typeof indexedDB === 'undefined'
-    ? new InMemoryOutcomeRepository()
-    : new DexieOutcomeRepository();
-}
-
-export const useAppStore = createAppStore(createRepository());
+export const useAppStore = createAppStore(outcomeRepository);
 
 /** Startdaten laden: Demo-Leads und gespeicherte Anrufergebnisse */
 export async function bootstrap(): Promise<void> {

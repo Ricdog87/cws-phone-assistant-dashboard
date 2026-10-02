@@ -28,7 +28,14 @@ export function App() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-panel px-4 py-2">
-        <img src="/logo.png" alt="CWS Workwear" className="h-9 w-auto shrink-0" />
+        <img
+          src="/logo.png"
+          alt="CWS Workwear"
+          width={582}
+          height={82}
+          className="h-9 w-auto shrink-0 select-none"
+          draggable={false}
+        />
         <div className="mr-auto">
           <h1 className="text-base font-bold leading-tight">Lead-Cockpit Nordwest</h1>
           <p className="text-xs text-muted">

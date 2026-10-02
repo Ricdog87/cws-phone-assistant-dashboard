@@ -5,6 +5,7 @@ import { DirectorView } from './DirectorView';
 import { TeamLeadView } from './TeamLeadView';
 import { Button } from '@/components/Button';
 import { GoalStrip } from '@/components/GoalStrip';
+import { downloadText } from '@/components/download';
 import { Meter } from '@/components/Meter';
 import { Panel } from '@/components/Panel';
 import { StatTile } from '@/components/StatTile';
@@ -21,16 +22,6 @@ const BAND_BAR: Record<Band, string> = {
 
 function rateLabel(stats: RateStats): string {
   return `${formatOne(stats.per100)} je 100 · ${stats.appointments} von ${stats.calls}`;
-}
-
-function downloadCsv(content: string, filename: string): void {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 export function DashboardView() {
@@ -53,7 +44,7 @@ function AssistantDashboard() {
 
   function exportCsv() {
     const date = new Date().toISOString().slice(0, 10);
-    downloadCsv(outcomesToCsv(outcomes), `anrufergebnisse-${date}.csv`);
+    downloadText(outcomesToCsv(outcomes), `anrufergebnisse-${date}.csv`);
   }
 
   function reset() {
