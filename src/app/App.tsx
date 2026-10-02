@@ -5,7 +5,6 @@ import { DataView } from '@/features/data/DataView';
 import { MapView } from '@/features/map/MapView';
 import { QueueView } from '@/features/queue/QueueView';
 import { ScoringView } from '@/features/scoring/ScoringView';
-import { DEMO_PERSONAS } from './demoUser';
 import { bootstrap, useAppStore } from './store';
 import { TABS } from './tabs';
 import { UserBadge } from './UserBadge';
@@ -27,47 +26,50 @@ export function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-panel px-4 py-2">
-        <img
-          src="/logo.png"
-          alt="CWS Workwear"
-          width={582}
-          height={82}
-          className="h-9 w-auto shrink-0 select-none"
-          draggable={false}
-        />
-        <div className="mr-auto">
-          <h1 className="text-base font-bold leading-tight">Lead-Cockpit Nordwest</h1>
-          <p className="text-xs text-muted">
-            New Business, {DEMO_PERSONAS[viewLevel].role}
-            {scope ? ` · ${scope}` : ` · Quelle: ${sourceLabel}`}
-          </p>
+      <header className="border-b border-border bg-panel">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
+          <img
+            src="/logo.png"
+            alt="CWS Workwear"
+            width={582}
+            height={82}
+            className="h-8 w-auto shrink-0 select-none"
+            draggable={false}
+          />
+          <div className="mr-auto min-w-0">
+            <h1 className="text-base font-bold leading-tight">Lead-Cockpit Nordwest</h1>
+            <p className="truncate text-xs text-muted">New Business · {scope ?? sourceLabel}</p>
+          </div>
+          <UserBadge />
         </div>
-        <UserBadge />
-        <ViewLevelSwitch />
-        {workplace && (
-          <nav role="tablist" aria-label="Bereiche" className="flex gap-1">
-            {TABS.map((tab) => {
-              const active = tab.id === activeTab;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  id={`tab-${tab.id}`}
-                  aria-selected={active}
-                  aria-controls={`panel-${tab.id}`}
-                  onClick={() => setTab(tab.id)}
-                  className={`rounded px-3 py-2 text-sm font-bold ${
-                    active ? 'bg-brand-ink text-on-primary' : 'text-brand-ink hover:bg-surface'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border px-4 py-1.5">
+          <ViewLevelSwitch />
+          {workplace && (
+            <nav role="tablist" aria-label="Bereiche" className="flex gap-1">
+              {TABS.map((tab) => {
+                const active = tab.id === activeTab;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    id={`tab-${tab.id}`}
+                    aria-selected={active}
+                    aria-controls={`panel-${tab.id}`}
+                    onClick={() => setTab(tab.id)}
+                    className={`rounded px-3 py-1.5 text-sm ${
+                      active
+                        ? 'bg-brand-ink font-bold text-on-primary'
+                        : 'text-brand-ink hover:bg-surface'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
+        </div>
       </header>
 
       {workplace && sourceId === 'mock' && <DemoNotice />}

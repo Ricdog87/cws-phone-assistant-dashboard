@@ -7,23 +7,28 @@ export function ViewLevelSwitch() {
   const setViewLevel = useAppStore((s) => s.setViewLevel);
 
   return (
-    <div role="group" aria-label="Demo-Ebene" className="flex flex-wrap gap-1">
-      {VIEW_LEVELS.map((id) => {
-        const active = id === level;
-        return (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={active}
-            onClick={() => setViewLevel(id)}
-            className={`rounded px-3 py-1.5 text-sm font-bold ${
-              active ? 'bg-brand-ink text-on-primary' : 'text-brand-ink hover:bg-surface'
-            }`}
-          >
-            {VIEW_LEVEL_LABELS[id]}
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted">Ansicht</span>
+      <div role="group" aria-label="Demo-Ebene" className="flex rounded border border-border">
+        {VIEW_LEVELS.map((id) => {
+          const active = id === level;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setViewLevel(id)}
+              className={`px-3 py-1.5 text-sm first:rounded-l last:rounded-r ${
+                active
+                  ? 'bg-brand-ink font-bold text-on-primary'
+                  : 'text-brand-ink hover:bg-surface'
+              }`}
+            >
+              {VIEW_LEVEL_LABELS[id]}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

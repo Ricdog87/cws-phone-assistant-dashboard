@@ -97,7 +97,7 @@ export const AssistantBrick = forwardRef<HTMLButtonElement, AssistantBrickProps>
         aria-controls={selected ? detailId : undefined}
         aria-label={`${member.fullName}: ${formatInt(member.weekAppointments)} von ${formatInt(member.weeklyAppointmentGoal)} Terminen diese Woche, ${formatInt(member.dayCalls)} von ${formatInt(member.dailyCallGoal)} Anrufen heute${member.live ? ', erfasst' : ''}`}
         onClick={onSelect}
-        className={`flex w-full flex-col rounded-lg border bg-panel text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink ${state} ${compact ? 'gap-3 p-3' : 'gap-4 p-5'}`}
+        className={`flex w-full cursor-pointer flex-col rounded-lg border bg-panel text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink ${state} ${compact ? 'gap-3 p-3' : 'gap-4 p-4'}`}
       >
         <span className="flex w-full items-center gap-3">
           <span
@@ -108,7 +108,16 @@ export const AssistantBrick = forwardRef<HTMLButtonElement, AssistantBrickProps>
           >
             {userInitials(member.givenName, member.familyName)}
           </span>
-          <span className="min-w-0 flex-1 truncate text-sm font-bold">{member.fullName}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">{member.fullName}</span>
+            <span
+              className={`block text-xs font-bold ${weekReached ? 'text-brand-ink' : 'text-brand-primary'}`}
+            >
+              {weekReached
+                ? 'im Ziel'
+                : `${formatInt(member.appointmentsRemaining)} ${noun(member.appointmentsRemaining, 'Termin', 'Termine')} offen`}
+            </span>
+          </span>
           {member.live && <LiveTag />}
         </span>
 
