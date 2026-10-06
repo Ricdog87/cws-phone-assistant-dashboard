@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   EARTH_RADIUS_KM,
+  corridorPolygon,
   detourMinutes,
   distanceToPolylineKm,
   distanceToSegmentKm,
@@ -99,5 +100,30 @@ describe('detourMinutes', () => {
   it('rundet auf eine Nachkommastelle', () => {
     // (2 * 1 / 45 * 60 + 2) = 4,6667
     expect(detourMinutes(1)).toBe(4.7);
+  });
+});
+
+describe('corridorPolygon', () => {
+  it('bildet einen geschlossenen Streifen um die Route', () => {
+    const ring = corridorPolygon(route, 2);
+    expect(ring.length).toBeGreaterThan(4);
+    const first = ring[0];
+    const last = ring[ring.length - 1];
+    expect(first && last && first.lat === last.lat && first.lng === last.lng).toBe(true);
+  });
+
+  it('hält die Korridorbreite ungefähr ein', () => {
+    const half = 2;
+    const ring = corridorPolygon(
+      [
+        { lat: 53.1, lng: 8.0 },
+        { lat: 53.2, lng: 8.0 },
+      ],
+      half,
+    );
+    const left = ring[0];
+    expect(left).toBeDefined();
+    if (!left) return;
+    expect(haversineKm({ lat: 53.1, lng: 8.0 }, left)).toBeCloseTo(half, 1);
   });
 });

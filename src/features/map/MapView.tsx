@@ -4,25 +4,26 @@ import {
   type LatLngBoundsExpression,
   type LatLngExpression,
 } from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   CircleMarker,
   MapContainer,
+  Polygon,
   Polyline,
   Popup,
   TileLayer,
   Tooltip,
   useMap,
-  useMapEvents,
 } from 'react-leaflet';
 import { useQueue, useScoredLeads } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
 import { formatKm, formatMin } from '@/components/format';
+import { corridorPolygon } from '@/domain/geo';
 import type { Route, ScoredLead } from '@/domain/types';
 import { MapLegend } from './MapLegend';
-import { applyMarkerClasses, corridorWeightPx, markerClass } from './mapUtils';
+import { applyMarkerClasses, markerClass } from './mapUtils';
 
 const FALLBACK_CENTER: LatLngExpression = [53.15, 8.0];
 
@@ -53,24 +54,41 @@ function FitOnActivate({
 }
 
 function CorridorLayer({ route, corridorKm }: { route: Route; corridorKm: number }) {
-  const map = useMap();
-  const [zoom, setZoom] = useState(map.getZoom());
-  useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
-
-  const positions = route.points.map((p) => [p.lat, p.lng] as [number, number]);
-  const midLat = route.points.reduce((sum, p) => sum + p.lat, 0) / Math.max(1, route.points.length);
-  const weight = corridorWeightPx(corridorKm, midLat, zoom);
+  const positions = useMemo(
+    () => route.points.map((p) => [p.lat, p.lng] as [number, number]),
+    [route.points],
+  );
+  const zone = useMemo(
+    () =>
+      corridorPolygon(route.points, corridorKm).map(
+        (p) => [p.lat, p.lng] as [number, number],
+      ),
+    [route.points, corridorKm],
+  );
 
   return (
     <>
+      {zone.length > 0 && (
+        <Polygon
+          positions={zone}
+          pathOptions={{
+            className: 'map-corridor',
+            fill: true,
+            weight: 1,
+            dashArray: '6 4',
+          }}
+          interactive={false}
+        />
+      )}
       <Polyline
         positions={positions}
-        pathOptions={{ className: 'map-corridor', weight, lineCap: 'round', lineJoin: 'round' }}
-        interactive={false}
-      />
-      <Polyline
-        positions={positions}
-        pathOptions={{ className: 'map-route', weight: 3 }}
+        pathOptions={{
+          className: 'map-route',
+          weight: 4,
+          lineCap: 'round',
+          lineJoin: 'round',
+          fill: false,
+        }}
         interactive={false}
       />
     </>
