@@ -55,16 +55,13 @@ describe('QueueView', () => {
     const booked = screen.getAllByRole('option')[0];
     expect(booked).toHaveClass('opacity-50');
     expect(within(booked as HTMLElement).getByText(/Termin vereinbart/)).toBeInTheDocument();
-    expect(screen.getByText(/Heute ist \S+, der \d{2}\.\d{2}\.\d{4}\./)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Noch \d+ Tage bis Sonntag|Letzter Tag für das Wochenziel/),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Noch 3 Termine bis zum Wochenziel.')).toBeInTheDocument();
-    expect(screen.getByText('von 50')).toBeInTheDocument();
-    expect(screen.getByText('Anrufe')).toBeInTheDocument();
-    expect(screen.getByText('Termine')).toBeInTheDocument();
-    expect(screen.getByText('1 Termin heute')).toBeInTheDocument();
-    expect(screen.getByText('1 Anruf diese Woche')).toBeInTheDocument();
+
+    // Live-Maske: dieselbe Persona und dieselben Ziele wie in Teamleitung und Vertriebsleitung
+    const live = screen.getByRole('region', { name: 'Live-Maske Telefonassistenz' });
+    expect(live).toHaveTextContent('Hallo Nele Faber');
+    expect(live).toHaveTextContent('1 / 50');
+    expect(live).toHaveTextContent('1 / 4');
+    expect(live).toHaveTextContent('noch 3');
   });
 
   it('bucht über die Schaltfläche', async () => {

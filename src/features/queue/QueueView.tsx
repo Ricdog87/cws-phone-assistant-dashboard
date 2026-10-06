@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { daypartGreeting, DEMO_USER } from '@/app/demoUser';
-import { useCallDay, useGoalProgress, useLatestOutcomes, useQueue } from '@/app/selectors';
+import { DEMO_USER } from '@/app/demoUser';
+import { useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
-import { GoalStrip } from '@/components/GoalStrip';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
 import type { OutcomeType } from '@/domain/types';
+import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { useRecordOutcome } from './useRecordOutcome';
@@ -25,8 +25,6 @@ export function QueueView() {
   const selectedIndex = queue.findIndex((e) => e.lead.id === selectedId);
   const selected = selectedIndex >= 0 ? queue[selectedIndex] : undefined;
   const openCount = queue.filter((e) => !latest.has(e.lead.id)).length;
-  const goals = useGoalProgress();
-  const today = useCallDay();
 
   // Ohne gültige Auswahl den ersten offenen Lead wählen
   useEffect(() => {
@@ -72,38 +70,26 @@ export function QueueView() {
   }, [queue, selectedIndex, selectLead, book]);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[minmax(320px,2fr)_3fr]">
-      <aside className="flex min-h-0 flex-col border-r border-border bg-panel">
-        <div className="flex items-baseline justify-between border-b border-border px-3 py-2">
-          <h2 className="text-sm font-bold">Warteschlange</h2>
-          <span className="text-xs text-muted">
-            {openCount} offen von {queue.length}
-          </span>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <QueueList queue={queue} selectedId={selectedId} latest={latest} onSelect={selectLead} />
-        </div>
-      </aside>
-      <div className="flex min-h-0 flex-col">
-        <div className="border-b border-border bg-panel px-6 py-4">
-          <p className="text-xl font-bold leading-tight">
-            {daypartGreeting()}, <span className="text-brand-primary">{DEMO_USER.givenName}</span>
-          </p>
-          <GoalStrip
-            className="mt-3"
-            dayCalls={goals.day.calls}
-            dayAppointments={goals.day.appointments}
-            weekCalls={goals.week.calls}
-            weekAppointments={goals.week.appointments}
-            dailyCallGoal={goals.dailyCallGoal}
-            weeklyGoal={goals.weeklyAppointmentGoal}
-            weekday={today.weekday}
-            dateLabel={today.dateLabel}
-            daysRemaining={today.daysRemaining}
-            weekEndLabel={today.weekEndLabel}
-          />
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+    <div className="flex h-full min-h-0 flex-col">
+      <AgentLivePanel />
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(320px,2fr)_3fr]">
+        <aside className="flex min-h-0 flex-col border-r border-border bg-panel">
+          <div className="flex items-baseline justify-between border-b border-border px-3 py-2">
+            <h2 className="text-sm font-bold">Warteschlange</h2>
+            <span className="text-xs text-muted">
+              {openCount} offen von {queue.length}
+            </span>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <QueueList
+              queue={queue}
+              selectedId={selectedId}
+              latest={latest}
+              onSelect={selectLead}
+            />
+          </div>
+        </aside>
+        <div className="min-h-0 overflow-y-auto p-6">
           {selected ? (
             <BriefingPanel
               entry={selected}

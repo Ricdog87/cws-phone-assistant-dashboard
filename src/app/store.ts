@@ -9,6 +9,8 @@ import {
 } from '@/data/providers/types';
 import { MOCK_ROUTE } from '@/data/mockRoute';
 import type { OutcomeRepository } from '@/data/repository';
+import type { AgentGoals } from '@/domain/agentGoals';
+import { DAILY_CALL_GOAL, WEEKLY_APPOINTMENT_GOAL } from '@/domain/goals';
 import {
   CORRIDOR_MAX_KM,
   CORRIDOR_MIN_KM,
@@ -17,7 +19,7 @@ import {
   clampWeight,
 } from '@/domain/scoring';
 import type { CallOutcome, DimensionKey, Lead, Route, Weights } from '@/domain/types';
-import type { ViewLevel } from './demoUser';
+import { DEMO_USER, type ViewLevel } from './demoUser';
 
 export type TabId = 'queue' | 'map' | 'dashboard' | 'scoring' | 'data';
 
@@ -34,6 +36,10 @@ export interface AppState {
   corridorKm: number;
   controlEnabled: boolean;
   briefingMode: BriefingMode;
+  /** Anzeigename der angemeldeten Telefonassistenz */
+  agentName: string;
+  /** Tages- und Wochenziele der Live-Maske */
+  agentGoals: AgentGoals;
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
   viewLevel: ViewLevel;
@@ -47,6 +53,8 @@ export interface AppState {
   setCorridorKm(km: number): void;
   setControlEnabled(enabled: boolean): void;
   setBriefingMode(mode: BriefingMode): void;
+  setAgentName(name: string): void;
+  setAgentGoals(goals: AgentGoals): void;
   selectLead(id: string | null): void;
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
@@ -68,6 +76,9 @@ export function createAppStore(repository: OutcomeRepository) {
     corridorKm: DEFAULT_CORRIDOR_KM,
     controlEnabled: true,
     briefingMode: DEFAULT_BRIEFING_MODE,
+    // Eine Persona und eine Zielquelle für Live-Maske, Teamleitung und Vertriebsleitung
+    agentName: DEMO_USER.fullName,
+    agentGoals: { dailyCalls: DAILY_CALL_GOAL, weeklyAppointments: WEEKLY_APPOINTMENT_GOAL },
     selectedLeadId: null,
     outcomes: [],
     viewLevel: 'teamLead',
@@ -93,6 +104,14 @@ export function createAppStore(repository: OutcomeRepository) {
       set({ corridorKm: Math.max(CORRIDOR_MIN_KM, Math.min(CORRIDOR_MAX_KM, km)) }),
     setControlEnabled: (controlEnabled) => set({ controlEnabled }),
     setBriefingMode: (briefingMode) => set({ briefingMode }),
+    setAgentName: (agentName) => set({ agentName }),
+    setAgentGoals: (agentGoals) =>
+      set({
+        agentGoals: {
+          dailyCalls: Math.max(1, Math.round(agentGoals.dailyCalls)),
+          weeklyAppointments: Math.max(1, Math.round(agentGoals.weeklyAppointments)),
+        },
+      }),
     selectLead: (selectedLeadId) => set({ selectedLeadId }),
 
     async loadFromProvider(provider, report) {
