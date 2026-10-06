@@ -18,13 +18,16 @@ export function ThinBar({
   value,
   goal,
   reached,
+  track = 'bg-surface',
 }: {
   value: number;
   goal: number;
   reached: boolean;
+  /** Hintergrund der Spur. In Tabellen mit hervorgehobener Zeile bg-border verwenden. */
+  track?: string;
 }) {
   return (
-    <span className="mt-2 block h-1 overflow-hidden rounded-full bg-surface" aria-hidden>
+    <span className={`mt-2 block h-1 overflow-hidden rounded-full ${track}`} aria-hidden>
       <span
         className={`block h-1 rounded-full ${reached ? 'bg-brand-ink' : 'bg-brand-primary'}`}
         style={{ width: `${progressPercent(value, goal)}%` }}

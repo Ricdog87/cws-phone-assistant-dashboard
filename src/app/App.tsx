@@ -45,7 +45,11 @@ export function App() {
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border px-4 py-1.5">
           <ViewLevelSwitch />
           {workplace && (
-            <nav role="tablist" aria-label="Bereiche" className="flex gap-1">
+            <nav
+              role="tablist"
+              aria-label="Bereiche"
+              className="flex max-w-full gap-1 overflow-x-auto"
+            >
               {TABS.map((tab) => {
                 const active = tab.id === activeTab;
                 return (
@@ -57,7 +61,7 @@ export function App() {
                     aria-selected={active}
                     aria-controls={`panel-${tab.id}`}
                     onClick={() => setTab(tab.id)}
-                    className={`rounded px-3 py-1.5 text-sm ${
+                    className={`whitespace-nowrap rounded px-2 py-1.5 text-sm sm:px-3 ${
                       active
                         ? 'bg-brand-ink font-bold text-on-primary'
                         : 'text-brand-ink hover:bg-surface'

@@ -1,13 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { daypartGreeting, DEMO_PERSONAS } from '@/app/demoUser';
 import { StatTile } from '@/components/StatTile';
 import { formatInt, formatOne } from '@/components/format';
 import { AssistantBrick } from './AssistantBrick';
+import { AttentionPanel } from './AttentionPanel';
+import { BoardHeader } from './BoardHeader';
+import { withRanks } from './boardRows';
+import { LeaderboardTable } from './LeaderboardTable';
 import { MemberDetail } from './MemberDetail';
 import { progressPercent } from './memberFormat';
+import { SectionTitle } from './SectionTitle';
 import { matchesFocus, useBoardFocus } from './useBoardFocus';
 import { useCardSelection } from './useCardSelection';
 import { useTeamStanding } from './useTeamStanding';
+import { ViewModeSwitch, type ViewMode } from './ViewModeSwitch';
+
+const keyOf = (memberId: string) => memberId;
 
 export function TeamLeadView() {
   const team = useTeamStanding();
@@ -15,10 +23,13 @@ export function TeamLeadView() {
   const appointmentGap = Math.max(0, team.weeklyAppointmentGoal - team.weekAppointments);
   const { focus, select } = useBoardFocus();
   const { selectedKey, toggle, close, cardRef } = useCardSelection();
-  const visible = team.members.filter((member) => matchesFocus(member, focus));
-  const selected = visible.find((member) => member.id === selectedKey);
+  const [mode, setMode] = useState<ViewMode>('list');
+  const ranked = withRanks(team.members);
+  const visible = ranked.filter(({ member }) => matchesFocus(member, focus));
+  const selected = team.members.find((member) => member.id === selectedKey);
   const detailId = 'team-member-detail';
 
+  // Gewählte Person schließen, wenn der Filter sie ausblendet
   useEffect(() => {
     if (selectedKey === null) return;
     const member = team.members.find((item) => item.id === selectedKey);
@@ -26,22 +37,19 @@ export function TeamLeadView() {
   }, [selectedKey, focus, team.members, close]);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-6xl space-y-4 p-6">
-        <div>
-          <h2 className="text-xl font-bold">
-            {daypartGreeting()}, {lead.givenName}
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Team {team.teamName} · {formatInt(team.headcount)} Telefonassistenzen. Ein Tipp auf eine
-            Kennzahl filtert die Personen.
-          </p>
-        </div>
+    <div className="h-full overflow-y-auto bg-surface">
+      <div className="mx-auto max-w-7xl space-y-6 p-6">
+        <BoardHeader
+          eyebrow={`Teamleitung · Region ${team.teamName}`}
+          title={`${daypartGreeting()}, ${lead.givenName}`}
+          subtitle={`Team ${team.teamName} · ${formatInt(team.headcount)} Telefonassistenzen · nur Anrufe und Termine`}
+        />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatTile
             label="Termine diese Woche"
-            value={`${formatInt(team.weekAppointments)} von ${formatInt(team.weeklyAppointmentGoal)}`}
+            value={formatInt(team.weekAppointments)}
+            suffix={`von ${formatInt(team.weeklyAppointmentGoal)}`}
             hint={
               appointmentGap === 0
                 ? 'Teamziel erreicht'
@@ -49,66 +57,90 @@ export function TeamLeadView() {
             }
             pressed={focus === 'weekGap'}
             onSelect={() => select('weekGap')}
+            filterLabel="Personen mit offenen Terminen zeigen"
             fillPercent={progressPercent(team.weekAppointments, team.weeklyAppointmentGoal)}
             fillReached={appointmentGap === 0}
           />
           <StatTile
             label="Anrufe heute"
-            value={`${formatInt(team.dayCalls)} von ${formatInt(team.dailyCallGoal)}`}
+            value={formatInt(team.dayCalls)}
+            suffix={`von ${formatInt(team.dailyCallGoal)}`}
             hint={`${formatInt(team.underDailyGoal)} unter dem Tagesziel`}
             pressed={focus === 'dayGap'}
             onSelect={() => select('dayGap')}
+            filterLabel="Personen unter dem Tagesziel zeigen"
             fillPercent={progressPercent(team.dayCalls, team.dailyCallGoal)}
             fillReached={team.dayCalls >= team.dailyCallGoal}
           />
           <StatTile
             label="Im Wochenziel"
-            value={`${formatInt(team.atWeeklyGoal)} von ${formatInt(team.headcount)}`}
+            value={formatInt(team.atWeeklyGoal)}
+            suffix={`von ${formatInt(team.headcount)}`}
             hint={`${formatOne(team.appointmentsPer100)} Termine je 100 Anrufe`}
             pressed={focus === 'weekHit'}
             onSelect={() => select('weekHit')}
+            filterLabel="Personen im Wochenziel zeigen"
             fillPercent={progressPercent(team.atWeeklyGoal, team.headcount)}
             fillReached={team.atWeeklyGoal === team.headcount}
           />
         </div>
 
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-sm font-bold">Personen</h3>
-          <p className="text-xs tabular-nums text-muted">
-            {formatInt(visible.length)} von {formatInt(team.headcount)}
-          </p>
-        </div>
-
-        {visible.length === 0 ? (
-          <p className="rounded border border-border bg-panel p-4 text-sm text-muted">
-            Keine Person in dieser Auswahl.
-          </p>
-        ) : (
-          <div className={selected ? 'flex flex-col gap-4 lg:flex-row lg:items-start' : undefined}>
-            <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {visible.map((member) => (
-                <AssistantBrick
-                  key={member.id}
-                  ref={cardRef(member.id)}
-                  member={member}
-                  selected={member.id === selectedKey}
-                  detailId={detailId}
-                  onSelect={() => toggle(member.id)}
-                />
-              ))}
-            </div>
-            {selected && (
-              <div className="lg:sticky lg:top-4 lg:w-80 lg:shrink-0">
-                <MemberDetail
-                  id={detailId}
-                  member={selected}
-                  groupLabel={`Team ${team.teamName}`}
-                  onClose={close}
-                />
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <section className="min-w-0 space-y-3" aria-label="Rangliste">
+            <SectionTitle
+              title="Rangliste"
+              aside={
+                <div className="flex items-center gap-3">
+                  <span className="text-xs tabular-nums text-muted">
+                    {formatInt(visible.length)} von {formatInt(team.headcount)}
+                    {focus !== 'all' && ' · gefiltert'}
+                  </span>
+                  <ViewModeSwitch mode={mode} onChange={setMode} />
+                </div>
+              }
+            />
+            {visible.length === 0 ? (
+              <p className="rounded-lg border border-border bg-panel p-4 text-sm text-muted">
+                Keine Person in dieser Auswahl.
+              </p>
+            ) : mode === 'list' ? (
+              <LeaderboardTable
+                rows={visible}
+                keyOf={keyOf}
+                selectedKey={selectedKey}
+                detailId={detailId}
+                cardRef={cardRef}
+                onToggle={toggle}
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+                {visible.map(({ member }) => (
+                  <AssistantBrick
+                    key={member.id}
+                    ref={cardRef(member.id)}
+                    member={member}
+                    selected={member.id === selectedKey}
+                    detailId={detailId}
+                    onSelect={() => toggle(member.id)}
+                  />
+                ))}
               </div>
             )}
-          </div>
-        )}
+          </section>
+
+          <aside className="space-y-4 xl:sticky xl:top-6">
+            {selected ? (
+              <MemberDetail
+                id={detailId}
+                member={selected}
+                groupLabel={`Team ${team.teamName}`}
+                onClose={close}
+              />
+            ) : (
+              <AttentionPanel members={team.members} keyOf={keyOf} onSelect={toggle} />
+            )}
+          </aside>
+        </div>
       </div>
     </div>
   );

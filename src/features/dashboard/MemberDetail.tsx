@@ -80,7 +80,7 @@ export function MemberDetail({ id, member, groupLabel, onClose }: MemberDetailPr
           : `Lücke zum Wochenziel: ${formatInt(member.appointmentsRemaining)} ${noun(member.appointmentsRemaining, 'Termin', 'Termine')}`}
       </p>
 
-      <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-6">
         <GoalMetric
           label="Termine diese Woche"
           value={member.weekAppointments}
@@ -89,7 +89,7 @@ export function MemberDetail({ id, member, groupLabel, onClose }: MemberDetailPr
         <GoalMetric label="Anrufe heute" value={member.dayCalls} goal={member.dailyCallGoal} />
       </div>
 
-      <dl className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-3">
+      <dl className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-4 border-t border-border pt-4">
         <div>
           <dt className="text-xs text-muted">Anrufe diese Woche</dt>
           <dd className="mt-1 text-lg font-bold tabular-nums">{formatInt(member.weekCalls)}</dd>
