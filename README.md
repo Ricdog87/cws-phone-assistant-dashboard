@@ -50,6 +50,25 @@ Die Anrufergebnisse liegen in der IndexedDB des Browsers und überstehen einen R
 Sie gelten nur für diesen Browser auf diesem Rechner. Vor dem Leeren der Browserdaten
 exportieren.
 
+## Demo-Ablauf
+
+Für Vorführungen in den Fachbereichen. Alle Daten sind erfunden.
+
+1. Vorher einmal unter Telefonassistenz, Reiter Dashboard, „Löschen“ wählen, damit
+   Anrufe und Termine bei null starten.
+2. Vertriebsleitung: Deutschland gesamt, zwei Regionen, ein Tipp auf eine Kennzahl
+   filtert die Personen.
+3. Telefonassistenz (Nele Faber): Warteschlange nach Score und Umweg, Briefing mit
+   Aufhängern und persönlichem Einstiegssatz.
+4. Taste 1 bucht einen Termin. Die Live-Maske zeigt den neuen Stand gegen Tages- und
+   Wochenziel.
+5. Zurück in die Vertriebsleitung: Region Nord und die Karte von Nele Faber zeigen den
+   Termin sofort, markiert als „erfasst“.
+6. Karte: Servicekorridor, Leads nach Band, Bestandskunden.
+
+Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link
+öffnet, startet mit eigenem Stand.
+
 ## Struktur
 
 ```
