@@ -3,6 +3,7 @@ import { useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
 import type { OutcomeType } from '@/domain/types';
+import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { useRecordOutcome } from './useRecordOutcome';
@@ -68,29 +69,32 @@ export function QueueView() {
   }, [queue, selectedIndex, selectLead, book]);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[minmax(320px,2fr)_3fr]">
-      <aside className="flex min-h-0 flex-col border-r border-border bg-panel">
-        <div className="flex items-baseline justify-between border-b border-border px-3 py-2">
-          <h2 className="text-sm font-bold">Warteschlange</h2>
-          <span className="text-xs text-muted">
-            {openCount} offen von {queue.length}
-          </span>
+    <div className="flex h-full min-h-0 flex-col">
+      <AgentLivePanel />
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(320px,2fr)_3fr]">
+        <aside className="flex min-h-0 flex-col border-r border-border bg-panel">
+          <div className="flex items-baseline justify-between border-b border-border px-3 py-2">
+            <h2 className="text-sm font-bold">Warteschlange</h2>
+            <span className="text-xs text-muted">
+              {openCount} offen von {queue.length}
+            </span>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <QueueList queue={queue} selectedId={selectedId} latest={latest} onSelect={selectLead} />
+          </div>
+        </aside>
+        <div className="min-h-0 overflow-y-auto p-6">
+          {selected ? (
+            <BriefingPanel
+              entry={selected}
+              latest={latest.get(selected.lead.id)}
+              busy={busy}
+              onRecord={(o) => void book(o)}
+            />
+          ) : (
+            <p className="text-sm text-muted">Kein Lead ausgewählt.</p>
+          )}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <QueueList queue={queue} selectedId={selectedId} latest={latest} onSelect={selectLead} />
-        </div>
-      </aside>
-      <div className="min-h-0 overflow-y-auto p-6">
-        {selected ? (
-          <BriefingPanel
-            entry={selected}
-            latest={latest.get(selected.lead.id)}
-            busy={busy}
-            onRecord={(o) => void book(o)}
-          />
-        ) : (
-          <p className="text-sm text-muted">Kein Lead ausgewählt.</p>
-        )}
       </div>
     </div>
   );

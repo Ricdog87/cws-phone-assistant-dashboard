@@ -158,3 +158,5 @@ als Annahme umgesetzt und mit dem Prototyp beziehungsweise dem Fachbereich abzug
    daraus später ein Termin wird. „Nicht erreicht“ zählt ebenfalls mit, weil die
    Erreichbarkeit Teil des Scores ist. Alternative: nur erreichte Gespräche auswerten.
 8. **Regularisierung** (λ = 1) und die Mindestmenge von 300 Anrufen.
+9. **Telefonassistenz-Ziele** (`src/domain/agentGoals.ts`): Standard 75 Anrufe/Tag und
+   4 Termine/Woche sowie die Motivationsformulierungen der Live-Maske.

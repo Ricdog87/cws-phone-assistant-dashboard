@@ -10,6 +10,11 @@ import {
 import { MOCK_ROUTE } from '@/data/mockRoute';
 import type { OutcomeRepository } from '@/data/repository';
 import {
+  DEFAULT_AGENT_GOALS,
+  DEFAULT_AGENT_NAME,
+  type AgentGoals,
+} from '@/domain/agentGoals';
+import {
   CORRIDOR_MAX_KM,
   CORRIDOR_MIN_KM,
   DEFAULT_CORRIDOR_KM,
@@ -33,6 +38,10 @@ export interface AppState {
   corridorKm: number;
   controlEnabled: boolean;
   briefingMode: BriefingMode;
+  /** Anzeigename der angemeldeten Telefonassistenz */
+  agentName: string;
+  /** Tages- und Wochenziele der Live-Maske */
+  agentGoals: AgentGoals;
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
 
@@ -44,6 +53,8 @@ export interface AppState {
   setCorridorKm(km: number): void;
   setControlEnabled(enabled: boolean): void;
   setBriefingMode(mode: BriefingMode): void;
+  setAgentName(name: string): void;
+  setAgentGoals(goals: AgentGoals): void;
   selectLead(id: string | null): void;
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
@@ -65,6 +76,8 @@ export function createAppStore(repository: OutcomeRepository) {
     corridorKm: DEFAULT_CORRIDOR_KM,
     controlEnabled: true,
     briefingMode: DEFAULT_BRIEFING_MODE,
+    agentName: DEFAULT_AGENT_NAME,
+    agentGoals: { ...DEFAULT_AGENT_GOALS },
     selectedLeadId: null,
     outcomes: [],
 
@@ -84,6 +97,14 @@ export function createAppStore(repository: OutcomeRepository) {
       set({ corridorKm: Math.max(CORRIDOR_MIN_KM, Math.min(CORRIDOR_MAX_KM, km)) }),
     setControlEnabled: (controlEnabled) => set({ controlEnabled }),
     setBriefingMode: (briefingMode) => set({ briefingMode }),
+    setAgentName: (agentName) => set({ agentName }),
+    setAgentGoals: (agentGoals) =>
+      set({
+        agentGoals: {
+          dailyCalls: Math.max(1, Math.round(agentGoals.dailyCalls)),
+          weeklyAppointments: Math.max(1, Math.round(agentGoals.weeklyAppointments)),
+        },
+      }),
     selectLead: (selectedLeadId) => set({ selectedLeadId }),
 
     async loadFromProvider(provider, report) {
