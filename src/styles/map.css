@@ -69,3 +69,36 @@
 .legend-swatch--corridor {
   background: var(--corridor);
 }
+
+/* Vertriebsgebiet Nordwest */
+.map-territory-mask {
+  fill: var(--brand-ink) !important;
+  fill-opacity: 0.1 !important;
+  stroke: none !important;
+}
+
+.map-territory-border {
+  stroke: var(--brand-ink) !important;
+  stroke-opacity: 0.55 !important;
+  fill: none !important;
+}
+
+.map-tour {
+  stroke: var(--muted) !important;
+  stroke-opacity: 0.9 !important;
+  fill: none !important;
+  cursor: pointer;
+}
+
+.map-tour:hover {
+  stroke: var(--brand-ink) !important;
+}
+
+.legend-swatch--territory {
+  border: 1.5px solid var(--brand-ink);
+  background: transparent;
+}
+
+.legend-swatch--tour {
+  border-top: 3px dashed var(--muted);
+}

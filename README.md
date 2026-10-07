@@ -58,21 +58,23 @@ Die App startet mit einer simulierten Anmeldung per Single Sign-on. Es werden ke
 Zugangsdaten abgefragt. Nach „Mit Firmenkonto anmelden (SSO)“ wird ein Konto gewählt,
 die Rolle bestimmt die Ansicht:
 
-| Konto            | Rolle                      | Ansicht                                        |
-| ---------------- | -------------------------- | ---------------------------------------------- |
-| Nele Faber       | Telefonassistenz           | Anrufliste, Briefing, Karte, eigene Ziele      |
-| Martina Weidmann | Teamleitung                | Team Nord: Rangliste, größte Lücken            |
-| Steffen Sixthor  | Head of Sales New Business | Regionen Nord und Süd im Vergleich, Ranglisten |
+| Konto            | Rolle                      | Ansicht                                         |
+| ---------------- | -------------------------- | ----------------------------------------------- |
+| Nele Faber       | Telefonassistenz           | Anrufliste je Tour, Briefing, Karte, Ziele      |
+| Martina Weidmann | Teamleitung                | Team Nord: Rangliste, größte Lücken             |
+| Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW |
 
 Rollenwechsel über „Abmelden“ oben rechts. Die Anmeldung gilt je Browser-Tab und bleibt
 beim Neuladen bestehen.
 
 1. Vorher als Nele Faber anmelden und im Reiter Dashboard „Löschen“ wählen, damit Anrufe
    und Termine bei null starten. Abmelden.
-2. Als Steffen Sixthor anmelden: Deutschland gesamt, Regionen im Vergleich, Klick auf eine
-   Region zeigt ihre Rangliste, rechts die größten Lücken.
-3. Abmelden, als Nele Faber anmelden: Warteschlange nach Score und Umweg, Briefing mit
-   Aufhängern und persönlichem Einstiegssatz. Taste 1 bucht einen Termin.
+2. Als Steffen Sixthor anmelden: Vertriebsgebiet Nordwest gesamt, Regionen Nord und NRW im
+   Vergleich, Klick auf eine Region zeigt ihre Rangliste, rechts die größten Lücken.
+3. Abmelden, als Nele Faber anmelden: Warteschlange der gewählten Tour nach Score und Umweg,
+   Briefing mit Aufhängern und persönlichem Einstiegssatz. Taste 1 bucht einen Termin. Im
+   Reiter Karte das ganze Vertriebsgebiet mit allen zehn Touren zeigen, ein Klick auf eine
+   gestrichelte Tour macht sie aktiv.
 4. Abmelden, als Steffen Sixthor oder Martina Weidmann anmelden: Region Nord und Nele
    Faber zeigen den Termin sofort, markiert als „erfasst“.
 

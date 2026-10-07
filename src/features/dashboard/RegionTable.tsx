@@ -115,6 +115,7 @@ export function RegionTable({ regions, total, selectedRegionId, onSelect }: Regi
                     <span className="block text-xs text-muted">
                       {region.leadName} · {formatInt(region.standing.headcount)} Personen
                     </span>
+                    <span className="block text-xs text-muted">{region.states}</span>
                   </button>
                 </td>
                 <FigureCells figures={region.standing} />
@@ -125,7 +126,7 @@ export function RegionTable({ regions, total, selectedRegionId, onSelect }: Regi
         <tfoot className="border-t-2 border-brand-ink">
           <tr>
             <th scope="row" className="px-4 py-3 text-left">
-              <span className="block font-bold">Deutschland gesamt</span>
+              <span className="block font-bold">Nordwest gesamt</span>
               <span className="block text-xs font-normal text-muted">
                 {formatInt(total.teamCount)} Regionen · {formatInt(total.headcount)} Personen
               </span>

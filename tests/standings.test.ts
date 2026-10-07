@@ -67,8 +67,12 @@ describe('teamStanding', () => {
 });
 
 describe('DEMO_REGIONS', () => {
-  it('teilt Deutschland in zwei Regionen mit je 15 Personen und einer Teamleitung', () => {
-    expect(DEMO_REGIONS.map((region) => region.name)).toEqual(['Nord', 'Süd']);
+  it('teilt das Vertriebsgebiet Nordwest in zwei Regionen mit je 15 Personen', () => {
+    expect(DEMO_REGIONS.map((region) => region.name)).toEqual(['Nord', 'NRW']);
+    expect(DEMO_REGIONS.map((region) => region.states)).toEqual([
+      'Niedersachsen, Bremen, Hamburg, Schleswig-Holstein',
+      'Nordrhein-Westfalen',
+    ]);
     expect(
       DEMO_REGIONS.map((region) => `${region.leadGivenName} ${region.leadFamilyName}`),
     ).toEqual(['Martina Weidmann', 'Julia Sander']);

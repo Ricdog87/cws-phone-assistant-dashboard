@@ -5,10 +5,13 @@ import { useAppStore } from '@/app/store';
 import { MockProvider } from '@/data/providers/mockProvider';
 import { QueueView } from '@/features/queue/QueueView';
 
+/** Einträge der Warteschlange, ohne die Optionen der Tourauswahl */
+function queueOptions(): HTMLElement[] {
+  return within(screen.getByRole('listbox', { name: 'Warteschlange' })).getAllByRole('option');
+}
+
 function selectedName(): string {
-  const option = screen
-    .getAllByRole('option')
-    .find((o) => o.getAttribute('aria-selected') === 'true');
+  const option = queueOptions().find((o) => o.getAttribute('aria-selected') === 'true');
   return option?.querySelector('span.text-sm.font-bold')?.textContent ?? '';
 }
 
@@ -23,7 +26,7 @@ describe('QueueView', () => {
   it('wählt den ersten Lead und wechselt mit den Pfeiltasten', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
-    const options = screen.getAllByRole('option');
+    const options = queueOptions();
     expect(options.length).toBeGreaterThan(10);
     const first = selectedName();
     expect(first).not.toBe('');
@@ -52,7 +55,7 @@ describe('QueueView', () => {
     });
     expect(selectedName()).not.toBe(first);
 
-    const booked = screen.getAllByRole('option')[0];
+    const booked = queueOptions()[0];
     expect(booked).toHaveClass('opacity-50');
     expect(within(booked as HTMLElement).getByText(/Termin vereinbart/)).toBeInTheDocument();
 

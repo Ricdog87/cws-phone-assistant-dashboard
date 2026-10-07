@@ -1,4 +1,6 @@
 import { formatKm } from '@/components/format';
+import { TERRITORY_NAME } from '@/data/territory';
+import { tourById } from '@/data/tours';
 
 const ITEMS = [
   { swatch: 'legend-swatch--a', label: 'Band A' },
@@ -7,10 +9,14 @@ const ITEMS = [
   { swatch: 'legend-swatch--customer', label: 'Bestandskunde' },
 ];
 
-export function MapLegend({ corridorKm }: { corridorKm: number }) {
+export function MapLegend({ corridorKm, tourId }: { corridorKm: number; tourId: string }) {
+  const tour = tourById(tourId);
   return (
     <div className="absolute bottom-6 left-3 z-[1000] max-w-[16rem] rounded border border-border bg-panel p-3 text-xs">
-      <p className="mb-2 font-bold">Karte</p>
+      <p className="font-bold">{TERRITORY_NAME}</p>
+      <p className="mb-2 text-muted">
+        Aktive Tour: {tour.weekday} · {tour.name}
+      </p>
       <ul className="space-y-1">
         {ITEMS.map((item) => (
           <li key={item.label} className="flex items-center gap-2">
@@ -26,7 +32,15 @@ export function MapLegend({ corridorKm }: { corridorKm: number }) {
         </li>
         <li className="flex items-center gap-2">
           <span className="inline-block h-2 w-6 rounded-sm border border-brand-ink bg-brand-ink" />
-          Serviceroute
+          Aktive Servicetour
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block h-0 w-6 legend-swatch--tour" />
+          Weitere Touren, Klick wählt
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block h-3 w-6 rounded-sm legend-swatch--territory" />
+          Grenze Vertriebsgebiet
         </li>
         <li className="flex items-start gap-2">
           <span className="mt-0.5 inline-block h-3 w-6 opacity-50 legend-swatch--corridor" />

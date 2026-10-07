@@ -23,6 +23,8 @@ import { formatKm, formatMin } from '@/components/format';
 import { corridorPolygon } from '@/domain/geo';
 import type { Route, ScoredLead } from '@/domain/types';
 import { MapLegend } from './MapLegend';
+import { TERRITORY_POINTS } from '@/data/territory';
+import { OtherToursLayer, TerritoryLayer } from './TerritoryLayer';
 import { applyMarkerClasses, markerClass } from './mapUtils';
 
 const FALLBACK_CENTER: LatLngExpression = [53.15, 8.0];
@@ -171,11 +173,8 @@ export function MapView({ active }: { active: boolean }) {
   const prospects = scored.filter((e) => !e.lead.isCustomer);
   const customers = scored.filter((e) => e.lead.isCustomer);
 
-  const leads = useAppStore((s) => s.leads);
-  const bounds = useMemo(() => {
-    const points = [...route.points, ...leads].map((p) => [p.lat, p.lng] as [number, number]);
-    return points.length > 0 ? latLngBounds(points) : null;
-  }, [route, leads]);
+  // Beim ersten Öffnen das ganze Vertriebsgebiet zeigen
+  const bounds = useMemo(() => latLngBounds(TERRITORY_POINTS), []);
 
   return (
     <div className="relative h-full">
@@ -186,10 +185,12 @@ export function MapView({ active }: { active: boolean }) {
         preferCanvas={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende · Grenzen: <a href="https://www.naturalearthdata.com">Natural Earth</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitOnActivate active={active} bounds={bounds} />
+        <TerritoryLayer />
+        <OtherToursLayer />
         <CorridorLayer route={route} corridorKm={corridorKm} />
         {/* Leads außerhalb zuerst, damit die aktiven oben liegen */}
         {[...prospects]
@@ -220,7 +221,7 @@ export function MapView({ active }: { active: boolean }) {
           </CircleMarker>
         ))}
       </MapContainer>
-      <MapLegend corridorKm={corridorKm} />
+      <MapLegend corridorKm={corridorKm} tourId={route.id} />
     </div>
   );
 }

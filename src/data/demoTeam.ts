@@ -1,6 +1,6 @@
 import type { MemberActivity } from '@/domain/standings';
 
-/** Zwei Regionen in Deutschland. Namen und Zahlen sind erfunden, außer die Live-Zeile. */
+/** Zwei Teams im Vertriebsgebiet Nordwest. Namen und Zahlen sind erfunden, außer die Live-Zeile. */
 export const LIVE_ASSISTANT_ID = 'nele-faber';
 
 export interface DemoRegion {
@@ -8,6 +8,8 @@ export interface DemoRegion {
   name: string;
   leadGivenName: string;
   leadFamilyName: string;
+  /** Bundesländer der Region im Vertriebsgebiet Nordwest */
+  states: string;
   members: readonly MemberActivity[];
 }
 
@@ -149,7 +151,7 @@ const NORD_MEMBERS: readonly MemberActivity[] = [
   },
 ];
 
-const SUED_MEMBERS: readonly MemberActivity[] = [
+const NRW_MEMBERS: readonly MemberActivity[] = [
   {
     id: 'anja-holm',
     givenName: 'Anja',
@@ -293,14 +295,16 @@ export const DEMO_REGIONS: readonly DemoRegion[] = [
     name: 'Nord',
     leadGivenName: 'Martina',
     leadFamilyName: 'Weidmann',
+    states: 'Niedersachsen, Bremen, Hamburg, Schleswig-Holstein',
     members: NORD_MEMBERS,
   },
   {
-    id: 'sued',
-    name: 'Süd',
+    id: 'nrw',
+    name: 'NRW',
     leadGivenName: 'Julia',
     leadFamilyName: 'Sander',
-    members: SUED_MEMBERS,
+    states: 'Nordrhein-Westfalen',
+    members: NRW_MEMBERS,
   },
 ];
 

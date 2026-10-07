@@ -20,7 +20,10 @@ export interface DemoAccount {
 const SCOPES: Record<ViewLevel, { scope: string; access: string }> = {
   assistant: { scope: 'Team Nord', access: 'Anrufliste, Briefing und eigene Ziele' },
   teamLead: { scope: 'Region Nord', access: 'Team Nord, 15 Personen, Anrufe und Termine' },
-  director: { scope: 'Deutschland', access: 'Regionen Nord und Süd, Vergleich und Ranglisten' },
+  director: {
+    scope: 'Vertriebsgebiet Nordwest',
+    access: 'Regionen Nord und NRW, Vergleich und Ranglisten',
+  },
 };
 
 function emailOf(givenName: string, familyName: string): string {

@@ -125,12 +125,18 @@ Zwei Richtungen:
    verloren geht. Der Store kennt nur die Schnittstelle, der Austausch passiert in
    `createRepository()` in `src/app/store.ts`.
 
-### Route
+### Vertriebsgebiet und Touren
 
-Die Route ist heute die Beispielroute in `src/data/mockRoute.ts`. Für echte Touren wird
-eine Quelle analog zum `LeadProvider` ergänzt (`RouteProvider`) und die Route im Store
-über eine Setter-Aktion gesetzt. Alle Berechnungen arbeiten bereits mit beliebigen
-Polylines.
+- `src/data/territory/`: Landesgrenzen des Vertriebsgebiets Nordwest (Schleswig-Holstein,
+  Hamburg, Bremen, Niedersachsen, Nordrhein-Westfalen). Quelle Natural Earth, Admin 1
+  (gemeinfrei), vereinfacht auf rund 0,5 km. Die Datei ist erzeugt und wird nicht von Hand
+  bearbeitet. Die Karte dunkelt alles außerhalb leicht ab und zeigt die Landesgrenzen.
+- `src/data/tours.ts`: zehn Beispieltouren entlang der Autobahnen, fünf je Region
+  (Nord und NRW), je mit Wochentag. Die aktive Tour liegt im Store (`setTour`), Warteschlange,
+  Korridor und Karte folgen ihr. Die Fachlogik rechnet unverändert mit genau einer Route.
+- Für echte Touren wird eine Quelle analog zum `LeadProvider` ergänzt (etwa aus
+  Salesforce mit Tour, Tourtag und Reihenfolge der Bestandskunden) und liefert
+  `ServiceTour`-Objekte. Alle Berechnungen arbeiten bereits mit beliebigen Polylines.
 
 ### Briefing
 

@@ -12,6 +12,7 @@ export interface RegionStanding {
   id: string;
   name: string;
   leadName: string;
+  states: string;
   standing: TeamStanding;
 }
 
@@ -24,6 +25,7 @@ function regionsWithLive(
     id: region.id,
     name: region.name,
     leadName: `${region.leadGivenName} ${region.leadFamilyName}`,
+    states: region.states,
     standing: teamStanding(
       applyLiveActivity(region.members, {
         id: LIVE_ASSISTANT_ID,

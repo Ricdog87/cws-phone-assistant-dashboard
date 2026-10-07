@@ -7,6 +7,7 @@ import type { OutcomeType } from '@/domain/types';
 import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
+import { TourSelect } from './TourSelect';
 import { useRecordOutcome } from './useRecordOutcome';
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -74,11 +75,14 @@ export function QueueView() {
       <AgentLivePanel />
       <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(320px,2fr)_3fr]">
         <aside className="flex min-h-0 flex-col border-r border-border bg-panel">
-          <div className="flex items-baseline justify-between border-b border-border px-3 py-2">
-            <h2 className="text-sm font-bold">Warteschlange</h2>
-            <span className="text-xs text-muted">
-              {openCount} offen von {queue.length}
-            </span>
+          <div className="space-y-2 border-b border-border px-3 py-2">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-sm font-bold">Warteschlange</h2>
+              <span className="text-xs text-muted">
+                {openCount} offen von {queue.length}
+              </span>
+            </div>
+            <TourSelect />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <QueueList

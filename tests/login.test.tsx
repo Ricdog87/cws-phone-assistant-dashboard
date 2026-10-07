@@ -14,7 +14,7 @@ describe('Demo-Konten', () => {
         'Steffen Sixthor',
         'steffen.sixthor@cws.example',
         'Head of Sales New Business',
-        'Deutschland',
+        'Vertriebsgebiet Nordwest',
       ],
     ]);
   });

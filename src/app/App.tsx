@@ -19,7 +19,11 @@ export function App() {
   const signedIn = useAppStore((s) => s.signedIn);
   const workplace = viewLevel === 'assistant';
   const scope =
-    viewLevel === 'director' ? 'Deutschland' : viewLevel === 'teamLead' ? 'Region Nord' : null;
+    viewLevel === 'director'
+      ? 'Vertriebsgebiet Nordwest'
+      : viewLevel === 'teamLead'
+        ? 'Region Nord'
+        : null;
 
   useEffect(() => {
     void bootstrap();

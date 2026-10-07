@@ -1,5 +1,6 @@
 import type { Lead } from '@/domain/types';
 import { MOCK_LEADS } from '../mockLeads';
+import { MOCK_LEADS_NORDWEST } from '../mockLeadsNordwest';
 import type { LeadProvider } from './types';
 
 export class MockProvider implements LeadProvider {
@@ -7,6 +8,6 @@ export class MockProvider implements LeadProvider {
   readonly label = 'Demo-Daten';
 
   async load(): Promise<Lead[]> {
-    return MOCK_LEADS.map((lead) => ({ ...lead }));
+    return [...MOCK_LEADS, ...MOCK_LEADS_NORDWEST].map((lead) => ({ ...lead }));
   }
 }

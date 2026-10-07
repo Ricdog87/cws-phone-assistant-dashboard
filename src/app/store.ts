@@ -7,7 +7,7 @@ import {
   type LoadReport,
   type ProviderId,
 } from '@/data/providers/types';
-import { MOCK_ROUTE } from '@/data/mockRoute';
+import { DEFAULT_TOUR_ID, tourById } from '@/data/tours';
 import type { OutcomeRepository } from '@/data/repository';
 import type { AgentGoals } from '@/domain/agentGoals';
 import { DAILY_CALL_GOAL, WEEKLY_APPOINTMENT_GOAL } from '@/domain/goals';
@@ -48,6 +48,8 @@ export interface AppState {
   signedIn: boolean;
 
   setTab(tab: TabId): void;
+  /** Aktive Servicetour, Warteschlange und Korridor folgen ihr */
+  setTour(tourId: string): void;
   setViewLevel(level: ViewLevel): void;
   signIn(level: ViewLevel): void;
   signOut(): void;
@@ -78,7 +80,7 @@ export function createAppStore(repository: OutcomeRepository) {
     loadReport: null,
     loadError: null,
     loading: false,
-    route: MOCK_ROUTE,
+    route: tourById(DEFAULT_TOUR_ID),
     weights: { ...DEFAULT_WEIGHTS },
     corridorKm: DEFAULT_CORRIDOR_KM,
     controlEnabled: true,
@@ -92,6 +94,7 @@ export function createAppStore(repository: OutcomeRepository) {
     signedIn: restoredLevel !== null,
 
     setTab: (activeTab) => set({ activeTab }),
+    setTour: (tourId) => set({ route: tourById(tourId), selectedLeadId: null }),
     setViewLevel: (viewLevel) =>
       set({
         viewLevel,
