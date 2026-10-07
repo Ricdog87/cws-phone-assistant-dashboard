@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Lead-Cockpit Nordwest: Ablauf vom Firmendatensatz zum qualifizierten Termin.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<title>Lead-Prozess Nordwest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* Layout: ein Blatt mit klarer Leserichtung. Großer Datenfluss oben, darunter die sechs Schritte, dann Bilder zu Route und Score, Rollen, Ausbaustufen, Zeitplan, Spielregeln. */
+  :root {
+    --bg: #f4f4f6;
+    --surface: #ffffff;
+    --ink: #231f20;
+    --muted: #64606a;
+    --line: #e2e1e6;
+    --red: #eb0045;
+    --red-soft: rgba(235, 0, 69, 0.09);
+    --yellow: #f9e244;
+    --yellow-ink: #231f20;
+    --display: "Archivo", "Arial Narrow", Arial, sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151314; --surface: #1f1c1e; --ink: #f3f1f3; --muted: #a6a1aa; --line: #363237;
+      --red: #ff3a6e; --red-soft: rgba(255, 58, 110, 0.14); --yellow: #f9e244; --yellow-ink: #231f20;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151314; --surface: #1f1c1e; --ink: #f3f1f3; --muted: #a6a1aa; --line: #363237;
+    --red: #ff3a6e; --red-soft: rgba(255, 58, 110, 0.14); --yellow: #f9e244; --yellow-ink: #231f20;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  img { max-width: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 400 15px/1.55 var(--body);
+    padding: 32px 20px 48px;
+  }
+  .sheet { max-width: 1040px; margin: 0 auto; display: grid; gap: 40px; }
+  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  .eyebrow {
+    font: 500 11.5px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--red);
+  }
+  .muted { color: var(--muted); }
+  .mark { background: var(--yellow); color: var(--yellow-ink); padding: 0 0.2em; border-radius: 2px; }
+
+  /* Kopf */
+  header { display: grid; gap: 14px; border-bottom: 3px solid var(--red); padding-bottom: 24px; }
+  header .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .tag { font: 500 11.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; line-height: 1.05; }
+  .lead { font-size: 17px; max-width: 64ch; }
+
+  section { display: grid; gap: 16px; }
+  .sec-head { display: grid; gap: 6px; }
+  h2 { font-size: 24px; font-weight: 700; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; min-width: 0; }
+  .scroll { overflow-x: auto; }
+
+  /* Diagramme */
+  svg text { font-family: var(--body); }
+  .d-box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .d-lead { fill: var(--red-soft); stroke: var(--red); stroke-width: 2.5; }
+  .d-dark { fill: var(--ink); }
+  .d-title { fill: var(--ink); font: 700 17px var(--display); }
+  .d-title-inv { fill: var(--surface); font: 700 17px var(--display); }
+  .d-sub { fill: var(--muted); font-size: 12.5px; }
+  .d-sub-inv { fill: var(--surface); font-size: 12.5px; opacity: .8; }
+  .d-arrow { stroke: var(--ink); stroke-width: 2; fill: none; }
+  .d-back { stroke: var(--red); stroke-width: 2.5; fill: none; stroke-dasharray: 7 5; }
+  .d-head { fill: var(--ink); }
+  .d-head-red { fill: var(--red); }
+  .d-chip { fill: var(--red); }
+  .d-chip-t { fill: #ffffff; font: 700 12px var(--mono); }
+  .d-label { fill: var(--ink); font-size: 12.5px; font-weight: 500; }
+  .d-label-red { fill: var(--red); font-size: 12.5px; font-weight: 600; }
+  .d-pill { fill: var(--yellow); }
+  .d-pill-t { fill: var(--yellow-ink); font: 700 11px var(--mono); letter-spacing: .06em; }
+
+  /* Schritte */
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: s; }
+  .step { display: grid; gap: 8px; align-content: start; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .step .n {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--red); color: #fff;
+    display: grid; place-items: center; font: 700 13px var(--mono);
+  }
+  .step h3 { font-size: 18px; }
+  .step .where { font: 500 11.5px/1.3 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .step .out { border-top: 1px solid var(--line); padding-top: 8px; font-size: 13.5px; }
+  .step .out b { font-weight: 600; }
+
+  /* Route und Score */
+  .duo { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; }
+  .duo .panel { display: grid; gap: 14px; align-content: start; }
+  .panel h3 { font-size: 18px; }
+  .r-grid { stroke: var(--line); stroke-width: 1; }
+  .r-corr { stroke: var(--red); stroke-opacity: .14; stroke-width: 38; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .r-tour { stroke: var(--ink); stroke-width: 2.5; fill: none; stroke-dasharray: 2 6; stroke-linecap: round; }
+  .r-cust { fill: var(--ink); }
+  .r-lead { fill: var(--red); }
+  .r-out { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+  .r-depot { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; }
+  .r-txt { fill: var(--muted); font: 500 11px var(--mono); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
+  .dot.cust { background: var(--ink); }
+  .dot.lead { background: var(--red); }
+  .dot.out { border: 1.5px solid var(--muted); }
+  .dot.depot { background: var(--yellow); border: 2px solid var(--ink); border-radius: 2px; }
+
+  .bars { display: grid; gap: 10px; }
+  .bar { display: grid; grid-template-columns: 112px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font-size: 13.5px; }
+  .bar .w { font: 500 11px var(--mono); color: var(--muted); display: block; }
+  .track { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+  .fill { height: 100%; background: var(--ink); border-radius: 5px; }
+  .bar .v { font: 500 13px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .result { display: flex; align-items: center; gap: 14px; border-top: 1px solid var(--line); padding-top: 14px; flex-wrap: wrap; }
+  .score { font: 800 40px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .bands { display: flex; gap: 6px; flex-wrap: wrap; }
+  .band { font: 500 12px/1 var(--mono); padding: 6px 9px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+  .band.on { background: var(--red); border-color: var(--red); color: #fff; }
+
+  /* Rollen */
+  .roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .role { display: grid; gap: 10px; align-content: start; }
+  .role .who { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--ink); color: var(--surface); display: grid; place-items: center; flex: none; }
+  .avatar svg { width: 20px; height: 20px; }
+  .role ul, .rules ul, .stage ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+  .note { font-size: 13px; color: var(--muted); }
+
+  /* Ausbaustufen */
+  .stages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .stage { display: grid; gap: 10px; align-content: start; }
+  .stage.now { border: 2px solid var(--red); }
+  .stage .eyebrow.grey { color: var(--muted); }
+
+  /* Zeitplan */
+  .weeks { display: grid; grid-template-columns: repeat(10, minmax(64px, 1fr)); gap: 4px; min-width: 680px; }
+  .wk { font: 500 11px var(--mono); color: var(--muted); text-align: center; padding-bottom: 4px; }
+  .blk { border-radius: 6px; padding: 10px; font-size: 13px; line-height: 1.35; background: var(--surface); border: 1px solid var(--line); }
+  .blk b { display: block; font-family: var(--display); font-size: 14px; }
+  .blk.live { background: var(--red); border-color: var(--red); color: #fff; }
+  .blk.live .muted { color: rgba(255,255,255,.85); }
+
+  /* Spielregeln */
+  .rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .rule { padding: 16px 18px; display: grid; gap: 4px; border-bottom: 1px solid var(--line); }
+  .rule:nth-child(odd) { border-right: 1px solid var(--line); }
+  .rule:nth-last-child(-n+2) { border-bottom: 0; }
+  .rule h3 { font-size: 16px; }
+  .rule p { font-size: 14px; color: var(--muted); }
+
+  footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 16px; font: 500 11.5px var(--mono); color: var(--muted); }
+
+  @media (max-width: 860px) {
+    .steps, .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .duo, .stages { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    body { padding-inline: 16px; }
+    .steps, .roles, .rules { grid-template-columns: minmax(0, 1fr); }
+    .rule:nth-child(odd) { border-right: 0; }
+    .rule:nth-last-child(2) { border-bottom: 1px solid var(--line); }
+    .bar { grid-template-columns: 96px minmax(0, 1fr) 34px; }
+  }
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <header>
+    <div class="top">
+      <span class="eyebrow">Lead-Cockpit Nordwest</span>
+      <span class="tag">Stand 07.10.2026 · Intern</span>
+    </div>
+    <h1>Vom Firmendatensatz zum qualifizierten Termin</h1>
+    <p class="lead"><span class="mark">Salesforce ist führend.</span> D&amp;B und Clay veredeln die Daten, bevor sie in Salesforce landen. Das Cockpit holt sie dort ab, sortiert sie entlang der Servicetouren und macht die Telefonassistenz schneller. Jedes Ergebnis geht zurück nach Salesforce.</p>
+  </header>
+
+  <!-- Datenfluss -->
+  <section aria-labelledby="flow-h">
+    <div class="sec-head">
+      <span class="eyebrow">Das Prinzip</span>
+      <h2 id="flow-h">Ein Kreislauf, eine Wahrheit</h2>
+    </div>
+    <div class="panel scroll">
+      <svg viewBox="0 0 980 340" width="100%" style="min-width:700px;display:block" role="img" aria-label="Datenfluss: D&amp;B und Clay liefern an Salesforce, das Cockpit liest aus Salesforce, bucht Termine beim Hunter und schreibt Ergebnisse zurück nach Salesforce.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="d-head-red" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+
+        <!-- Quellen -->
+        <text x="20" y="22" class="d-sub" style="font-family:var(--mono);letter-spacing:.1em">QUELLEN</text>
+        <rect x="20" y="40" width="180" height="88" rx="10" class="d-box"/>
+        <text x="40" y="74" class="d-title">D&amp;B</text>
+        <text x="40" y="96" class="d-sub">Firmen, Konzernstruktur,</text>
+        <text x="40" y="113" class="d-sub">D-U-N-S-Nummer</text>
+
+        <rect x="20" y="160" width="180" height="88" rx="10" class="d-box"/>
+        <text x="40" y="194" class="d-title">Clay</text>
+        <text x="40" y="216" class="d-sub">Durchwahl, Kontakte,</text>
+        <text x="40" y="233" class="d-sub">Signale</text>
+
+        <!-- Salesforce -->
+        <text x="290" y="22" class="d-sub" style="font-family:var(--mono);letter-spacing:.1em">FÜHRENDES SYSTEM</text>
+        <rect x="290" y="60" width="200" height="150" rx="12" class="d-lead"/>
+        <rect x="306" y="74" width="74" height="20" rx="4" class="d-pill"/>
+        <text x="314" y="88" class="d-pill-t">FÜHREND</text>
+        <text x="306" y="124" class="d-title" style="font-size:21px">Salesforce</text>
+        <text x="306" y="148" class="d-sub">Leads, Bestandskunden,</text>
+        <text x="306" y="165" class="d-sub">Ergebnisse, Termine,</text>
+        <text x="306" y="182" class="d-sub">Historie</text>
+
+        <!-- Cockpit -->
+        <text x="570" y="22" class="d-sub" style="font-family:var(--mono);letter-spacing:.1em">ARBEITSOBERFLÄCHE</text>
+        <rect x="570" y="60" width="200" height="150" rx="12" class="d-dark"/>
+        <text x="588" y="96" class="d-title-inv" style="font-size:21px">Lead-Cockpit</text>
+        <text x="588" y="124" class="d-sub-inv">Score entlang der Tour</text>
+        <text x="588" y="143" class="d-sub-inv">Briefing und Leitfaden</text>
+        <text x="588" y="162" class="d-sub-inv">Qualifizierung</text>
+        <text x="588" y="181" class="d-sub-inv">Terminbuchung</text>
+
+        <!-- Hunter -->
+        <text x="830" y="22" class="d-sub" style="font-family:var(--mono);letter-spacing:.1em">AUSSENDIENST</text>
+        <rect x="830" y="88" width="130" height="94" rx="10" class="d-box"/>
+        <text x="848" y="124" class="d-title">Hunter</text>
+        <text x="848" y="146" class="d-sub">Termin am</text>
+        <text x="848" y="163" class="d-sub">Tourtag</text>
+
+        <!-- Pfeile -->
+        <path d="M200,84 C245,84 245,110 286,110" class="d-arrow" marker-end="url(#ah)"/>
+        <path d="M200,204 C245,204 245,162 286,162" class="d-arrow" marker-end="url(#ah)"/>
+        <path d="M490,135 L566,135" class="d-arrow" marker-end="url(#ah)"/>
+        <path d="M770,135 L826,135" class="d-arrow" marker-end="url(#ah)"/>
+        <path d="M670,210 C670,300 390,300 390,214" class="d-back" marker-end="url(#ahr)"/>
+
+        <!-- Schrittnummern -->
+        <circle cx="243" cy="97" r="12" class="d-chip"/><text x="243" y="101.5" text-anchor="middle" class="d-chip-t">1</text>
+        <circle cx="243" cy="183" r="12" class="d-chip"/><text x="243" y="187.5" text-anchor="middle" class="d-chip-t">3</text>
+        <circle cx="390" cy="44" r="12" class="d-chip"/><text x="390" y="48.5" text-anchor="middle" class="d-chip-t">2</text>
+        <circle cx="528" cy="135" r="12" class="d-chip"/><text x="528" y="139.5" text-anchor="middle" class="d-chip-t">4</text>
+        <text x="528" y="164" text-anchor="middle" class="d-label">laden</text>
+        <circle cx="670" cy="44" r="12" class="d-chip"/><text x="670" y="48.5" text-anchor="middle" class="d-chip-t">5</text>
+        <circle cx="798" cy="112" r="12" class="d-chip"/><text x="798" y="116.5" text-anchor="middle" class="d-chip-t">6</text>
+        <text x="798" y="160" text-anchor="middle" class="d-label">Termin</text>
+        <circle cx="530" cy="277" r="12" class="d-chip"/><text x="530" y="281.5" text-anchor="middle" class="d-chip-t">6</text>
+        <text x="530" y="318" text-anchor="middle" class="d-label-red">zurück: Ergebnis, Termin, neue Kontakte</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Sechs Schritte -->
+  <section aria-labelledby="steps-h">
+    <div class="sec-head">
+      <span class="eyebrow">Der Ablauf</span>
+      <h2 id="steps-h">Sechs Schritte, jeder an seinem Platz</h2>
+      <p class="muted">Die Nummern entsprechen dem Diagramm oben.</p>
+    </div>
+    <div class="steps">
+      <article class="step">
+        <span class="n">1</span>
+        <span class="where">D&amp;B</span>
+        <h3>Finden</h3>
+        <p>Firmen im Gebiet Nordwest nach Branche und Größe. Dazu weitere Standorte und Schwesterfirmen unserer Bestandskunden aus dem Family Tree.</p>
+        <p class="out"><b>Ergebnis:</b> Liste mit D-U-N-S-Nummer</p>
+      </article>
+      <article class="step">
+        <span class="n">2</span>
+        <span class="where">Salesforce</span>
+        <h3>Abgleichen</h3>
+        <p>Abgleich über die D-U-N-S-Nummer. Dubletten fallen raus, Bestandskunden werden erkannt, nur echte Neukunden werden als Lead angelegt.</p>
+        <p class="out"><b>Ergebnis:</b> saubere Leads in Salesforce</p>
+      </article>
+      <article class="step">
+        <span class="n">3</span>
+        <span class="where">Clay → Salesforce</span>
+        <h3>Veredeln</h3>
+        <p>Clay ergänzt Durchwahl, Ansprechpartner, offene Stellen und Signale wie Expansion. Die Daten landen direkt am Lead in Salesforce, einmal und nicht pro Nutzer.</p>
+        <p class="out"><b>Ergebnis:</b> anrufbereite Leads</p>
+      </article>
+      <article class="step">
+        <span class="n">4</span>
+        <span class="where">Lead-Cockpit</span>
+        <h3>Priorisieren</h3>
+        <p>Das Cockpit lädt Leads, Bestandskunden und Touren aus Salesforce. Jeder Lead bekommt einen Score von 0 bis 100. Wer nah an der Tour des Tages liegt, steht oben.</p>
+        <p class="out"><b>Ergebnis:</b> Anrufliste des Tages</p>
+      </article>
+      <article class="step">
+        <span class="n">5</span>
+        <span class="where">Lead-Cockpit</span>
+        <h3>Anrufen und qualifizieren</h3>
+        <p>Briefing zur Firma, Gesprächsleitfaden nach Branche, Checkliste für den qualifizierten Termin. Wer keine Anrufe will, bekommt einen Sperrvermerk.</p>
+        <p class="out"><b>Ergebnis:</b> Termin, Wiedervorlage oder Absage</p>
+      </article>
+      <article class="step">
+        <span class="n">6</span>
+        <span class="where">Hunter und Salesforce</span>
+        <h3>Buchen und zurückschreiben</h3>
+        <p>Der Termin liegt am Tourtag des Hunters, er bekommt eine Kalendereinladung. Ergebnis, Termin und neu erfasste Kontakte gehen zurück nach Salesforce.</p>
+        <p class="out"><b>Ergebnis:</b> Salesforce ist vollständig</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Route und Score -->
+  <section aria-labelledby="smart-h">
+    <div class="sec-head">
+      <span class="eyebrow">Was das Cockpit klug macht</span>
+      <h2 id="smart-h">Anrufen, wo der Hunter ohnehin ist</h2>
+    </div>
+    <div class="duo">
+      <div class="panel">
+        <h3>Smart Route: der Korridor entlang der Tour</h3>
+        <svg viewBox="0 0 480 290" width="100%" role="img" aria-label="Schematische Karte: Eine Servicetour verbindet Bestandskunden. Leads innerhalb eines Korridors von zwei Kilometern um die Tour werden bevorzugt, Leads außerhalb nachrangig.">
+          <g class="r-grid">
+            <line x1="0" y1="58" x2="480" y2="58"/><line x1="0" y1="116" x2="480" y2="116"/><line x1="0" y1="174" x2="480" y2="174"/><line x1="0" y1="232" x2="480" y2="232"/>
+            <line x1="80" y1="0" x2="80" y2="290"/><line x1="160" y1="0" x2="160" y2="290"/><line x1="240" y1="0" x2="240" y2="290"/><line x1="320" y1="0" x2="320" y2="290"/><line x1="400" y1="0" x2="400" y2="290"/>
+          </g>
+          <polyline class="r-corr" points="40,250 120,205 190,182 250,132 330,116 400,80 448,44"/>
+          <polyline class="r-tour" points="40,250 120,205 190,182 250,132 330,116 400,80 448,44"/>
+          <!-- Leads außerhalb -->
+          <circle class="r-out" cx="88" cy="118" r="6"/><circle class="r-out" cx="205" cy="262" r="6"/><circle class="r-out" cx="338" cy="220" r="6"/>
+          <circle class="r-out" cx="430" cy="196" r="6"/><circle class="r-out" cx="56" cy="44" r="6"/><circle class="r-out" cx="292" cy="36" r="6"/>
+          <!-- Leads im Korridor -->
+          <circle class="r-lead" cx="162" cy="200" r="7"/><circle class="r-lead" cx="220" cy="148" r="7"/><circle class="r-lead" cx="292" cy="133" r="7"/>
+          <circle class="r-lead" cx="366" cy="92" r="7"/><circle class="r-lead" cx="84" cy="236" r="7"/>
+          <!-- Bestandskunden -->
+          <circle class="r-cust" cx="120" cy="205" r="7"/><circle class="r-cust" cx="250" cy="132" r="7"/><circle class="r-cust" cx="400" cy="80" r="7"/><circle class="r-cust" cx="448" cy="44" r="7"/>
+          <rect class="r-depot" x="31" y="241" width="18" height="18" rx="2"/>
+          <text class="r-txt" x="58" y="278">Start der Tour</text>
+          <text class="r-txt" x="330" y="150">Korridor 2 km</text>
+        </svg>
+        <div class="legend">
+          <span><i class="dot depot"></i>Start</span>
+          <span><i class="dot cust"></i>Bestandskunde auf der Tour</span>
+          <span><i class="dot lead"></i>Lead im Korridor, zuerst anrufen</span>
+          <span><i class="dot out"></i>Lead außerhalb, später</span>
+        </div>
+        <p class="note">Der Hunter fährt die Tour ohnehin. Ein Termin im Korridor kostet ihn nur wenige Minuten Umweg. Die Breite des Korridors ist einstellbar, Standard sind 2 km.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Score: vier Fragen, eine Zahl</h3>
+        <div class="bars" aria-label="Beispielrechnung Score">
+          <div class="bar"><span>Fit <span class="w">Gewicht 30 %</span></span><div class="track"><div class="fill" style="width:90%"></div></div><span class="v">90</span></div>
+          <div class="bar"><span>Nähe <span class="w">Gewicht 30 %</span></span><div class="track"><div class="fill" style="width:95%"></div></div><span class="v">95</span></div>
+          <div class="bar"><span>Potenzial <span class="w">Gewicht 25 %</span></span><div class="track"><div class="fill" style="width:70%"></div></div><span class="v">70</span></div>
+          <div class="bar"><span>Erreichbarkeit <span class="w">Gewicht 15 %</span></span><div class="track"><div class="fill" style="width:60%"></div></div><span class="v">60</span></div>
+        </div>
+        <div class="result">
+          <span class="score">82</span>
+          <div class="bands" aria-label="Bänder">
+            <span class="band on">A ab 78</span><span class="band">B ab 58</span><span class="band">C darunter</span>
+          </div>
+        </div>
+        <ul class="note" style="margin:0;padding-left:18px;display:grid;gap:3px">
+          <li><b>Fit:</b> Passt Branche und Zahl der gewerblichen Mitarbeitenden?</li>
+          <li><b>Nähe:</b> Wie viele Minuten Umweg für den Hunter?</li>
+          <li><b>Potenzial:</b> Wie viele Träger von Berufskleidung?</li>
+          <li><b>Erreichbarkeit:</b> Gibt es Durchwahl und Ansprechpartner?</li>
+        </ul>
+        <p class="note">Beispielrechnung mit fiktiven Werten. Bonitäts- und Zahlungsdaten fließen nie in den Score ein.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rollen -->
+  <section aria-labelledby="roles-h">
+    <div class="sec-head">
+      <span class="eyebrow">Wer sieht was</span>
+      <h2 id="roles-h">Drei Rollen, ein Login mit dem CWS-Konto</h2>
+    </div>
+    <div class="roles">
+      <div class="panel role">
+        <div class="who">
+          <span class="avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span>
+          <h3>Telefonassistenz</h3>
+        </div>
+        <ul>
+          <li>Anrufliste des Tages entlang der Tour</li>
+          <li>Briefing, Leitfaden, Checkliste</li>
+          <li>Termin buchen, Ergebnis erfassen</li>
+          <li>Eigenes Wochenziel im Blick</li>
+        </ul>
+      </div>
+      <div class="panel role">
+        <div class="who">
+          <span class="avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.2c2.9.3 5 2.6 5 5.8"/></svg></span>
+          <h3>Teamleitung</h3>
+        </div>
+        <ul>
+          <li>Stand der Region gegen das Wochenziel</li>
+          <li>Wo Unterstützung nötig ist</li>
+          <li>Termine und Quoten des Teams</li>
+        </ul>
+      </div>
+      <div class="panel role">
+        <div class="who">
+          <span class="avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><rect x="5" y="11" width="3.5" height="7"/><rect x="10.25" y="7" width="3.5" height="11"/><rect x="15.5" y="4" width="3.5" height="14"/></svg></span>
+          <h3>Head of Sales</h3>
+        </div>
+        <ul>
+          <li>Gebiet Nordwest auf einen Blick</li>
+          <li>Regionen Nord und NRW im Vergleich</li>
+          <li>Wirkung des Cockpits gegen Kontrollgruppe</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Ranglisten einzelner Personen bleiben im Pilot ausgeschaltet, bis eine Regelung mit dem Betriebsrat vorliegt.</p>
+  </section>
+
+  <!-- Ausbaustufen -->
+  <section aria-labelledby="stages-h">
+    <div class="sec-head">
+      <span class="eyebrow">Wie die Daten fließen</span>
+      <h2 id="stages-h">Erst per Datei, dann automatisch</h2>
+    </div>
+    <div class="stages">
+      <div class="panel stage now">
+        <span class="eyebrow">Pilot · ab KW 46</span>
+        <h3>Einmal pro Woche per CSV</h3>
+        <ol>
+          <li>Report aus Salesforce exportieren</li>
+          <li>In Clay anreichern, mit D&amp;B-Export abgleichen</li>
+          <li>Angereichert zurück nach Salesforce importieren</li>
+          <li>Stapel ins Cockpit laden</li>
+          <li>Ergebnisse und Kontakte wöchentlich nach Salesforce</li>
+        </ol>
+        <p class="note">Ein Umweg, aber sauber: Salesforce bleibt vollständig, und es braucht keine Schnittstelle.</p>
+      </div>
+      <div class="panel stage">
+        <span class="eyebrow grey">Stufe 2 · nach erfolgreichem Pilot</span>
+        <h3>Automatisch per Schnittstelle</h3>
+        <ol>
+          <li>D&amp;B direkt in Salesforce, D-U-N-S am Account</li>
+          <li>Clay schreibt per Integration an den Lead</li>
+          <li>Cockpit liest und schreibt über die Salesforce-API</li>
+          <li>Freie Zeiten und Termine direkt im Outlook-Kalender des Hunters</li>
+        </ol>
+        <p class="note">Keine Handarbeit mehr. Investition erst, wenn der Pilot Wirkung zeigt.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Zeitplan -->
+  <section aria-labelledby="time-h">
+    <div class="sec-head">
+      <span class="eyebrow">Zeitplan</span>
+      <h2 id="time-h">Go-Live ab 9. November 2026</h2>
+    </div>
+    <div class="panel scroll">
+      <div class="weeks" role="table" aria-label="Zeitplan in Kalenderwochen">
+        <span class="wk">KW 41</span><span class="wk">KW 42</span><span class="wk">KW 43</span><span class="wk">KW 44</span><span class="wk">KW 45</span>
+        <span class="wk">KW 46</span><span class="wk">KW 47</span><span class="wk">KW 48</span><span class="wk">KW 49</span><span class="wk">KW 50</span>
+        <div class="blk" style="grid-column:1 / span 2"><b>Freigaben</b><span class="muted">IT, Betriebsrat, Datenschutz, Lizenzen D&amp;B und Clay</span></div>
+        <div class="blk" style="grid-column:3 / span 2"><b>Umbau</b><span class="muted">Login, Speicher, Karten, Termin­buchung</span></div>
+        <div class="blk" style="grid-column:5 / span 1"><b>Abnahme</b><span class="muted">Schulung</span></div>
+        <div class="blk live" style="grid-column:6 / span 4"><b>Go-Live und Pilot</b><span class="muted">vier Wochen mit echten Daten, wöchentlich ausgewertet</span></div>
+        <div class="blk" style="grid-column:10 / span 1"><b>Ent­scheidung</b><span class="muted">Stufe 2</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Spielregeln -->
+  <section aria-labelledby="rules-h">
+    <div class="sec-head">
+      <span class="eyebrow">Spielregeln</span>
+      <h2 id="rules-h">Vier Regeln, damit es sauber bleibt</h2>
+    </div>
+    <div class="rules">
+      <div class="rule"><h3>Was nicht in Salesforce steht, gibt es nicht</h3><p>Salesforce ist das führende System. Das Cockpit ist Arbeitsfläche, kein zweiter Datenspeicher.</p></div>
+      <div class="rule"><h3>Einmal veredeln, nicht pro Anruf</h3><p>Anreicherung passiert vor dem Cockpit. Das spart Credits und verhindert Dubletten.</p></div>
+      <div class="rule"><h3>Anrufen nur mit Bedarfsbezug</h3><p>Werbeanrufe bei Firmen brauchen eine mutmaßliche Einwilligung. Widerspruch heißt Sperre.</p></div>
+      <div class="rule"><h3>Echte Daten nur im CWS-Tenant</h3><p>Die Demo läuft mit fiktiven Daten. Echte Daten erst in Azure mit Login über das CWS-Konto.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Lead-Cockpit Nordwest · Intern</span>
+    <span>Details: Machbarkeit, MVP und Kosten, Version 1.2</span>
+  </footer>
+</main>
+</body>
+</html>
