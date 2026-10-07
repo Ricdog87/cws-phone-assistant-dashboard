@@ -1,4 +1,4 @@
-# Lead-Cockpit Nordwest
+# Lead-Cockpit · New Business
 
 Arbeitsoberfläche für die Telefonassistenz im New Business der CWS Workwear.
 

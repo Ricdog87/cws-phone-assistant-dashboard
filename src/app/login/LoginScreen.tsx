@@ -99,7 +99,7 @@ export function LoginScreen({ stepMs = 550 }: LoginScreenProps) {
           draggable={false}
         />
         <p className="mt-6 text-xs font-bold uppercase tracking-wide text-muted">
-          Lead-Cockpit Nordwest · New Business
+          Lead-Cockpit · New Business
         </p>
 
         {step === 'start' && (
