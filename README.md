@@ -52,19 +52,29 @@ exportieren.
 
 ## Demo-Ablauf
 
-Für Vorführungen in den Fachbereichen. Alle Daten sind erfunden.
+Für Vorführungen in den Fachbereichen. Alle Daten und Konten sind erfunden.
 
-1. Vorher einmal unter Telefonassistenz, Reiter Dashboard, „Löschen“ wählen, damit
-   Anrufe und Termine bei null starten.
-2. Vertriebsleitung: Deutschland gesamt, zwei Regionen, ein Tipp auf eine Kennzahl
-   filtert die Personen.
-3. Telefonassistenz (Nele Faber): Warteschlange nach Score und Umweg, Briefing mit
-   Aufhängern und persönlichem Einstiegssatz.
-4. Taste 1 bucht einen Termin. Die Live-Maske zeigt den neuen Stand gegen Tages- und
-   Wochenziel.
-5. Zurück in die Vertriebsleitung: Region Nord und die Karte von Nele Faber zeigen den
-   Termin sofort, markiert als „erfasst“.
-6. Karte: Servicekorridor, Leads nach Band, Bestandskunden.
+Die App startet mit einer simulierten Anmeldung per Single Sign-on. Es werden keine
+Zugangsdaten abgefragt. Nach „Mit Firmenkonto anmelden (SSO)“ wird ein Konto gewählt,
+die Rolle bestimmt die Ansicht:
+
+| Konto            | Rolle            | Ansicht                                        |
+| ---------------- | ---------------- | ---------------------------------------------- |
+| Nele Faber       | Telefonassistenz | Anrufliste, Briefing, Karte, eigene Ziele      |
+| Martina Weidmann | Teamleitung      | Team Nord: Rangliste, größte Lücken            |
+| Steffen Sixthor  | Vertriebsleitung | Regionen Nord und Süd im Vergleich, Ranglisten |
+
+Rollenwechsel über „Abmelden“ oben rechts. Die Anmeldung gilt je Browser-Tab und bleibt
+beim Neuladen bestehen.
+
+1. Vorher als Nele Faber anmelden und im Reiter Dashboard „Löschen“ wählen, damit Anrufe
+   und Termine bei null starten. Abmelden.
+2. Als Steffen Sixthor anmelden: Deutschland gesamt, Regionen im Vergleich, Klick auf eine
+   Region zeigt ihre Rangliste, rechts die größten Lücken.
+3. Abmelden, als Nele Faber anmelden: Warteschlange nach Score und Umweg, Briefing mit
+   Aufhängern und persönlichem Einstiegssatz. Taste 1 bucht einen Termin.
+4. Abmelden, als Steffen Sixthor oder Martina Weidmann anmelden: Region Nord und Nele
+   Faber zeigen den Termin sofort, markiert als „erfasst“.
 
 Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link
 öffnet, startet mit eigenem Stand.

@@ -20,6 +20,7 @@ import {
 } from '@/domain/scoring';
 import type { CallOutcome, DimensionKey, Lead, Route, Weights } from '@/domain/types';
 import { DEMO_USER, type ViewLevel } from './demoUser';
+import { loadSession, saveSession } from './session';
 
 export type TabId = 'queue' | 'map' | 'dashboard' | 'scoring' | 'data';
 
@@ -43,9 +44,13 @@ export interface AppState {
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
   viewLevel: ViewLevel;
+  /** Simulierte Anmeldung per Single Sign-on */
+  signedIn: boolean;
 
   setTab(tab: TabId): void;
   setViewLevel(level: ViewLevel): void;
+  signIn(level: ViewLevel): void;
+  signOut(): void;
   setWeight(key: DimensionKey, value: number): void;
   resetWeights(): void;
   /** Setzt alle Gewichte auf einmal, etwa nach bestätigtem Kalibrierungsvorschlag */
@@ -63,8 +68,10 @@ export interface AppState {
 }
 
 export function createAppStore(repository: OutcomeRepository) {
+  // Anmeldung dieses Browser-Tabs wiederherstellen, etwa nach dem Neuladen
+  const restoredLevel = loadSession();
   return create<AppState>()((set, get) => ({
-    activeTab: 'dashboard',
+    activeTab: restoredLevel === 'assistant' ? 'queue' : 'dashboard',
     sourceId: 'mock',
     sourceLabel: 'Demo-Daten',
     leads: [],
@@ -81,7 +88,8 @@ export function createAppStore(repository: OutcomeRepository) {
     agentGoals: { dailyCalls: DAILY_CALL_GOAL, weeklyAppointments: WEEKLY_APPOINTMENT_GOAL },
     selectedLeadId: null,
     outcomes: [],
-    viewLevel: 'teamLead',
+    viewLevel: restoredLevel ?? 'teamLead',
+    signedIn: restoredLevel !== null,
 
     setTab: (activeTab) => set({ activeTab }),
     setViewLevel: (viewLevel) =>
@@ -89,6 +97,19 @@ export function createAppStore(repository: OutcomeRepository) {
         viewLevel,
         activeTab: viewLevel === 'assistant' ? 'queue' : 'dashboard',
       }),
+    signIn: (viewLevel) => {
+      saveSession(viewLevel);
+      set({
+        viewLevel,
+        signedIn: true,
+        selectedLeadId: null,
+        activeTab: viewLevel === 'assistant' ? 'queue' : 'dashboard',
+      });
+    },
+    signOut: () => {
+      saveSession(null);
+      set({ signedIn: false, selectedLeadId: null });
+    },
     setWeight: (key, value) => set({ weights: { ...get().weights, [key]: clampWeight(value) } }),
     resetWeights: () => set({ weights: { ...DEFAULT_WEIGHTS } }),
     setWeights: (weights) =>

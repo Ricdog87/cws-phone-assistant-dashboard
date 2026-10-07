@@ -8,7 +8,7 @@ import { ScoringView } from '@/features/scoring/ScoringView';
 import { bootstrap, useAppStore } from './store';
 import { TABS } from './tabs';
 import { UserBadge } from './UserBadge';
-import { ViewLevelSwitch } from './ViewLevelSwitch';
+import { LoginScreen } from './login/LoginScreen';
 
 export function App() {
   const activeTab = useAppStore((s) => s.activeTab);
@@ -16,6 +16,7 @@ export function App() {
   const sourceId = useAppStore((s) => s.sourceId);
   const sourceLabel = useAppStore((s) => s.sourceLabel);
   const viewLevel = useAppStore((s) => s.viewLevel);
+  const signedIn = useAppStore((s) => s.signedIn);
   const workplace = viewLevel === 'assistant';
   const scope =
     viewLevel === 'director' ? 'Deutschland' : viewLevel === 'teamLead' ? 'Region Nord' : null;
@@ -23,6 +24,8 @@ export function App() {
   useEffect(() => {
     void bootstrap();
   }, []);
+
+  if (!signedIn) return <LoginScreen />;
 
   return (
     <div className="flex h-full flex-col">
@@ -42,9 +45,8 @@ export function App() {
           </div>
           <UserBadge />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border px-4 py-1.5">
-          <ViewLevelSwitch />
-          {workplace && (
+        {workplace && (
+          <div className="flex items-center border-t border-border px-4 py-1.5">
             <nav
               role="tablist"
               aria-label="Bereiche"
@@ -72,8 +74,8 @@ export function App() {
                 );
               })}
             </nav>
-          )}
-        </div>
+          </div>
+        )}
       </header>
 
       {workplace && sourceId === 'mock' && <DemoNotice />}
