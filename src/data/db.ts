@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { CallOutcome } from '@/domain/types';
+import type { CallOutcome, ContactUpdate } from '@/domain/types';
 import type { ColumnMapping } from './csvMapping';
 
 export interface StoredColumnMapping {
@@ -25,6 +25,7 @@ export class AppDatabase extends Dexie {
   outcomes!: Table<CallOutcome, string>;
   columnMappings!: Table<StoredColumnMapping, string>;
   geocodeCache!: Table<GeocodeCacheEntry, string>;
+  contacts!: Table<ContactUpdate, string>;
 
   constructor(name = 'cws-lead-cockpit') {
     super(name);
@@ -34,6 +35,9 @@ export class AppDatabase extends Dexie {
     this.version(2).stores({
       columnMappings: 'key, updatedAt',
       geocodeCache: 'key, cachedAt',
+    });
+    this.version(3).stores({
+      contacts: 'id, leadId, capturedAt',
     });
   }
 }

@@ -2,6 +2,11 @@ import { FallbackBriefingGenerator } from '@/data/briefing/fallbackGenerator';
 import { LlmBriefingGenerator } from '@/data/briefing/llmGenerator';
 import { RuleBasedBriefingGenerator } from '@/data/briefing/ruleBasedGenerator';
 import type { BriefingGenerator } from '@/data/briefing/types';
+import {
+  DexieContactRepository,
+  InMemoryContactRepository,
+  type ContactRepository,
+} from '@/data/contactRepository';
 import { AppDatabase } from '@/data/db';
 import { createGeocoder } from '@/data/geocoding';
 import { DexieGeocodeCache, InMemoryGeocodeCache, type GeocodeCache } from '@/data/geocoding/cache';
@@ -23,6 +28,10 @@ const db = typeof indexedDB === 'undefined' ? null : new AppDatabase();
 export const outcomeRepository: OutcomeRepository = db
   ? new DexieOutcomeRepository(db)
   : new InMemoryOutcomeRepository();
+
+export const contactRepository: ContactRepository = db
+  ? new DexieContactRepository(db)
+  : new InMemoryContactRepository();
 
 export const mappingRepository: ColumnMappingRepository = db
   ? new DexieColumnMappingRepository(db)

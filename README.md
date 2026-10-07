@@ -36,9 +36,9 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 
 | Reiter     | Inhalt                                                                             |
 | ---------- | ---------------------------------------------------------------------------------- |
-| Anrufliste | Warteschlange links, Briefing rechts, Ergebnis mit Taste 1 bis 4 buchen            |
+| Anrufliste | Warteschlange links, Briefing rechts, Kontakt erfassen, Ergebnis mit Taste 1 bis 4 |
 | Karte      | Route, Korridor, Leads nach Band, Bestandskunden separat                           |
-| Dashboard  | Anrufe, Termine, Termine je 100 Anrufe, Quote nach Band, Kontrolle, CSV-Export     |
+| Dashboard  | Anrufe, Termine, Quote nach Band, Kontrolle, Export Ergebnisse und Kontakte        |
 | Scoring    | Gewichte, Korridor, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung |
 | Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           |
 
@@ -46,9 +46,14 @@ Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin ve
 2 Wiedervorlage, 3 Nicht erreicht, 4 Kein Interesse. Nach dem Buchen springt die Auswahl
 auf den nächsten offenen Lead.
 
-Die Anrufergebnisse liegen in der IndexedDB des Browsers und überstehen einen Reload.
-Sie gelten nur für diesen Browser auf diesem Rechner. Vor dem Leeren der Browserdaten
-exportieren.
+Im Gespräch gewonnene Kontaktdaten (Name, Funktion, Durchwahl, E-Mail) werden im Briefing
+unter „Neu erfasster Kontakt“ gespeichert. Das Dashboard exportiert sie als eigene CSV mit
+der Lead-ID als Schlüssel, damit sie per Import zurück an den Lead in Salesforce gehen.
+Salesforce bleibt das führende System, das Cockpit hält nichts dauerhaft.
+
+Anrufergebnisse und Kontakte liegen in der IndexedDB des Browsers und überstehen einen
+Reload. Sie gelten nur für diesen Browser auf diesem Rechner. Vor dem Leeren der
+Browserdaten exportieren.
 
 ## Demo-Ablauf
 

@@ -44,7 +44,9 @@ Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
    Store, damit sie nicht veralten.
 4. Ein gebuchtes Ergebnis wird als `CallOutcome` mit allen Merkmalen zum Zeitpunkt des
    Anrufs gespeichert und über das `OutcomeRepository` in IndexedDB abgelegt.
-5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen.
+5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen. Im
+   Gespräch erfasste Kontakte liegen als `ContactUpdate` über das `ContactRepository`
+   ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
    Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
    0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine
@@ -123,7 +125,13 @@ Zwei Richtungen:
    Implementierung ergänzen, die jedes `CallOutcome` als Task am Lead ablegt. Die
    Dexie-Implementierung bleibt als lokaler Puffer bestehen, damit bei Netzausfall nichts
    verloren geht. Der Store kennt nur die Schnittstelle, der Austausch passiert in
-   `createRepository()` in `src/app/store.ts`.
+   `createRepository()` in `src/app/store.ts`. Erfasste Kontakte aktualisieren auf
+   demselben Weg den Lead (Ansprechpartner, Funktion, Durchwahl, E-Mail); bis dahin
+   gehen sie per CSV-Import zurück.
+
+Salesforce ist das führende System. Angereichert wird vor dem Cockpit: D&B und Clay
+schreiben an den Lead in Salesforce, das Cockpit lädt die fertigen Leads und schreibt
+nur Ergebnisse, Termine und im Gespräch erfasste Kontakte zurück.
 
 ### Vertriebsgebiet und Touren
 

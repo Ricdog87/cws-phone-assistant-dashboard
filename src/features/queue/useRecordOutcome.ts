@@ -1,14 +1,9 @@
 import { useCallback } from 'react';
+import { newId } from '@/app/ids';
 import { useAppStore } from '@/app/store';
 import { nextOpenLeadId } from '@/domain/queue';
 import { normalizeWeights } from '@/domain/scoring';
 import type { CallOutcome, OutcomeType, QueueEntry } from '@/domain/types';
-
-function newId(): string {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
 
 /** Ergebnis buchen und anschließend zum nächsten offenen Lead springen */
 export function useRecordOutcome(queue: readonly QueueEntry[]) {

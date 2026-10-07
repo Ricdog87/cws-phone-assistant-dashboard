@@ -10,7 +10,7 @@ import { Meter } from '@/components/Meter';
 import { Panel } from '@/components/Panel';
 import { StatTile } from '@/components/StatTile';
 import { formatDateTime, formatInt, formatOne } from '@/components/format';
-import { outcomesToCsv } from '@/domain/export';
+import { contactsToCsv, outcomesToCsv } from '@/domain/export';
 import { OUTCOME_LABELS, computeMetrics, type RateStats } from '@/domain/outcomes';
 import type { Band } from '@/domain/types';
 
@@ -33,6 +33,7 @@ export function DashboardView() {
 
 function AssistantDashboard() {
   const outcomes = useAppStore((s) => s.outcomes);
+  const contacts = useAppStore((s) => s.contacts);
   const clearOutcomes = useAppStore((s) => s.clearOutcomes);
   const metrics = useMemo(() => computeMetrics(outcomes), [outcomes]);
   const goals = useGoalProgress();
@@ -47,8 +48,15 @@ function AssistantDashboard() {
     downloadText(outcomesToCsv(outcomes), `anrufergebnisse-${date}.csv`);
   }
 
+  function exportContacts() {
+    const date = new Date().toISOString().slice(0, 10);
+    downloadText(contactsToCsv(contacts), `kontakte-salesforce-${date}.csv`);
+  }
+
   function reset() {
-    if (window.confirm('Alle erfassten Anrufergebnisse endgültig löschen?')) void clearOutcomes();
+    if (window.confirm('Alle erfassten Anrufergebnisse und Kontakte endgültig löschen?')) {
+      void clearOutcomes();
+    }
   }
 
   return (
@@ -126,8 +134,11 @@ function AssistantDashboard() {
           title="Anrufergebnisse"
           actions={
             <div className="flex gap-2">
-              <Button onClick={reset} disabled={outcomes.length === 0}>
+              <Button onClick={reset} disabled={outcomes.length === 0 && contacts.length === 0}>
                 Löschen
+              </Button>
+              <Button onClick={exportContacts} disabled={contacts.length === 0}>
+                Kontakte exportieren ({contacts.length})
               </Button>
               <Button variant="primary" onClick={exportCsv} disabled={outcomes.length === 0}>
                 CSV exportieren

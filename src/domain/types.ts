@@ -102,7 +102,10 @@ export interface QualificationAnswers {
 export type QualificationStatus = 'open' | 'qualified' | 'partial' | 'unqualified';
 
 export interface ContactUpdate {
+  id: string;
   leadId: string;
+  /** Firmenname zum Zeitpunkt der Erfassung, für den Export */
+  leadName: string;
   name: string | null;
   role: string | null;
   directDial: string | null;

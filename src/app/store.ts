@@ -1,5 +1,10 @@
 import { create } from 'zustand';
-import { DEFAULT_BRIEFING_MODE, outcomeRepository, type BriefingMode } from './services';
+import {
+  DEFAULT_BRIEFING_MODE,
+  contactRepository,
+  outcomeRepository,
+  type BriefingMode,
+} from './services';
 import { MockProvider } from '@/data/providers/mockProvider';
 import {
   emptyReport,
@@ -8,6 +13,7 @@ import {
   type ProviderId,
 } from '@/data/providers/types';
 import { DEFAULT_TOUR_ID, tourById } from '@/data/tours';
+import { InMemoryContactRepository, type ContactRepository } from '@/data/contactRepository';
 import type { OutcomeRepository } from '@/data/repository';
 import type { AgentGoals } from '@/domain/agentGoals';
 import { DAILY_CALL_GOAL, WEEKLY_APPOINTMENT_GOAL } from '@/domain/goals';
@@ -18,7 +24,14 @@ import {
   DEFAULT_WEIGHTS,
   clampWeight,
 } from '@/domain/scoring';
-import type { CallOutcome, DimensionKey, Lead, Route, Weights } from '@/domain/types';
+import type {
+  CallOutcome,
+  ContactUpdate,
+  DimensionKey,
+  Lead,
+  Route,
+  Weights,
+} from '@/domain/types';
 import { DEMO_USER, type ViewLevel } from './demoUser';
 import { loadSession, saveSession } from './session';
 
@@ -43,6 +56,8 @@ export interface AppState {
   agentGoals: AgentGoals;
   selectedLeadId: string | null;
   outcomes: CallOutcome[];
+  /** Im Gespräch erfasste Kontakte, Rückweg nach Salesforce per CSV */
+  contacts: ContactUpdate[];
   viewLevel: ViewLevel;
   /** Simulierte Anmeldung per Single Sign-on */
   signedIn: boolean;
@@ -66,10 +81,16 @@ export interface AppState {
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
   addOutcome(outcome: CallOutcome): Promise<void>;
+  /** Löscht Anrufergebnisse und erfasste Kontakte */
   clearOutcomes(): Promise<void>;
+  loadContacts(): Promise<void>;
+  addContact(contact: ContactUpdate): Promise<void>;
 }
 
-export function createAppStore(repository: OutcomeRepository) {
+export function createAppStore(
+  repository: OutcomeRepository,
+  contactStore: ContactRepository = new InMemoryContactRepository(),
+) {
   // Anmeldung dieses Browser-Tabs wiederherstellen, etwa nach dem Neuladen
   const restoredLevel = loadSession();
   return create<AppState>()((set, get) => ({
@@ -90,6 +111,7 @@ export function createAppStore(repository: OutcomeRepository) {
     agentGoals: { dailyCalls: DAILY_CALL_GOAL, weeklyAppointments: WEEKLY_APPOINTMENT_GOAL },
     selectedLeadId: null,
     outcomes: [],
+    contacts: [],
     viewLevel: restoredLevel ?? 'teamLead',
     signedIn: restoredLevel !== null,
 
@@ -168,16 +190,25 @@ export function createAppStore(repository: OutcomeRepository) {
     },
 
     async clearOutcomes() {
-      await repository.clear();
-      set({ outcomes: [] });
+      await Promise.all([repository.clear(), contactStore.clear()]);
+      set({ outcomes: [], contacts: [] });
+    },
+
+    async loadContacts() {
+      set({ contacts: await contactStore.list() });
+    },
+
+    async addContact(contact) {
+      await contactStore.add(contact);
+      set({ contacts: [...get().contacts.filter((c) => c.id !== contact.id), contact] });
     },
   }));
 }
 
-export const useAppStore = createAppStore(outcomeRepository);
+export const useAppStore = createAppStore(outcomeRepository, contactRepository);
 
-/** Startdaten laden: Demo-Leads und gespeicherte Anrufergebnisse */
+/** Startdaten laden: Demo-Leads, gespeicherte Anrufergebnisse und Kontakte */
 export async function bootstrap(): Promise<void> {
-  const { loadFromProvider, loadOutcomes } = useAppStore.getState();
-  await Promise.all([loadFromProvider(new MockProvider()), loadOutcomes()]);
+  const { loadFromProvider, loadOutcomes, loadContacts } = useAppStore.getState();
+  await Promise.all([loadFromProvider(new MockProvider()), loadOutcomes(), loadContacts()]);
 }
