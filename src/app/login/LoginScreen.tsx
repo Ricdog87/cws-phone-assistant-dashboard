@@ -141,11 +141,10 @@ export function LoginScreen({ stepMs = 550 }: LoginScreenProps) {
                     <Avatar account={item} />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-bold">{item.fullName}</span>
+                      <span className="block text-xs font-bold text-brand-ink">
+                        {item.role} · {item.scope}
+                      </span>
                       <span className="block truncate text-xs text-muted">{item.email}</span>
-                    </span>
-                    <span className="shrink-0 text-right text-xs">
-                      <span className="block font-bold">{item.role}</span>
-                      <span className="block text-muted">{item.scope}</span>
                     </span>
                   </button>
                 </li>

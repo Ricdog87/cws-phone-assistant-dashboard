@@ -34,7 +34,8 @@ export const DEMO_PERSONAS: Record<
     givenName: 'Steffen',
     familyName: 'Sixthor',
     fullName: 'Steffen Sixthor',
-    role: VIEW_LEVEL_LABELS.director,
+    // Positionsbezeichnung laut Organigramm, die Ebene bleibt Vertriebsleitung
+    role: 'Head of Sales New Business',
   },
 };
 

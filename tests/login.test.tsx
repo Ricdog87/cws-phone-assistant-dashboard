@@ -10,7 +10,12 @@ describe('Demo-Konten', () => {
     expect(DEMO_ACCOUNTS.map((a) => [a.fullName, a.email, a.role, a.scope])).toEqual([
       ['Nele Faber', 'nele.faber@cws.example', 'Telefonassistenz', 'Team Nord'],
       ['Martina Weidmann', 'martina.weidmann@cws.example', 'Teamleitung', 'Region Nord'],
-      ['Steffen Sixthor', 'steffen.sixthor@cws.example', 'Vertriebsleitung', 'Deutschland'],
+      [
+        'Steffen Sixthor',
+        'steffen.sixthor@cws.example',
+        'Head of Sales New Business',
+        'Deutschland',
+      ],
     ]);
   });
 });

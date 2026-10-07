@@ -58,11 +58,11 @@ Die App startet mit einer simulierten Anmeldung per Single Sign-on. Es werden ke
 Zugangsdaten abgefragt. Nach „Mit Firmenkonto anmelden (SSO)“ wird ein Konto gewählt,
 die Rolle bestimmt die Ansicht:
 
-| Konto            | Rolle            | Ansicht                                        |
-| ---------------- | ---------------- | ---------------------------------------------- |
-| Nele Faber       | Telefonassistenz | Anrufliste, Briefing, Karte, eigene Ziele      |
-| Martina Weidmann | Teamleitung      | Team Nord: Rangliste, größte Lücken            |
-| Steffen Sixthor  | Vertriebsleitung | Regionen Nord und Süd im Vergleich, Ranglisten |
+| Konto            | Rolle                      | Ansicht                                        |
+| ---------------- | -------------------------- | ---------------------------------------------- |
+| Nele Faber       | Telefonassistenz           | Anrufliste, Briefing, Karte, eigene Ziele      |
+| Martina Weidmann | Teamleitung                | Team Nord: Rangliste, größte Lücken            |
+| Steffen Sixthor  | Head of Sales New Business | Regionen Nord und Süd im Vergleich, Ranglisten |
 
 Rollenwechsel über „Abmelden“ oben rechts. Die Anmeldung gilt je Browser-Tab und bleibt
 beim Neuladen bestehen.

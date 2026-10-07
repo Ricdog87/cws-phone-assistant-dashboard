@@ -45,7 +45,7 @@ export function DirectorView() {
     <div className="h-full overflow-y-auto bg-surface">
       <div className="mx-auto max-w-7xl space-y-6 p-6">
         <BoardHeader
-          eyebrow="Vertriebsleitung · Deutschland"
+          eyebrow={`${director.role} · Deutschland`}
           title={director.fullName}
           subtitle={`${formatInt(standing.teamCount)} Regionen · ${formatInt(standing.headcount)} Telefonassistenzen · Teamleitungen ${regions.map((item) => item.leadName).join(' und ')}`}
         />

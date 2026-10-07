@@ -1,4 +1,4 @@
-import { DEMO_PERSONAS, VIEW_LEVELS, VIEW_LEVEL_LABELS, type ViewLevel } from './demoUser';
+import { DEMO_PERSONAS, VIEW_LEVELS, type ViewLevel } from './demoUser';
 
 /**
  * Simulierte Anmeldung per Single Sign-on für Vorführungen.
@@ -41,7 +41,7 @@ export const DEMO_ACCOUNTS: readonly DemoAccount[] = VIEW_LEVELS.map((level) => 
     familyName: person.familyName,
     fullName: person.fullName,
     email: emailOf(person.givenName, person.familyName),
-    role: VIEW_LEVEL_LABELS[level],
+    role: person.role,
     ...SCOPES[level],
   };
 });
