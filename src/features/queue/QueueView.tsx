@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DEMO_USER } from '@/app/demoUser';
 import { useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
+import { Button } from '@/components/Button';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
 import type { OutcomeType } from '@/domain/types';
 import { AgentLivePanel } from './AgentLivePanel';
@@ -21,6 +22,20 @@ export function QueueView() {
   const selectedId = useAppStore((s) => s.selectedLeadId);
   const selectLead = useAppStore((s) => s.selectLead);
   const recordOutcome = useRecordOutcome(queue);
+  const outcomes = useAppStore((s) => s.outcomes);
+  const appointments = useAppStore((s) => s.appointments);
+  // Jüngster gebuchter Termin ohne erfasste Bestätigung, damit keiner untergeht
+  const pendingConfirmation = useMemo(() => {
+    const confirmed = new Set(appointments.map((a) => a.leadId));
+    return [...outcomes]
+      .reverse()
+      .find(
+        (o) =>
+          o.outcome === 'appointment' &&
+          !confirmed.has(o.leadId) &&
+          latest.get(o.leadId)?.outcome === 'appointment',
+      );
+  }, [outcomes, appointments, latest]);
   const [busy, setBusy] = useState(false);
 
   const selectedIndex = queue.findIndex((e) => e.lead.id === selectedId);
@@ -94,6 +109,20 @@ export function QueueView() {
           </div>
         </aside>
         <div className="min-h-0 overflow-y-auto p-6">
+          {pendingConfirmation && pendingConfirmation.leadId !== selectedId && (
+            <div
+              role="status"
+              className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-brand-primary bg-panel px-4 py-2 text-sm"
+            >
+              <span>
+                Termin mit <strong>{pendingConfirmation.leadName}</strong> gebucht. Die Bestätigung
+                fehlt noch.
+              </span>
+              <Button onClick={() => selectLead(pendingConfirmation.leadId)}>
+                Jetzt bestätigen
+              </Button>
+            </div>
+          )}
           {selected ? (
             <BriefingPanel
               entry={selected}

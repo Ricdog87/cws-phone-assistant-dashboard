@@ -8,7 +8,11 @@ export interface CsvFieldSpec {
   label: string;
   required: boolean;
   kind: 'text' | 'number' | 'boolean';
-  /** Spaltennamen, die beim automatischen Vorschlag erkannt werden (klein geschrieben) */
+  /**
+   * Spaltennamen, die beim automatischen Vorschlag erkannt werden (klein geschrieben).
+   * Die Reihenfolge ist die Priorität, etwa Lieferanschrift vor Rechnungsanschrift,
+   * weil die Rechnungsanschrift oft die Zentrale und nicht der Standort ist.
+   */
   aliases: string[];
 }
 
@@ -18,37 +22,73 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
     label: 'ID',
     required: false,
     kind: 'text',
-    aliases: ['id', 'lead-id', 'kundennummer'],
+    aliases: ['id', 'lead-id', 'account-id', 'account id', 'accountid', 'kundennummer'],
   },
   {
     field: 'name',
     label: 'Firmenname',
     required: true,
     kind: 'text',
-    aliases: ['name', 'firma', 'firmenname', 'unternehmen', 'company'],
+    aliases: [
+      'name',
+      'firma',
+      'firmenname',
+      'unternehmen',
+      'company',
+      'accountname',
+      'account name',
+    ],
   },
   {
     field: 'industry',
     label: 'Branche',
     required: false,
     kind: 'text',
-    aliases: ['branche', 'industry'],
+    aliases: ['branche', 'industry', 'branchenebene 2', 'branchenebene 1'],
   },
   {
     field: 'street',
     label: 'Straße',
     required: false,
     kind: 'text',
-    aliases: ['straße', 'strasse', 'street', 'adresse'],
+    aliases: [
+      'straße',
+      'strasse',
+      'street',
+      'adresse',
+      'straße (lieferanschrift)',
+      'straße (rechnungsanschrift)',
+    ],
   },
   {
     field: 'postalCode',
     label: 'PLZ',
     required: false,
     kind: 'text',
-    aliases: ['plz', 'postleitzahl', 'postalcode', 'zip'],
+    aliases: [
+      'plz',
+      'postleitzahl',
+      'postalcode',
+      'zip',
+      'plz (lieferanschrift)',
+      'plz (rechnungsanschrift)',
+    ],
   },
-  { field: 'city', label: 'Ort', required: false, kind: 'text', aliases: ['ort', 'stadt', 'city'] },
+  {
+    field: 'city',
+    label: 'Ort',
+    required: false,
+    kind: 'text',
+    aliases: [
+      'ort',
+      'stadt',
+      'city',
+      'ort (lieferanschrift)',
+      'stadt (lieferanschrift)',
+      'ort (rechnungsanschrift)',
+      'stadt (rechnungsanschrift)',
+    ],
+  },
   {
     field: 'lat',
     label: 'Breitengrad',
@@ -68,7 +108,14 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
     label: 'Gewerbliche Mitarbeitende',
     required: false,
     kind: 'number',
-    aliases: ['gewerbliche mitarbeitende', 'gewerbliche ma', 'mitarbeitende', 'employees'],
+    aliases: [
+      'gewerbliche mitarbeitende',
+      'gewerbliche ma',
+      'mitarbeitende',
+      'mitarbeiter',
+      'anzahl mitarbeiter',
+      'employees',
+    ],
   },
   {
     field: 'wearerCount',
@@ -150,12 +197,13 @@ export function suggestMapping(headers: readonly string[]): ColumnMapping {
   const mapping: ColumnMapping = {};
   const used = new Set<string>();
   for (const spec of CSV_FIELDS) {
-    const match = headers.find(
-      (h) => !used.has(h) && spec.aliases.includes(h.trim().toLowerCase()),
-    );
-    if (match) {
-      mapping[spec.field] = match;
-      used.add(match);
+    for (const alias of spec.aliases) {
+      const match = headers.find((h) => !used.has(h) && h.trim().toLowerCase() === alias);
+      if (match) {
+        mapping[spec.field] = match;
+        used.add(match);
+        break;
+      }
     }
   }
   return mapping;

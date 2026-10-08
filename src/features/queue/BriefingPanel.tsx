@@ -8,6 +8,7 @@ import { buildBriefing, contactLabel } from '@/domain/briefing';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
 import type { CallOutcome, OutcomeType, QueueEntry } from '@/domain/types';
+import { AppointmentConfirm } from './AppointmentConfirm';
 import { ContactCapture } from './ContactCapture';
 import { useBriefing } from './useBriefing';
 
@@ -46,6 +47,10 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
           <div className="text-3xl font-bold tabular-nums">{entry.score}</div>
         </div>
       </header>
+
+      {latest?.outcome === 'appointment' && (
+        <AppointmentConfirm key={`termin-${lead.id}`} lead={lead} callerName={callerName} />
+      )}
 
       <section
         aria-label="Dimensionen"
@@ -106,7 +111,7 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
         </section>
       </div>
 
-      <ContactCapture key={lead.id} lead={lead} />
+      <ContactCapture key={`kontakt-${lead.id}`} lead={lead} />
 
       <section className="rounded border border-brand-ink bg-panel p-4">
         <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">

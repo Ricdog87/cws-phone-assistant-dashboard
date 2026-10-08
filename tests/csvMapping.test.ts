@@ -56,3 +56,43 @@ describe('mappingProblems', () => {
     ]);
   });
 });
+
+describe('suggestMapping für Salesforce-Berichte', () => {
+  it('erkennt die Spalten des Account-Berichts ohne Handarbeit', () => {
+    const headers = [
+      'Accountinhaber',
+      'WW Accountinhaber',
+      'Account-ID',
+      'Accountname',
+      'Status WW',
+      'Telefon',
+      'Letzte Aktivität',
+      'PLZ (Rechnungsanschrift)',
+      'Stadt (Rechnungsanschrift)',
+      'Mitarbeiter',
+      'NACE Ebene 2',
+      'Branchenebene 2',
+      'WW Inhaber-Team',
+    ];
+    expect(suggestMapping(headers)).toEqual({
+      id: 'Account-ID',
+      name: 'Accountname',
+      industry: 'Branchenebene 2',
+      postalCode: 'PLZ (Rechnungsanschrift)',
+      city: 'Stadt (Rechnungsanschrift)',
+      commercialEmployees: 'Mitarbeiter',
+      phone: 'Telefon',
+    });
+  });
+
+  it('bevorzugt die Lieferanschrift vor der Rechnungsanschrift', () => {
+    const mapping = suggestMapping([
+      'Straße (Rechnungsanschrift)',
+      'Straße (Lieferanschrift)',
+      'Ort (Rechnungsanschrift)',
+      'Ort (Lieferanschrift)',
+    ]);
+    expect(mapping.street).toBe('Straße (Lieferanschrift)');
+    expect(mapping.city).toBe('Ort (Lieferanschrift)');
+  });
+});

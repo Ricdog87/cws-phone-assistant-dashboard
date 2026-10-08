@@ -4,10 +4,25 @@ import { MOCK_ROUTE } from './mockRoute';
 /** Region eines Teams im Vertriebsgebiet Nordwest */
 export type TerritoryRegionId = 'nord' | 'nrw';
 
+/** Hunter im Außendienst, der die Termine der Tour wahrnimmt */
+export interface TourHunter {
+  name: string;
+  email: string;
+}
+
 export interface ServiceTour extends Route {
   weekday: 'Montag' | 'Dienstag' | 'Mittwoch' | 'Donnerstag' | 'Freitag';
   regionId: TerritoryRegionId;
+  hunter: TourHunter;
 }
+
+/** Erfundene Hunter auf der reservierten Domain cws.example */
+const HUNTERS = {
+  ahlers: { name: 'Jonas Ahlers', email: 'jonas.ahlers@cws.example' },
+  petersen: { name: 'Malte Petersen', email: 'malte.petersen@cws.example' },
+  brandt: { name: 'Kai Brandt', email: 'kai.brandt@cws.example' },
+  wolters: { name: 'Dennis Wolters', email: 'dennis.wolters@cws.example' },
+} satisfies Record<string, TourHunter>;
 
 /**
  * Beispieltouren entlang der Autobahnen im Vertriebsgebiet Nordwest.
@@ -19,6 +34,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Hamburg – Neumünster – Kiel',
     weekday: 'Montag',
     regionId: 'nord',
+    hunter: HUNTERS.petersen,
     points: [
       { lat: 53.5511, lng: 9.9937 },
       { lat: 53.7064, lng: 9.9997 },
@@ -34,12 +50,14 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Bremen – Oldenburg – Emden',
     weekday: 'Dienstag',
     regionId: 'nord',
+    hunter: HUNTERS.ahlers,
   },
   {
     id: 'tour-bremen-cuxhaven',
     name: 'Bremen – Bremerhaven – Cuxhaven',
     weekday: 'Mittwoch',
     regionId: 'nord',
+    hunter: HUNTERS.ahlers,
     points: [
       { lat: 53.0793, lng: 8.8017 },
       { lat: 53.227, lng: 8.79 },
@@ -54,6 +72,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Hannover – Braunschweig – Wolfsburg',
     weekday: 'Donnerstag',
     regionId: 'nord',
+    hunter: HUNTERS.petersen,
     points: [
       { lat: 52.3759, lng: 9.732 },
       { lat: 52.372, lng: 9.977 },
@@ -67,6 +86,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Osnabrück – Fürstenau – Lingen – Nordhorn',
     weekday: 'Freitag',
     regionId: 'nord',
+    hunter: HUNTERS.ahlers,
     points: [
       { lat: 52.2799, lng: 8.0472 },
       { lat: 52.408, lng: 7.973 },
@@ -81,6 +101,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Duisburg – Essen – Dortmund',
     weekday: 'Montag',
     regionId: 'nrw',
+    hunter: HUNTERS.brandt,
     points: [
       { lat: 51.4344, lng: 6.7623 },
       { lat: 51.4275, lng: 6.8825 },
@@ -94,6 +115,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Mönchengladbach – Neuss – Köln – Bonn',
     weekday: 'Dienstag',
     regionId: 'nrw',
+    hunter: HUNTERS.wolters,
     points: [
       { lat: 51.1805, lng: 6.4428 },
       { lat: 51.2042, lng: 6.6879 },
@@ -108,6 +130,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Münster – Bielefeld – Herford',
     weekday: 'Mittwoch',
     regionId: 'nrw',
+    hunter: HUNTERS.brandt,
     points: [
       { lat: 51.9607, lng: 7.6261 },
       { lat: 51.93, lng: 8.0 },
@@ -121,6 +144,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Köln – Düren – Aachen',
     weekday: 'Donnerstag',
     regionId: 'nrw',
+    hunter: HUNTERS.wolters,
     points: [
       { lat: 50.9375, lng: 6.9603 },
       { lat: 50.912, lng: 6.81 },
@@ -134,6 +158,7 @@ export const SERVICE_TOURS: readonly ServiceTour[] = [
     name: 'Dortmund – Hagen – Wuppertal – Solingen',
     weekday: 'Freitag',
     regionId: 'nrw',
+    hunter: HUNTERS.brandt,
     points: [
       { lat: 51.5136, lng: 7.4653 },
       { lat: 51.3671, lng: 7.4633 },

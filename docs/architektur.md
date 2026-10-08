@@ -46,7 +46,10 @@ Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
    Anrufs gespeichert und über das `OutcomeRepository` in IndexedDB abgelegt.
 5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen. Im
    Gespräch erfasste Kontakte liegen als `ContactUpdate` über das `ContactRepository`
-   ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce.
+   ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce. Termine
+   (`Appointment`) liegen im `AppointmentRepository`; `src/domain/appointments.ts` baut
+   daraus Bestätigungs-E-Mail, `mailto`-Link und iCalendar-Datei, `appointmentsToCsv()` den
+   Export.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
    Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
    0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine
@@ -128,6 +131,12 @@ Zwei Richtungen:
    `createRepository()` in `src/app/store.ts`. Erfasste Kontakte aktualisieren auf
    demselben Weg den Lead (Ansprechpartner, Funktion, Durchwahl, E-Mail); bis dahin
    gehen sie per CSV-Import zurück.
+
+Import aus Salesforce-Berichten: Die Spaltenerkennung in `src/data/csvMapping.ts` kennt die
+deutschen Feldbezeichnungen (Account-ID, Accountname, PLZ und Stadt der Liefer- oder
+Rechnungsanschrift, Mitarbeiter, Branchenebene 2). Die Reihenfolge der Aliase ist die
+Priorität: Lieferanschrift vor Rechnungsanschrift, weil die Rechnungsanschrift oft die
+Zentrale ist und nicht der Standort auf der Tour.
 
 Salesforce ist das führende System. Angereichert wird vor dem Cockpit: D&B und Clay
 schreiben an den Lead in Salesforce, das Cockpit lädt die fertigen Leads und schreibt

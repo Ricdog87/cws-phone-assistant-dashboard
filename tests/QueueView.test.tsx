@@ -67,6 +67,19 @@ describe('QueueView', () => {
     expect(live).toHaveTextContent('noch 3');
   });
 
+  it('erinnert an die Bestätigung eines gebuchten Termins', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const first = selectedName();
+
+    await user.keyboard('1');
+    expect(screen.getByRole('status')).toHaveTextContent(`Termin mit ${first} gebucht`);
+
+    await user.click(screen.getByRole('button', { name: 'Jetzt bestätigen' }));
+    expect(selectedName()).toBe(first);
+    expect(screen.getByRole('region', { name: 'Termin bestätigen' })).toBeInTheDocument();
+  });
+
   it('bucht über die Schaltfläche', async () => {
     const user = userEvent.setup();
     render(<QueueView />);

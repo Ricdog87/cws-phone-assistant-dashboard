@@ -3,6 +3,11 @@ import { LlmBriefingGenerator } from '@/data/briefing/llmGenerator';
 import { RuleBasedBriefingGenerator } from '@/data/briefing/ruleBasedGenerator';
 import type { BriefingGenerator } from '@/data/briefing/types';
 import {
+  DexieAppointmentRepository,
+  InMemoryAppointmentRepository,
+  type AppointmentRepository,
+} from '@/data/appointmentRepository';
+import {
   DexieContactRepository,
   InMemoryContactRepository,
   type ContactRepository,
@@ -32,6 +37,10 @@ export const outcomeRepository: OutcomeRepository = db
 export const contactRepository: ContactRepository = db
   ? new DexieContactRepository(db)
   : new InMemoryContactRepository();
+
+export const appointmentRepository: AppointmentRepository = db
+  ? new DexieAppointmentRepository(db)
+  : new InMemoryAppointmentRepository();
 
 export const mappingRepository: ColumnMappingRepository = db
   ? new DexieColumnMappingRepository(db)

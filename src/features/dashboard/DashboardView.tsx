@@ -10,7 +10,7 @@ import { Meter } from '@/components/Meter';
 import { Panel } from '@/components/Panel';
 import { StatTile } from '@/components/StatTile';
 import { formatDateTime, formatInt, formatOne } from '@/components/format';
-import { contactsToCsv, outcomesToCsv } from '@/domain/export';
+import { appointmentsToCsv, contactsToCsv, outcomesToCsv } from '@/domain/export';
 import { OUTCOME_LABELS, computeMetrics, type RateStats } from '@/domain/outcomes';
 import type { Band } from '@/domain/types';
 
@@ -34,6 +34,7 @@ export function DashboardView() {
 function AssistantDashboard() {
   const outcomes = useAppStore((s) => s.outcomes);
   const contacts = useAppStore((s) => s.contacts);
+  const appointments = useAppStore((s) => s.appointments);
   const clearOutcomes = useAppStore((s) => s.clearOutcomes);
   const metrics = useMemo(() => computeMetrics(outcomes), [outcomes]);
   const goals = useGoalProgress();
@@ -53,8 +54,13 @@ function AssistantDashboard() {
     downloadText(contactsToCsv(contacts), `kontakte-salesforce-${date}.csv`);
   }
 
+  function exportAppointments() {
+    const date = new Date().toISOString().slice(0, 10);
+    downloadText(appointmentsToCsv(appointments), `termine-salesforce-${date}.csv`);
+  }
+
   function reset() {
-    if (window.confirm('Alle erfassten Anrufergebnisse und Kontakte endgültig löschen?')) {
+    if (window.confirm('Alle erfassten Anrufergebnisse, Kontakte und Termine endgültig löschen?')) {
       void clearOutcomes();
     }
   }
@@ -133,9 +139,17 @@ function AssistantDashboard() {
         <Panel
           title="Anrufergebnisse"
           actions={
-            <div className="flex gap-2">
-              <Button onClick={reset} disabled={outcomes.length === 0 && contacts.length === 0}>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={reset}
+                disabled={
+                  outcomes.length === 0 && contacts.length === 0 && appointments.length === 0
+                }
+              >
                 Löschen
+              </Button>
+              <Button onClick={exportAppointments} disabled={appointments.length === 0}>
+                Termine exportieren ({appointments.length})
               </Button>
               <Button onClick={exportContacts} disabled={contacts.length === 0}>
                 Kontakte exportieren ({contacts.length})

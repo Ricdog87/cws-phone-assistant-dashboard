@@ -46,12 +46,18 @@ Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin ve
 2 Wiedervorlage, 3 Nicht erreicht, 4 Kein Interesse. Nach dem Buchen springt die Auswahl
 auf den nächsten offenen Lead.
 
+Nach „Termin vereinbart“ erinnert ein Hinweis an die Bestätigung. Im Briefing werden Datum,
+Uhrzeit, Dauer, Hunter der Tour und Ansprechpartner festgehalten. Daraus entstehen eine fertige
+Bestätigungs-E-Mail im Standard-Mailprogramm (Hunter in Kopie) und ein Kalendereintrag als
+`.ics`. Das Dashboard exportiert die Termine für Salesforce. Der automatische Versand über
+Microsoft Graph folgt in Stufe 2.
+
 Im Gespräch gewonnene Kontaktdaten (Name, Funktion, Durchwahl, E-Mail) werden im Briefing
 unter „Neu erfasster Kontakt“ gespeichert. Das Dashboard exportiert sie als eigene CSV mit
 der Lead-ID als Schlüssel, damit sie per Import zurück an den Lead in Salesforce gehen.
 Salesforce bleibt das führende System, das Cockpit hält nichts dauerhaft.
 
-Anrufergebnisse und Kontakte liegen in der IndexedDB des Browsers und überstehen einen
+Anrufergebnisse, Kontakte und Termine liegen in der IndexedDB des Browsers und überstehen einen
 Reload. Sie gelten nur für diesen Browser auf diesem Rechner. Vor dem Leeren der
 Browserdaten exportieren.
 

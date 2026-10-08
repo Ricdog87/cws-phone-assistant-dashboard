@@ -114,6 +114,23 @@ export interface ContactUpdate {
   capturedAt: string;
 }
 
+/** Vereinbarter Vor-Ort-Termin, Grundlage für Bestätigung und Rückweg nach Salesforce */
+export interface Appointment {
+  id: string;
+  leadId: string;
+  leadName: string;
+  /** Beginn als ISO-Zeitpunkt in UTC */
+  start: string;
+  durationMinutes: number;
+  hunterName: string;
+  hunterEmail: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  /** Adresse des Termins, einzeilig */
+  location: string;
+  createdAt: string;
+}
+
 export interface HunterFeedback {
   appointmentId: string;
   happened: 'yes' | 'noShow' | 'rescheduled' | 'cancelled';

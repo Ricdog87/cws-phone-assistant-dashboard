@@ -1,5 +1,5 @@
 import { OUTCOME_LABELS } from './outcomes';
-import type { CallOutcome, ContactUpdate } from './types';
+import type { Appointment, CallOutcome, ContactUpdate } from './types';
 
 /** Byte Order Mark, damit Excel die Datei als UTF-8 erkennt */
 export const CSV_BOM = '\uFEFF';
@@ -97,4 +97,38 @@ export function contactsToCsv(contacts: readonly ContactUpdate[]): string {
       .join(CSV_SEPARATOR),
   );
   return CSV_BOM + [CONTACT_HEADER.join(CSV_SEPARATOR), ...rows].join('\r\n') + '\r\n';
+}
+
+const APPOINTMENT_HEADER = [
+  'Erfasst am',
+  'Lead-ID',
+  'Firma',
+  'Beginn',
+  'Dauer Minuten',
+  'Hunter',
+  'Hunter E-Mail',
+  'Ansprechpartner',
+  'E-Mail Ansprechpartner',
+  'Ort',
+];
+
+/** Vereinbarte Termine für den Rückweg nach Salesforce, gleiches Format wie die übrigen Exporte */
+export function appointmentsToCsv(appointments: readonly Appointment[]): string {
+  const rows = appointments.map((a) =>
+    [
+      a.createdAt,
+      a.leadId,
+      a.leadName,
+      a.start,
+      String(a.durationMinutes),
+      a.hunterName,
+      a.hunterEmail ?? '',
+      a.contactName ?? '',
+      a.contactEmail ?? '',
+      a.location,
+    ]
+      .map(escapeCsvCell)
+      .join(CSV_SEPARATOR),
+  );
+  return CSV_BOM + [APPOINTMENT_HEADER.join(CSV_SEPARATOR), ...rows].join('\r\n') + '\r\n';
 }
