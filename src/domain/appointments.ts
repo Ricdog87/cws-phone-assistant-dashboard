@@ -200,7 +200,7 @@ export function buildIcs(appointment: Appointment, stamp: string): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//CWS Workwear//Lead-Cockpit Nordwest//DE',
+    'PRODID:-//CWS Workwear//Lead-Cockpit New Business//DE',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${appointment.id}@lead-cockpit`,
