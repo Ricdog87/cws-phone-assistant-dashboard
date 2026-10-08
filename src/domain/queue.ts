@@ -1,3 +1,4 @@
+import { isInCooldown } from './activity';
 import { applyControlSample } from './sampling';
 import type { QueueEntry, ScoredLead } from './types';
 
@@ -6,19 +7,46 @@ export function sortByScore(leads: readonly ScoredLead[]): ScoredLead[] {
   return [...leads].sort((a, b) => b.score - a.score);
 }
 
+export interface QueueFilter {
+  /** Accountinhaber, null für alle Hunter */
+  owner?: string | null;
+  /** Heute als YYYY-MM-DD; gesetzt, blendet die Sperrfrist nach letzter Aktivität aus */
+  today?: string | null;
+}
+
+/** Neukunden-Accounts der Potenzialliste, ohne Bestandskunden */
+export function inList(entry: ScoredLead, owner: string | null | undefined): boolean {
+  return (
+    !entry.lead.isCustomer && (owner === null || owner === undefined || entry.lead.owner === owner)
+  );
+}
+
 /**
  * Baut die Warteschlange: keine Bestandskunden, optional nur die Accounts eines
- * Hunters (Accountinhaber), sortiert nach Score, optional mit Kontrollstichprobe.
+ * Hunters (Accountinhaber), ohne Accounts in der Sperrfrist, sortiert nach Score,
+ * optional mit Kontrollstichprobe.
  */
 export function buildQueue(
   scored: readonly ScoredLead[],
   controlEnabled: boolean,
-  owner: string | null = null,
+  filter: QueueFilter = {},
 ): QueueEntry[] {
+  const { owner = null, today = null } = filter;
   const eligible = scored.filter(
-    (entry) => !entry.lead.isCustomer && (owner === null || entry.lead.owner === owner),
+    (entry) => inList(entry, owner) && !(today && isInCooldown(entry.lead.lastActivity, today)),
   );
   return applyControlSample(sortByScore(eligible), { enabled: controlEnabled });
+}
+
+/** Accounts der Potenzialliste, die wegen der Sperrfrist gerade nicht in der Warteschlange stehen */
+export function cooldownCount(
+  scored: readonly ScoredLead[],
+  owner: string | null,
+  today: string,
+): number {
+  return scored.filter(
+    (entry) => inList(entry, owner) && isInCooldown(entry.lead.lastActivity, today),
+  ).length;
 }
 
 export interface OwnerCount {

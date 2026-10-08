@@ -154,8 +154,15 @@ nur Ergebnisse, Termine und im Gespräch erfasste Kontakte zurück.
 - Keine Routenplanung: Im New Business arbeitet die Telefonassistenz die Potenzialliste
   eines Hunters ab. Der Hunter ist der Accountinhaber (`Lead.owner`), die Auswahl liegt im
   Store (`ownerFilter`), Warteschlange und Karte folgen ihr.
-- `src/data/hunters.ts`: fiktive Hunter mit Region und E-Mail für die Demo. Für echte
-  Daten kommt die E-Mail später aus Entra ID; bis dahin bleibt sie im Terminformular leer.
+- `src/data/hunters.ts`: fiktive Hunter mit Region, Gebiet (PLZ-Leitzonen) und E-Mail für
+  die Demo. `hunterForArea()` findet den Hunter zu Region und PLZ; damit erhalten die
+  Demo-Leads ihren Accountinhaber. Für echte Daten kommt der Accountinhaber aus Salesforce,
+  die E-Mail später aus Entra ID; bis dahin bleibt sie im Terminformular leer.
+- Zuordnung Telefonassistenz zu Hunter: Auswahlfeld in der Anrufliste (eigene Zuordnung)
+  und in der Personenansicht von Teamleitung und Head of Sales. Der Store hält sie in
+  `assignments`, gespeichert im `localStorage` dieses Browsers (`src/app/assignments.ts`),
+  bis der zentrale Speicher steht. Die Anmeldung als Telefonassistenz startet mit der
+  Leadliste des zugeordneten Hunters.
 - `src/data/demoOwnership.ts`, `demoAssignments.ts`, `demoAppointments.ts`,
   `demoHistory.ts`: erfundene Zuordnung, Termine und Vorwochen für die Demo. Mit
   importierten Daten zeigt das Dashboard nur echte Accountinhaber und die Termine aus

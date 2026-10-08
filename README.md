@@ -84,12 +84,15 @@ beim Neuladen bestehen.
    und Termine bei null starten. Abmelden.
 2. Als Steffen Sixthor anmelden: Vertriebsgebiet Nordwest gesamt, Regionen Nord und NRW im
    Vergleich, Klick auf eine Region zeigt ihre Rangliste, rechts die größten Lücken.
-3. Abmelden, als Nele Faber anmelden: Potenzialliste eines Hunters wählen, Warteschlange
-   nach Score mit letzter Aktivität, Briefing mit Aufhängern und persönlichem
+3. Abmelden, als Nele Faber anmelden: Die Anrufliste startet mit der Leadliste ihres
+   Hunters (Auswahl „Hunter“), sortiert nach Score, mit letzter Aktivität; Accounts mit
+   Aktivität in den letzten 14 Tagen sind gesperrt, Briefing mit Aufhängern und persönlichem
    Einstiegssatz. Taste 1 bucht einen Termin, „Jetzt bestätigen“ öffnet die Bestätigung:
    Termin speichern, „Bestätigung in Outlook öffnen“.
 4. Abmelden, als Martina Weidmann anmelden: Potenzialliste je Hunter, Terminbestätigungen
-   mit dem Termin von Nele Faber (markiert als „erfasst“), Klick auf eine Person zeigt den Werdegang.
+   mit dem Termin von Nele Faber (markiert als „erfasst“). Klick auf eine Person zeigt den
+   Werdegang und das Auswahlfeld „Arbeitet für Hunter“; nach einer Umstellung startet Nele
+   Faber mit der Leadliste des neuen Hunters.
 5. Als Steffen Sixthor: dieselben Bausteine je Region, dazu der Regionsvergleich.
 
 Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link

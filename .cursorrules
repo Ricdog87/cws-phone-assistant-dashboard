@@ -20,6 +20,7 @@
 - erreichbarkeit = Durchwahl 34 + Ansprechpartner 26 + min(22, Stellen * 3.5) + Zertifizierung 6 + Erweiterung 7 + GF-Wechsel 5, max 100.
 - Gewichte 0–50, Standard Fit 30, Potenzial 25, Erreichbarkeit 15, normiert auf 100. Band A ab 78, B ab 58.
 - Warteschlange = Potenzialliste eines Hunters (Accountinhaber) oder aller Hunter. Bestandskunden nie in der Warteschlange.
+- Sperrfrist 14 Tage nach letzter Aktivität (ACTIVITY_COOLDOWN_DAYS). Branche aus NACE Ebene 2 über src/domain/nace.ts.
 - Kontrollstichprobe 8 % aus Band B und C, fester Seed, gleichmäßig eingestreut.
 
 ## Daten, Briefing, Kalibrierung

@@ -16,7 +16,8 @@ import { RegionTable } from './RegionTable';
 import { SectionTitle } from './SectionTitle';
 import { matchesFocus, useBoardFocus } from './useBoardFocus';
 import { useCardSelection } from './useCardSelection';
-import { useRegionBoard } from './useRegionBoard';
+import { useHunterOptions, useRegionBoard } from './useRegionBoard';
+import { useAppStore } from '@/app/store';
 import { useDirectorStanding } from './useTeamStanding';
 import { ViewModeSwitch, type ViewMode } from './ViewModeSwitch';
 
@@ -33,6 +34,9 @@ export function DirectorView() {
 
   const region = regions.find((item) => item.id === regionId) ?? regions[0];
   const board = useRegionBoard(region?.id ?? '', region?.standing.members ?? NO_MEMBERS);
+  const hunterOptions = useHunterOptions(region?.id ?? '');
+  const assignments = useAppStore((s) => s.assignments);
+  const setAssignment = useAppStore((s) => s.setAssignment);
   // Schlüssel aus Region und Person, damit die Auswahl in ihrer Region bleibt
   const keyOf = (memberId: string) => `${region?.id ?? ''}:${memberId}`;
   const ranked = region ? withRanks(region.standing.members) : [];
@@ -181,6 +185,11 @@ export function DirectorView() {
                   id={detailId}
                   member={selected}
                   groupLabel={`Region ${region.name}`}
+                  assignment={{
+                    hunter: assignments[selected.id] ?? null,
+                    options: hunterOptions,
+                    onChange: (hunter) => setAssignment(selected.id, hunter),
+                  }}
                   onClose={close}
                 />
               ) : (

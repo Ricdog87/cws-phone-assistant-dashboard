@@ -4,6 +4,7 @@ import { useAppStore } from '@/app/store';
 import { demoHunterAssignments } from '@/data/demoAssignments';
 import { demoTeamAppointments } from '@/data/demoAppointments';
 import { DEMO_REGIONS, LIVE_ASSISTANT_ID } from '@/data/demoTeam';
+import { DEMO_HUNTERS } from '@/data/hunters';
 import {
   liveTeamAppointments,
   sortTeamAppointments,
@@ -45,6 +46,7 @@ export function useRegionBoard(regionId: string, members: readonly MemberStandin
   const outcomes = useAppStore((s) => s.outcomes);
   const sourceId = useAppStore((s) => s.sourceId);
   const owners = useOwnerCounts();
+  const assignmentMap = useAppStore((s) => s.assignments);
   const live = useLiveAppointments();
   const demo = sourceId === 'mock';
   const hasLiveMember = DEMO_REGIONS.find((region) => region.id === regionId)?.members.some(
@@ -53,7 +55,7 @@ export function useRegionBoard(regionId: string, members: readonly MemberStandin
 
   return useMemo(() => {
     const assignments: HunterAssignment[] = demo
-      ? demoHunterAssignments(regionId, members)
+      ? demoHunterAssignments(regionId, members, assignmentMap)
       : owners.map((item) => ({
           hunter: item.owner,
           assistants: [],
@@ -62,11 +64,32 @@ export function useRegionBoard(regionId: string, members: readonly MemberStandin
         }));
     const appointments = [
       ...(hasLiveMember ? live : []),
-      ...(demo ? demoTeamAppointments(regionId, members) : []),
+      ...(demo ? demoTeamAppointments(regionId, members, assignmentMap) : []),
     ];
     return {
       hunters: hunterRows(assignments, scored, outcomes),
       appointments: sortTeamAppointments(appointments),
     };
-  }, [demo, regionId, members, owners, live, hasLiveMember, scored, outcomes]);
+  }, [demo, regionId, members, owners, assignmentMap, live, hasLiveMember, scored, outcomes]);
+}
+
+export interface HunterOption {
+  name: string;
+  area: string | null;
+}
+
+/** Hunter, denen in dieser Region zugeordnet werden kann: Demo-Hunter oder echte Accountinhaber */
+export function useHunterOptions(regionId: string): HunterOption[] {
+  const sourceId = useAppStore((s) => s.sourceId);
+  const owners = useOwnerCounts();
+  return useMemo(
+    () =>
+      sourceId === 'mock'
+        ? DEMO_HUNTERS.filter((hunter) => hunter.regionId === regionId).map((hunter) => ({
+            name: hunter.name,
+            area: hunter.area,
+          }))
+        : owners.map((item) => ({ name: item.owner, area: null })),
+    [sourceId, owners, regionId],
+  );
 }

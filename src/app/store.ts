@@ -30,6 +30,9 @@ import type {
   Lead,
   Weights,
 } from '@/domain/types';
+import { defaultAssignments } from '@/data/demoAssignments';
+import { LIVE_ASSISTANT_ID } from '@/data/demoTeam';
+import { loadAssignments, saveAssignments, type Assignments } from './assignments';
 import { DEMO_USER, type ViewLevel } from './demoUser';
 import { loadSession, saveSession } from './session';
 
@@ -45,6 +48,8 @@ export interface AppState {
   loading: boolean;
   /** Accountinhaber, dessen Potenzialliste angerufen wird; null zeigt alle Hunter */
   ownerFilter: string | null;
+  /** Zuordnung Telefonassistenz zu Hunter (Sales Rep), gesetzt über die Auswahlfelder */
+  assignments: Assignments;
   weights: Weights;
   controlEnabled: boolean;
   briefingMode: BriefingMode;
@@ -64,6 +69,8 @@ export interface AppState {
 
   setTab(tab: TabId): void;
   setOwnerFilter(owner: string | null): void;
+  /** Ordnet eine Telefonassistenz einem Hunter zu; null hebt die Zuordnung auf */
+  setAssignment(memberId: string, hunter: string | null): void;
   setViewLevel(level: ViewLevel): void;
   signIn(level: ViewLevel): void;
   signOut(): void;
@@ -94,6 +101,7 @@ export function createAppStore(
 ) {
   // Anmeldung dieses Browser-Tabs wiederherstellen, etwa nach dem Neuladen
   const restoredLevel = loadSession();
+  const initialAssignments = loadAssignments() ?? defaultAssignments();
   return create<AppState>()((set, get) => ({
     activeTab: restoredLevel === 'assistant' ? 'queue' : 'dashboard',
     sourceId: 'mock',
@@ -102,7 +110,10 @@ export function createAppStore(
     loadReport: null,
     loadError: null,
     loading: false,
-    ownerFilter: null,
+    // Die angemeldete Telefonassistenz startet mit der Leadliste ihres Hunters
+    ownerFilter:
+      restoredLevel === 'assistant' ? (initialAssignments[LIVE_ASSISTANT_ID] ?? null) : null,
+    assignments: initialAssignments,
     weights: { ...DEFAULT_WEIGHTS },
     controlEnabled: true,
     briefingMode: DEFAULT_BRIEFING_MODE,
@@ -118,6 +129,19 @@ export function createAppStore(
 
     setTab: (activeTab) => set({ activeTab }),
     setOwnerFilter: (ownerFilter) => set({ ownerFilter, selectedLeadId: null }),
+    setAssignment: (memberId, hunter) => {
+      const others = Object.entries(get().assignments).filter(([id]) => id !== memberId);
+      const next: Assignments = Object.fromEntries(
+        hunter ? [...others, [memberId, hunter]] : others,
+      );
+      saveAssignments(next);
+      const live = memberId === LIVE_ASSISTANT_ID && get().viewLevel === 'assistant';
+      set(
+        live
+          ? { assignments: next, ownerFilter: hunter, selectedLeadId: null }
+          : { assignments: next },
+      );
+    },
     setViewLevel: (viewLevel) =>
       set({
         viewLevel,
@@ -130,6 +154,8 @@ export function createAppStore(
         signedIn: true,
         selectedLeadId: null,
         activeTab: viewLevel === 'assistant' ? 'queue' : 'dashboard',
+        ownerFilter:
+          viewLevel === 'assistant' ? (get().assignments[LIVE_ASSISTANT_ID] ?? null) : null,
       });
     },
     signOut: () => {

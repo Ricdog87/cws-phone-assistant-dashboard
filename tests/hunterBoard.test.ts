@@ -11,7 +11,7 @@ describe('hunterRows', () => {
   const scored = scoreLeads(
     [
       makeLead({ id: 'a', owner: 'Anna', wearerCount: 220, hasDirectDial: true, contactName: 'X' }),
-      makeLead({ id: 'b', owner: 'Anna', lastActivity: '2026-09-01' }),
+      makeLead({ id: 'b', owner: 'Anna', lastActivity: '2026-10-01' }),
       makeLead({ id: 'c', owner: 'Ben' }),
       makeLead({ id: 'd', owner: 'Anna', isCustomer: true }),
     ],
@@ -54,6 +54,7 @@ describe('hunterRows', () => {
       accounts: 2,
       aAccounts: 1,
       neverContacted: 1,
+      inCooldown: 1,
       weekCalls: 12,
       weekAppointments: 2,
     });
@@ -64,7 +65,7 @@ describe('hunterRows', () => {
 describe('demoHunterAssignments', () => {
   it('verteilt die Wochenwerte der Region ohne Doppelzählung auf ihre Hunter', () => {
     for (const region of DEMO_REGIONS) {
-      const assignments = demoHunterAssignments(region.id, region.members);
+      const assignments = demoHunterAssignments(region.id, region.members, {});
       const nonLive = region.members.filter((member) => member.id !== 'nele-faber');
       const sum = (key: 'weekCalls' | 'weekAppointments') =>
         nonLive.reduce((total, member) => total + member[key], 0);
@@ -76,5 +77,23 @@ describe('demoHunterAssignments', () => {
       const people = assignments.flatMap((a) => a.assistants);
       expect(new Set(people).size).toBe(region.members.length);
     }
+  });
+});
+
+describe('Zuordnung per Auswahl', () => {
+  it('folgt der geänderten Zuordnung und verschiebt die Wochenwerte mit', () => {
+    const region = DEMO_REGIONS[0];
+    if (!region) throw new Error('Region fehlt');
+    const jana = region.members.find((member) => member.id === 'jana-osterkamp');
+    if (!jana) throw new Error('Person fehlt');
+    const before = demoHunterAssignments(region.id, region.members, {});
+    const target = before.find((row) => !row.assistants.includes('Jana Osterkamp'));
+    if (!target) throw new Error('Hunter fehlt');
+    const after = demoHunterAssignments(region.id, region.members, {
+      'jana-osterkamp': target.hunter,
+    });
+    const moved = after.find((row) => row.hunter === target.hunter);
+    expect(moved?.assistants).toContain('Jana Osterkamp');
+    expect(moved?.baselineWeekCalls).toBe(target.baselineWeekCalls + jana.weekCalls);
   });
 });

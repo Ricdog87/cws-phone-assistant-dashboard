@@ -1,7 +1,10 @@
 import type { Lead } from '@/domain/types';
 
-/** Zielfelder des CSV-Imports mit deutscher Bezeichnung */
-export type CsvTargetField = Exclude<keyof Lead, 'id'> | 'id';
+/**
+ * Zielfelder des CSV-Imports mit deutscher Bezeichnung. naceCode ist kein Lead-Feld:
+ * Er bestimmt beim Import die Branche im Scoring.
+ */
+export type CsvTargetField = Exclude<keyof Lead, 'id'> | 'id' | 'naceCode';
 
 export interface CsvFieldSpec {
   field: CsvTargetField;
@@ -45,6 +48,13 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
     required: false,
     kind: 'text',
     aliases: ['branche', 'industry', 'branchenebene 2', 'branchenebene 1'],
+  },
+  {
+    field: 'naceCode',
+    label: 'NACE-Code (Ebene 2)',
+    required: false,
+    kind: 'text',
+    aliases: ['nace ebene 2', 'nace', 'nace-code', 'nace code', 'wz-code', 'wz 2008'],
   },
   {
     field: 'street',

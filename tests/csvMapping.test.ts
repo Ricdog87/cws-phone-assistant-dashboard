@@ -79,6 +79,7 @@ describe('suggestMapping für Salesforce-Berichte', () => {
       id: 'Account-ID',
       name: 'Accountname',
       industry: 'Branchenebene 2',
+      naceCode: 'NACE Ebene 2',
       postalCode: 'PLZ (Rechnungsanschrift)',
       city: 'Stadt (Rechnungsanschrift)',
       commercialEmployees: 'Mitarbeiter',

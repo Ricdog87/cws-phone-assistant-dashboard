@@ -60,10 +60,32 @@ es zählt also nur ihr Verhältnis zueinander (rund 43 : 36 : 21).
 ## 4. Potenzialliste und Warteschlange
 
 In die Warteschlange kommen alle Neukunden-Accounts der gewählten Potenzialliste: ein
-Hunter (Accountinhaber) oder alle Hunter. Bestandskunden kommen nie in die Warteschlange
-und stehen auf der Karte in eigener Farbe. Die letzte Aktivität aus Salesforce wird je
-Account angezeigt, beeinflusst die Reihenfolge aber nicht. Eine Sperrfrist nach der
-letzten Aktivität ist eine fachliche Entscheidung und noch offen.
+Hunter (Accountinhaber) oder alle Hunter. Die Telefonassistenz ist per Auswahlfeld einem
+Hunter zugeordnet und startet mit seiner Liste. Jeder Hunter hat ein Gebiet (Region und
+PLZ-Leitzonen); in Salesforce steht er als Accountinhaber an den Accounts seines Gebiets.
+Bestandskunden kommen nie in die Warteschlange und stehen auf der Karte in eigener Farbe.
+
+**Sperrfrist**: Accounts mit einer Aktivität in Salesforce in den letzten 14 Tagen
+(`ACTIVITY_COOLDOWN_DAYS`) stehen nicht in der Warteschlange. Die Anrufliste nennt ihre
+Zahl, die Karte zeigt sie blass mit dem Tag, ab dem sie wieder frei sind. Entscheidung vom
+08.10.2026, vorläufig. Die letzte Aktivität beeinflusst die Reihenfolge sonst nicht.
+
+**Branche aus NACE**: Liefert die Quelle einen NACE-Code (Ebene 2), bestimmt er die Branche
+im Scoring (`src/domain/nace.ts`). Codes ohne Zuordnung behalten die Branche der Quelle
+und erhalten den neutralen Grundwert 50.
+
+| NACE Ebene 2 | Branche im Scoring                                         |
+| ------------ | ---------------------------------------------------------- |
+| 10, 11       | Lebensmittelproduktion (Fleisch erst ab Ebene 4 erkennbar) |
+| 20           | Chemie                                                     |
+| 24, 25       | Metallbau                                                  |
+| 28, 33       | Maschinenbau                                               |
+| 41 bis 43    | Bau                                                        |
+| 45           | Kfz-Werkstatt                                              |
+| 46, 47       | Handel                                                     |
+| 49, 52, 53   | Logistik                                                   |
+| 55, 56       | Gastronomie                                                |
+| 86 bis 88    | Gesundheit und Pflege                                      |
 
 Die Warteschlange ist absteigend nach Score sortiert. Bei gleichem Score bleibt die
 Reihenfolge der Datenquelle erhalten.
@@ -137,8 +159,8 @@ als Annahme umgesetzt und mit dem Prototyp beziehungsweise dem Fachbereich abzug
 
 1. **Branchengrundwerte** (`src/domain/branchen.json`): Werte sind Platzhalter und vom
    Vertrieb zu bestätigen. Unbekannte Branchen erhalten 50.
-2. **Sperrfrist nach letzter Aktivität**: Ob und wie lange ein kürzlich kontaktierter
-   Account nicht angerufen wird, legt die Teamleitung fest.
+2. **Sperrfrist und NACE-Zuordnung**: vorläufig festgelegt (14 Tage, Tabelle oben), die
+   Bestätigung durch die Vertriebsleitung steht aus.
 3. **Alle Gewichte auf null**: Dann werden alle drei Dimensionen gleich gewichtet.
 4. **Rundung der Stichprobengröße**: kaufmännisch, damit entfällt die Stichprobe bei
    Warteschlangen unter 7 Leads.

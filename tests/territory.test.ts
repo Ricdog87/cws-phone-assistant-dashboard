@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withDemoOwnership } from '@/data/demoOwnership';
-import { DEMO_HUNTERS } from '@/data/hunters';
+import { DEMO_HUNTERS, hunterForArea } from '@/data/hunters';
 import { MOCK_LEADS } from '@/data/mockLeads';
 import { MOCK_LEADS_NORDWEST } from '@/data/mockLeadsNordwest';
 import { NORDWEST_MASK_HOLES, NORDWEST_STATES, TERRITORY_POINTS, stateAt } from '@/data/territory';
@@ -42,17 +42,31 @@ describe('Vertriebsgebiet Nordwest', () => {
     expect(outside.map((lead) => `${lead.name}, ${lead.city}`)).toEqual([]);
   });
 
-  it('ordnet NRW-Leads den NRW-Huntern zu und alle anderen der Region Nord', () => {
+  it('ordnet jeden Lead dem Hunter seines Gebiets zu', () => {
     const owned = withDemoOwnership(ALL_LEADS, '2026-10-08');
-    const regionOf = (owner: string | null | undefined) =>
-      DEMO_HUNTERS.find((hunter) => hunter.name === owner)?.regionId;
     for (const lead of owned) {
       const nrw =
         lead.lat !== null &&
         lead.lng !== null &&
         stateAt(lead.lat, lead.lng) === 'Nordrhein-Westfalen';
-      expect(regionOf(lead.owner), lead.name).toBe(nrw ? 'nrw' : 'nord');
+      const hunter = DEMO_HUNTERS.find((item) => item.name === lead.owner);
+      expect(hunter?.regionId, lead.name).toBe(nrw ? 'nrw' : 'nord');
+      expect(hunter?.postalPrefixes, lead.name).toContain(lead.postalCode.slice(0, 2));
     }
+    // Jeder Hunter hat eine eigene Leadliste
+    for (const hunter of DEMO_HUNTERS) {
+      expect(owned.filter((lead) => lead.owner === hunter.name).length).toBeGreaterThan(40);
+    }
+  });
+
+  it('findet den Hunter über Region und PLZ-Leitzone', () => {
+    expect(hunterForArea('nord', '26122')?.name).toBe('Jonas Tiedemann');
+    expect(hunterForArea('nord', '20095')?.name).toBe('Malte Hartwig');
+    expect(hunterForArea('nrw', '48143')?.name).toBe('Dennis Wolters');
+    expect(hunterForArea('nord', '48529')?.name).toBe('Jonas Tiedemann');
+    expect(hunterForArea('nrw', '50667')?.name).toBe('Kai Overbeck');
+    // Unbekannte Leitzone fällt auf den ersten Hunter der Region
+    expect(hunterForArea('nord', '99999')?.name).toBe('Jonas Tiedemann');
   });
 
   it('vergibt Hunter und letzte Aktivität stabil', () => {

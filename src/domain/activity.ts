@@ -1,3 +1,9 @@
+/**
+ * Sperrfrist nach der letzten Aktivität in Salesforce: so lange wird ein Account
+ * nicht angerufen. Entscheidung vom 08.10.2026, vorläufig.
+ */
+export const ACTIVITY_COOLDOWN_DAYS = 14;
+
 /** Tage zwischen der letzten Aktivität und heute, beides als YYYY-MM-DD; null ohne Aktivität */
 export function daysSinceActivity(
   lastActivity: string | null | undefined,
@@ -31,4 +37,19 @@ export function parseActivityDate(raw: string | undefined): string | null {
   }
   const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   return iso ? `${iso[1]}-${iso[2]}-${iso[3]}` : null;
+}
+
+/** True, wenn die letzte Aktivität weniger als ACTIVITY_COOLDOWN_DAYS zurückliegt */
+export function isInCooldown(lastActivity: string | null | undefined, today: string): boolean {
+  const days = daysSinceActivity(lastActivity, today);
+  return days !== null && days < ACTIVITY_COOLDOWN_DAYS;
+}
+
+/** Erster Tag nach der Sperrfrist als YYYY-MM-DD, null ohne Aktivität */
+export function cooldownEnds(lastActivity: string | null | undefined): string | null {
+  if (!lastActivity) return null;
+  const date = new Date(`${lastActivity.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setUTCDate(date.getUTCDate() + ACTIVITY_COOLDOWN_DAYS);
+  return date.toISOString().slice(0, 10);
 }

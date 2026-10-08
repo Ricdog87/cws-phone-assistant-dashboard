@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CSV_BOM, CSV_SEPARATOR, escapeCsvCell } from '@/domain/export';
 import { parseActivityDate } from '@/domain/activity';
+import { industryForNace } from '@/domain/nace';
 import type { Lead } from '@/domain/types';
 import {
   CSV_FIELDS,
@@ -64,6 +65,7 @@ export const csvRowSchema = z.object({
   id: text,
   name: text.min(1, 'fehlt'),
   industry: text,
+  naceCode: optionalText,
   street: text,
   postalCode: text,
   city: text,
@@ -205,7 +207,8 @@ function toLead(entry: ValidRow, lat: number | null, lng: number | null): Lead {
   return {
     id: entry.id,
     name: row.name,
-    industry: row.industry,
+    // Branche im Scoring aus dem NACE-Code, sonst die Branche der Quelle
+    industry: industryForNace(row.naceCode) ?? row.industry,
     street: row.street,
     postalCode: row.postalCode,
     city: row.city,

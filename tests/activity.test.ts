@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { activityLabel, daysSinceActivity, parseActivityDate } from '@/domain/activity';
+import {
+  ACTIVITY_COOLDOWN_DAYS,
+  activityLabel,
+  cooldownEnds,
+  daysSinceActivity,
+  isInCooldown,
+  parseActivityDate,
+} from '@/domain/activity';
 
 describe('daysSinceActivity', () => {
   it('zählt volle Tage bis heute', () => {
@@ -37,5 +44,20 @@ describe('parseActivityDate', () => {
   it('liefert null für Unbekanntes', () => {
     expect(parseActivityDate('gestern')).toBeNull();
     expect(parseActivityDate('')).toBeNull();
+  });
+});
+
+describe('Sperrfrist', () => {
+  it('dauert 14 Tage ab der letzten Aktivität', () => {
+    expect(ACTIVITY_COOLDOWN_DAYS).toBe(14);
+    expect(isInCooldown('2026-10-08', '2026-10-08')).toBe(true);
+    expect(isInCooldown('2026-09-25', '2026-10-08')).toBe(true);
+    expect(isInCooldown('2026-09-24', '2026-10-08')).toBe(false);
+    expect(isInCooldown(null, '2026-10-08')).toBe(false);
+  });
+
+  it('nennt den ersten freien Tag', () => {
+    expect(cooldownEnds('2026-09-25')).toBe('2026-10-09');
+    expect(cooldownEnds(null)).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { callDay, goalProgress, type CallDay, type GoalProgress } from '@/domain/goals';
 import { latestOutcomeByLead } from '@/domain/outcomes';
-import { buildQueue, ownerCounts, type OwnerCount } from '@/domain/queue';
+import { buildQueue, cooldownCount, ownerCounts, type OwnerCount } from '@/domain/queue';
 import { scoreLeads } from '@/domain/scoring';
 import type { CallOutcome, QueueEntry, ScoredLead } from '@/domain/types';
 import { useAppStore } from './store';
@@ -18,10 +18,19 @@ export function useQueue(): QueueEntry[] {
   const scored = useScoredLeads();
   const controlEnabled = useAppStore((s) => s.controlEnabled);
   const ownerFilter = useAppStore((s) => s.ownerFilter);
+  const today = todayLocal();
   return useMemo(
-    () => buildQueue(scored, controlEnabled, ownerFilter),
-    [scored, controlEnabled, ownerFilter],
+    () => buildQueue(scored, controlEnabled, { owner: ownerFilter, today }),
+    [scored, controlEnabled, ownerFilter, today],
   );
+}
+
+/** Accounts der gewählten Potenzialliste in der Sperrfrist */
+export function useCooldownCount(): number {
+  const scored = useScoredLeads();
+  const ownerFilter = useAppStore((s) => s.ownerFilter);
+  const today = todayLocal();
+  return useMemo(() => cooldownCount(scored, ownerFilter, today), [scored, ownerFilter, today]);
 }
 
 /** Hunter mit Zahl der Neukunden-Accounts für die Auswahl der Potenzialliste */

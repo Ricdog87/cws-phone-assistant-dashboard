@@ -14,7 +14,8 @@ import { progressPercent } from './memberFormat';
 import { SectionTitle } from './SectionTitle';
 import { matchesFocus, useBoardFocus } from './useBoardFocus';
 import { useCardSelection } from './useCardSelection';
-import { useRegionBoard } from './useRegionBoard';
+import { useHunterOptions, useRegionBoard } from './useRegionBoard';
+import { useAppStore } from '@/app/store';
 import { useTeamStanding } from './useTeamStanding';
 import { ViewModeSwitch, type ViewMode } from './ViewModeSwitch';
 
@@ -23,6 +24,9 @@ const keyOf = (memberId: string) => memberId;
 export function TeamLeadView() {
   const team = useTeamStanding();
   const board = useRegionBoard(team.teamId, team.members);
+  const hunterOptions = useHunterOptions(team.teamId);
+  const assignments = useAppStore((s) => s.assignments);
+  const setAssignment = useAppStore((s) => s.setAssignment);
   const lead = DEMO_PERSONAS.teamLead;
   const appointmentGap = Math.max(0, team.weeklyAppointmentGoal - team.weekAppointments);
   const { focus, select } = useBoardFocus();
@@ -152,6 +156,11 @@ export function TeamLeadView() {
                 id={detailId}
                 member={selected}
                 groupLabel={`Team ${team.teamName}`}
+                assignment={{
+                  hunter: assignments[selected.id] ?? null,
+                  options: hunterOptions,
+                  onChange: (hunter) => setAssignment(selected.id, hunter),
+                }}
                 onClose={close}
               />
             ) : (

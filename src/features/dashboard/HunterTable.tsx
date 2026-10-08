@@ -29,7 +29,7 @@ export function HunterTable({ rows }: HunterTableProps) {
   }
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-panel">
-      <table className="w-full min-w-[760px] text-left text-sm">
+      <table className="w-full min-w-[860px] text-left text-sm">
         <thead className="border-b border-border text-xs text-muted">
           <tr>
             <th scope="col" className="px-4 py-3 font-normal">
@@ -43,6 +43,9 @@ export function HunterTable({ rows }: HunterTableProps) {
             </th>
             <th scope="col" className="px-4 py-3 text-right font-normal">
               Noch nie kontaktiert
+            </th>
+            <th scope="col" className="px-4 py-3 text-right font-normal">
+              In Sperrfrist
             </th>
             <th scope="col" className="px-4 py-3 text-right font-normal">
               Anrufe diese Woche
@@ -69,6 +72,9 @@ export function HunterTable({ rows }: HunterTableProps) {
                 {formatInt(row.aAccounts)}
               </td>
               <td className="px-4 py-3 text-right tabular-nums">{formatInt(row.neverContacted)}</td>
+              <td className="px-4 py-3 text-right tabular-nums text-muted">
+                {formatInt(row.inCooldown)}
+              </td>
               <td className="px-4 py-3 text-right tabular-nums">{formatInt(row.weekCalls)}</td>
               <td className="px-4 py-3 text-right font-bold tabular-nums">
                 {formatInt(row.weekAppointments)}

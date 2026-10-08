@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DEMO_USER } from '@/app/demoUser';
-import { todayLocal, useLatestOutcomes, useQueue } from '@/app/selectors';
+import { todayLocal, useCooldownCount, useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { Button } from '@/components/Button';
+import { ACTIVITY_COOLDOWN_DAYS } from '@/domain/activity';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
 import type { OutcomeType } from '@/domain/types';
 import { AgentLivePanel } from './AgentLivePanel';
@@ -41,6 +42,7 @@ export function QueueView() {
   const selectedIndex = queue.findIndex((e) => e.lead.id === selectedId);
   const selected = selectedIndex >= 0 ? queue[selectedIndex] : undefined;
   const openCount = queue.filter((e) => !latest.has(e.lead.id)).length;
+  const blocked = useCooldownCount();
 
   // Ohne gültige Auswahl den ersten offenen Lead wählen
   useEffect(() => {
@@ -95,6 +97,12 @@ export function QueueView() {
               <h2 className="text-sm font-bold">Warteschlange</h2>
               <span className="text-xs text-muted">
                 {openCount} offen von {queue.length}
+                {blocked > 0 && (
+                  <span title={`Letzte Aktivität vor weniger als ${ACTIVITY_COOLDOWN_DAYS} Tagen`}>
+                    {' '}
+                    · {blocked} in Sperrfrist
+                  </span>
+                )}
               </span>
             </div>
             <HunterSelect />

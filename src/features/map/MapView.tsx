@@ -10,7 +10,7 @@ import { todayLocal, useQueue, useScoredLeads } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
-import { activityLabel, daysSinceActivity } from '@/domain/activity';
+import { activityLabel, cooldownEnds, daysSinceActivity, isInCooldown } from '@/domain/activity';
 import type { ScoredLead } from '@/domain/types';
 import { MapLegend } from './MapLegend';
 import { TERRITORY_POINTS } from '@/data/territory';
@@ -70,7 +70,9 @@ function LeadMarker({
 }) {
   const { lead } = entry;
   const ref = useRef<LeafletCircleMarker>(null);
-  const className = markerClass(entry.band, inList, selected);
+  const blocked = isInCooldown(lead.lastActivity, today);
+  const blockedUntil = cooldownEnds(lead.lastActivity);
+  const className = markerClass(entry.band, inList && !blocked, selected);
 
   // Leaflet übernimmt className nur beim Anlegen, spätere Änderungen direkt am Element setzen
   useEffect(() => {
@@ -105,9 +107,20 @@ function LeadMarker({
               </>
             )}
           </div>
-          <Button variant="primary" className="w-full" onClick={onOpenQueue}>
-            {inList ? 'In Anrufliste öffnen' : `Liste von ${lead.owner ?? 'allen Huntern'} öffnen`}
-          </Button>
+          {blocked ? (
+            <div className="text-xs font-bold">
+              In Sperrfrist
+              {blockedUntil &&
+                ` bis ${new Date(`${blockedUntil}T00:00:00`).toLocaleDateString('de-DE')}`}
+              , nicht in der Anrufliste.
+            </div>
+          ) : (
+            <Button variant="primary" className="w-full" onClick={onOpenQueue}>
+              {inList
+                ? 'In Anrufliste öffnen'
+                : `Liste von ${lead.owner ?? 'allen Huntern'} öffnen`}
+            </Button>
+          )}
         </div>
       </Popup>
     </CircleMarker>

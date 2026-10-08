@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import type { HunterOption } from './useRegionBoard';
 import { Button } from '@/components/Button';
 import { formatInt } from '@/components/format';
 import { demoHistory } from '@/data/demoHistory';
@@ -12,6 +13,12 @@ interface MemberDetailProps {
   member: MemberStanding;
   /** Team oder Region, in der die Person steht */
   groupLabel: string;
+  /** Zuordnung zum Hunter (Sales Rep), änderbar über das Auswahlfeld */
+  assignment?: {
+    hunter: string | null;
+    options: readonly HunterOption[];
+    onChange(hunter: string | null): void;
+  };
   onClose(): void;
 }
 
@@ -40,10 +47,11 @@ function GoalMetric({ label, value, goal }: { label: string; value: number; goal
 }
 
 /** Kennzahlen einer Person aus MemberStanding, ohne Leads und ohne Scoring. */
-export function MemberDetail({ id, member, groupLabel, onClose }: MemberDetailProps) {
+export function MemberDetail({ id, member, groupLabel, assignment, onClose }: MemberDetailProps) {
   const headingId = useId();
   const ref = useRef<HTMLElement>(null);
   const weekReached = member.weekAppointments >= member.weeklyAppointmentGoal;
+  const selectId = useId();
 
   // Beim Öffnen und beim Wechsel der Person in den sichtbaren Bereich holen
   useEffect(() => {
@@ -72,6 +80,31 @@ export function MemberDetail({ id, member, groupLabel, onClose }: MemberDetailPr
           <Button onClick={onClose}>Schließen</Button>
         </div>
       </div>
+
+      {assignment && (
+        <div className="mt-4">
+          <label htmlFor={selectId} className="mb-1 block text-xs text-muted">
+            Arbeitet für Hunter (Sales Rep)
+          </label>
+          <select
+            id={selectId}
+            value={assignment.hunter ?? ''}
+            onChange={(event) => assignment.onChange(event.target.value || null)}
+            className="w-full rounded border border-border bg-panel px-2 py-1.5 text-sm font-bold"
+          >
+            <option value="">Nicht zugeordnet</option>
+            {assignment.options.map((option) => (
+              <option key={option.name} value={option.name}>
+                {option.name}
+                {option.area ? ` · ${option.area}` : ''}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted">
+            Die Anrufliste zeigt die Leads aus dem Gebiet dieses Hunters.
+          </p>
+        </div>
+      )}
 
       <p
         className={`mt-4 text-sm font-bold ${weekReached ? 'text-brand-ink' : 'text-brand-primary'}`}

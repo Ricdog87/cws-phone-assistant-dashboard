@@ -37,20 +37,18 @@ export function WeeklyTrend({ points, goal }: WeeklyTrendProps) {
           {points.map((point) => (
             <div
               key={point.week}
-              className="group relative flex h-full flex-1 items-end justify-center"
+              className="flex h-full flex-1 flex-col items-center justify-end"
               title={`KW ${point.week}: ${point.appointments} Termine, ${formatInt(point.calls)} Anrufe`}
             >
+              {point.current && (
+                <span className="mb-1 text-xs font-bold tabular-nums">{point.appointments}</span>
+              )}
               <div
                 className={`w-full max-w-[1.75rem] rounded-t ${
                   point.current ? 'bg-brand-primary' : 'bg-brand-ink'
                 }`}
                 style={{ height: Math.max(2, (point.appointments / max) * HEIGHT) }}
               />
-              {point.current && (
-                <span className="absolute -top-5 text-xs font-bold tabular-nums">
-                  {point.appointments}
-                </span>
-              )}
             </div>
           ))}
         </div>

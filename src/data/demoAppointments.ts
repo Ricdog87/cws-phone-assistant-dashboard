@@ -35,11 +35,12 @@ function demoStart(today: Date, seed: number): string {
 export function demoTeamAppointments(
   regionId: string,
   members: readonly MemberActivity[],
+  assignments: Readonly<Record<string, string>> = {},
   today: Date = new Date(),
 ): TeamAppointment[] {
   const region = DEMO_REGIONS.find((item) => item.id === regionId);
   if (!region) return [];
-  const assignment = demoAssignment(region);
+  const fallback = demoAssignment(region);
   const isoDay = today.toISOString().slice(0, 10);
   const leads = withDemoOwnership([...MOCK_LEADS, ...MOCK_LEADS_NORDWEST], isoDay).filter(
     (lead) => !lead.isCustomer,
@@ -47,7 +48,7 @@ export function demoTeamAppointments(
   const rows: TeamAppointment[] = [];
   for (const member of members) {
     if (member.live || member.id === LIVE_ASSISTANT_ID) continue;
-    const hunter = assignment.get(member.id);
+    const hunter = assignments[member.id] ?? fallback.get(member.id);
     const pool = leads.filter((lead) => lead.owner === hunter);
     for (let i = 0; i < member.weekAppointments && pool.length > 0; i++) {
       const seed = hash(`${member.id}-${i}`);

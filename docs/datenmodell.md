@@ -105,8 +105,8 @@ Felder mit Endung `__c` sind benutzerdefinierte Salesforce-Felder und müssen an
    eine Quote je Branche, oder wird der Wert im CRM gepflegt?
 2. **Trägerzahl**: Wie wird sie geschätzt, solange keine Angabe vorliegt? Vorschlag:
    feste Quote auf gewerbliche Mitarbeitende je Branche, fachlich festzulegen.
-3. **Branchenschlüssel**: Abbildung von SIC/NACE (D&B) und Freitext (Clay, Salesforce) auf
-   die Schlüssel in `INDUSTRY_BASE_SCORES`.
+3. **Branchenschlüssel**: NACE Ebene 2 ist abgebildet (`src/domain/nace.ts`, siehe
+   docs/scoring.md). Offen bleiben SIC (D&B) und Freitext ohne NACE-Code.
 4. **Durchwahl**: Woran erkennen wir eine Durchwahl zum Entscheider? Kennzeichen im CRM
    oder Regel auf der Nummer?
 5. **Bestandskunden**: Maßgeblich ist der Account mit aktivem Vertrag. Abgleich über

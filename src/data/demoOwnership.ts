@@ -1,5 +1,5 @@
 import type { Lead } from '@/domain/types';
-import { DEMO_HUNTERS, type TerritoryRegionId } from './hunters';
+import { hunterForArea, type TerritoryRegionId } from './hunters';
 import { stateAt } from './territory';
 
 /** Stabiler Hash, damit dieselbe Firma immer denselben Hunter bekommt */
@@ -19,16 +19,16 @@ function shiftDays(today: string, days: number): string {
 }
 
 /**
- * Ordnet die Demo-Leads einem fiktiven Hunter ihrer Region zu und vergibt eine
- * letzte Aktivität. Rund ein Fünftel hatte noch keine Aktivität. Nur für Demo-Daten.
+ * Ordnet die Demo-Leads dem fiktiven Hunter ihres Gebiets zu (Region, dann PLZ-Leitzone)
+ * und vergibt eine letzte Aktivität. Rund ein Fünftel hatte noch keine Aktivität.
+ * Nur für Demo-Daten.
  */
 export function withDemoOwnership(leads: readonly Lead[], today: string): Lead[] {
   return leads.map((lead) => {
     const state = lead.lat !== null && lead.lng !== null ? stateAt(lead.lat, lead.lng) : null;
     const regionId: TerritoryRegionId = state === 'Nordrhein-Westfalen' ? 'nrw' : 'nord';
-    const hunters = DEMO_HUNTERS.filter((hunter) => hunter.regionId === regionId);
+    const owner = hunterForArea(regionId, lead.postalCode)?.name ?? null;
     const h = hash(lead.id);
-    const owner = hunters[h % hunters.length]?.name ?? null;
     const lastActivity = h % 100 < 22 ? null : shiftDays(today, 3 + (Math.floor(h / 100) % 420));
     return { ...lead, owner, lastActivity };
   });

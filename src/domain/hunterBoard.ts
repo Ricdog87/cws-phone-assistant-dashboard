@@ -1,3 +1,4 @@
+import { isInCooldown } from './activity';
 import { localWeekRange } from './goals';
 import type { CallOutcome, ScoredLead } from './types';
 
@@ -18,6 +19,8 @@ export interface HunterRow {
   aAccounts: number;
   /** Accounts ohne jede Aktivität in Salesforce */
   neverContacted: number;
+  /** Accounts, deren letzte Aktivität in der Sperrfrist liegt */
+  inCooldown: number;
   weekCalls: number;
   weekAppointments: number;
   appointmentsPer100: number;
@@ -35,6 +38,8 @@ export function hunterRows(
   now: Date = new Date(),
 ): HunterRow[] {
   const { from, to } = localWeekRange(now);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   return assignments
     .map((assignment) => {
       const list = scored.filter(
@@ -54,6 +59,7 @@ export function hunterRows(
         accounts: list.length,
         aAccounts: list.filter((entry) => entry.band === 'A').length,
         neverContacted: list.filter((entry) => !entry.lead.lastActivity).length,
+        inCooldown: list.filter((entry) => isInCooldown(entry.lead.lastActivity, today)).length,
         weekCalls,
         weekAppointments,
         appointmentsPer100: weekCalls === 0 ? 0 : (weekAppointments / weekCalls) * 100,

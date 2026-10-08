@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildQueue, nextOpenLeadId, ownerCounts } from '@/domain/queue';
+import { buildQueue, cooldownCount, nextOpenLeadId, ownerCounts } from '@/domain/queue';
 import { DEFAULT_WEIGHTS, scoreLeads } from '@/domain/scoring';
 import { makeLead } from './fixtures';
 
@@ -24,8 +24,25 @@ describe('buildQueue', () => {
   });
 
   it('zeigt nur die Potenzialliste des gewählten Hunters', () => {
-    const queue = buildQueue(scoreLeads(leads, DEFAULT_WEIGHTS), false, 'Hunter A');
+    const queue = buildQueue(scoreLeads(leads, DEFAULT_WEIGHTS), false, { owner: 'Hunter A' });
     expect(queue.map((e) => e.lead.id)).toEqual(['high', 'low']);
+  });
+
+  it('blendet Accounts mit Aktivität in den letzten 14 Tagen aus', () => {
+    const scored = scoreLeads(
+      [
+        makeLead({ id: 'gesperrt', owner: 'Hunter A', lastActivity: '2026-09-25' }),
+        makeLead({ id: 'frei-ab-heute', owner: 'Hunter A', lastActivity: '2026-09-24' }),
+        makeLead({ id: 'nie', owner: 'Hunter A', lastActivity: null }),
+        makeLead({ id: 'anderer', owner: 'Hunter B', lastActivity: '2026-10-07' }),
+      ],
+      DEFAULT_WEIGHTS,
+    );
+    const today = '2026-10-08';
+    const ids = buildQueue(scored, false, { owner: 'Hunter A', today }).map((e) => e.lead.id);
+    expect(ids).toEqual(['frei-ab-heute', 'nie']);
+    expect(cooldownCount(scored, 'Hunter A', today)).toBe(1);
+    expect(cooldownCount(scored, null, today)).toBe(2);
   });
 });
 
