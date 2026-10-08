@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-  /* Layout: ein Blatt mit klarer Leserichtung. Großer Datenfluss oben, darunter die sechs Schritte, dann Bilder zu Route und Score, Rollen, Ausbaustufen, Zeitplan, Spielregeln. */
+  /* Layout: ein Blatt mit klarer Leserichtung. Großer Datenfluss oben, darunter die sechs Schritte, dann Bilder zu Potenzialliste und Score, Rollen, Ausbaustufen, Zeitplan, Spielregeln. */
   :root {
     --bg: #f4f4f6;
     --surface: #ffffff;
@@ -102,25 +102,23 @@
   .step .out { border-top: 1px solid var(--line); padding-top: 8px; font-size: 13.5px; }
   .step .out b { font-weight: 600; }
 
-  /* Route und Score */
+  /* Potenzialliste und Score */
   .duo { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 14px; }
   .duo .panel { display: grid; gap: 14px; align-content: start; }
   .panel h3 { font-size: 18px; }
-  .r-grid { stroke: var(--line); stroke-width: 1; }
-  .r-corr { stroke: var(--red); stroke-opacity: .14; stroke-width: 38; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .r-tour { stroke: var(--ink); stroke-width: 2.5; fill: none; stroke-dasharray: 2 6; stroke-linecap: round; }
-  .r-cust { fill: var(--ink); }
-  .r-lead { fill: var(--red); }
-  .r-out { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
-  .r-depot { fill: var(--yellow); stroke: var(--ink); stroke-width: 2; }
-  .r-txt { fill: var(--muted); font: 500 11px var(--mono); }
-  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; }
-  .legend span { display: inline-flex; align-items: center; gap: 7px; }
-  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
-  .dot.cust { background: var(--ink); }
-  .dot.lead { background: var(--red); }
-  .dot.out { border: 1.5px solid var(--muted); }
-  .dot.depot { background: var(--yellow); border: 2px solid var(--ink); border-radius: 2px; }
+  .plist { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .plist-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; background: var(--bg); font-size: 13px; }
+  .plist-head span { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .plist ol { list-style: none; margin: 0; padding: 0; }
+  .plist li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 34px; align-items: center; gap: 10px; padding: 9px 12px; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .plist .bandb { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font: 700 12px var(--mono); }
+  .plist .bandb.a { background: var(--red); color: #fff; }
+  .plist .bandb.b { background: var(--yellow); color: var(--yellow-ink); }
+  .plist .bandb.c { background: var(--muted); color: var(--surface); }
+  .plist .pl-name { min-width: 0; font-weight: 600; }
+  .plist .pl-name small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  .plist .pl-act { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .plist .pl-score { font: 600 13px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
 
   .bars { display: grid; gap: 10px; }
   .bar { display: grid; grid-template-columns: 112px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font-size: 13.5px; }
@@ -186,10 +184,10 @@
   <header>
     <div class="top">
       <span class="eyebrow">Lead-Cockpit · New Business</span>
-      <span class="tag">Stand 07.10.2026 · Intern</span>
+      <span class="tag">Stand 08.10.2026 · Intern</span>
     </div>
     <h1>Vom Firmendatensatz zum qualifizierten Termin</h1>
-    <p class="lead"><span class="mark">Salesforce ist führend.</span> D&amp;B und Clay veredeln die Daten, bevor sie in Salesforce landen. Das Cockpit holt sie dort ab, sortiert sie entlang der Servicetouren und macht die Telefonassistenz schneller. Jedes Ergebnis geht zurück nach Salesforce.</p>
+    <p class="lead"><span class="mark">Salesforce ist führend.</span> D&amp;B und Clay veredeln die Daten, bevor sie in Salesforce landen. Das Cockpit holt sie dort ab, sortiert die Potenzialliste jedes Hunters nach der Chance auf einen Termin und macht die Telefonassistenz schneller. Jedes Ergebnis geht zurück nach Salesforce.</p>
   </header>
 
   <!-- Datenfluss -->
@@ -231,7 +229,7 @@
         <text x="570" y="22" class="d-sub" style="font-family:var(--mono);letter-spacing:.1em">ARBEITSOBERFLÄCHE</text>
         <rect x="570" y="60" width="200" height="150" rx="12" class="d-dark"/>
         <text x="588" y="96" class="d-title-inv" style="font-size:21px">Lead-Cockpit</text>
-        <text x="588" y="124" class="d-sub-inv">Score entlang der Tour</text>
+        <text x="588" y="124" class="d-sub-inv">Score je Potenzialliste</text>
         <text x="588" y="143" class="d-sub-inv">Briefing und Leitfaden</text>
         <text x="588" y="162" class="d-sub-inv">Qualifizierung</text>
         <text x="588" y="181" class="d-sub-inv">Terminbuchung</text>
@@ -240,8 +238,8 @@
         <text x="830" y="22" class="d-sub" style="font-family:var(--mono);letter-spacing:.1em">AUSSENDIENST</text>
         <rect x="830" y="88" width="130" height="94" rx="10" class="d-box"/>
         <text x="848" y="124" class="d-title">Hunter</text>
-        <text x="848" y="146" class="d-sub">Termin am</text>
-        <text x="848" y="163" class="d-sub">Tourtag</text>
+        <text x="848" y="146" class="d-sub">Termin beim</text>
+        <text x="848" y="163" class="d-sub">Kunden</text>
 
         <!-- Pfeile -->
         <path d="M200,84 C245,84 245,110 286,110" class="d-arrow" marker-end="url(#ah)"/>
@@ -298,7 +296,7 @@
         <span class="n">4</span>
         <span class="where">Lead-Cockpit</span>
         <h3>Priorisieren</h3>
-        <p>Das Cockpit lädt Leads, Bestandskunden und Touren aus Salesforce. Jeder Lead bekommt einen Score von 0 bis 100. Wer nah an der Tour des Tages liegt, steht oben.</p>
+        <p>Das Cockpit lädt die Potenzialliste je Hunter (Accountinhaber) aus Salesforce. Jeder Account bekommt einen Score von 0 bis 100, die letzte Aktivität steht daneben. Die besten Chancen stehen oben.</p>
         <p class="out"><b>Ergebnis:</b> Anrufliste des Tages</p>
       </article>
       <article class="step">
@@ -312,66 +310,49 @@
         <span class="n">6</span>
         <span class="where">Hunter und Salesforce</span>
         <h3>Buchen und zurückschreiben</h3>
-        <p>Der Termin liegt am Tourtag des Hunters, er bekommt eine Kalendereinladung. Ergebnis, Termin und neu erfasste Kontakte gehen zurück nach Salesforce.</p>
+        <p>Der Termin geht an den Accountinhaber. Der Kunde bekommt eine Bestätigung per E-Mail, der Hunter steht in Kopie und bekommt den Kalendereintrag. Ergebnis, Termin und neue Kontakte gehen zurück nach Salesforce.</p>
         <p class="out"><b>Ergebnis:</b> Salesforce ist vollständig</p>
       </article>
     </div>
   </section>
 
-  <!-- Route und Score -->
+  <!-- Potenzialliste und Score -->
   <section aria-labelledby="smart-h">
     <div class="sec-head">
       <span class="eyebrow">Was das Cockpit klug macht</span>
-      <h2 id="smart-h">Anrufen, wo der Hunter ohnehin ist</h2>
+      <h2 id="smart-h">Die besten Chancen zuerst, je Hunter</h2>
     </div>
     <div class="duo">
       <div class="panel">
-        <h3>Smart Route: der Korridor entlang der Tour</h3>
-        <svg viewBox="0 0 480 290" width="100%" role="img" aria-label="Schematische Karte: Eine Servicetour verbindet Bestandskunden. Leads innerhalb eines Korridors von zwei Kilometern um die Tour werden bevorzugt, Leads außerhalb nachrangig.">
-          <g class="r-grid">
-            <line x1="0" y1="58" x2="480" y2="58"/><line x1="0" y1="116" x2="480" y2="116"/><line x1="0" y1="174" x2="480" y2="174"/><line x1="0" y1="232" x2="480" y2="232"/>
-            <line x1="80" y1="0" x2="80" y2="290"/><line x1="160" y1="0" x2="160" y2="290"/><line x1="240" y1="0" x2="240" y2="290"/><line x1="320" y1="0" x2="320" y2="290"/><line x1="400" y1="0" x2="400" y2="290"/>
-          </g>
-          <polyline class="r-corr" points="40,250 120,205 190,182 250,132 330,116 400,80 448,44"/>
-          <polyline class="r-tour" points="40,250 120,205 190,182 250,132 330,116 400,80 448,44"/>
-          <!-- Leads außerhalb -->
-          <circle class="r-out" cx="88" cy="118" r="6"/><circle class="r-out" cx="205" cy="262" r="6"/><circle class="r-out" cx="338" cy="220" r="6"/>
-          <circle class="r-out" cx="430" cy="196" r="6"/><circle class="r-out" cx="56" cy="44" r="6"/><circle class="r-out" cx="292" cy="36" r="6"/>
-          <!-- Leads im Korridor -->
-          <circle class="r-lead" cx="162" cy="200" r="7"/><circle class="r-lead" cx="220" cy="148" r="7"/><circle class="r-lead" cx="292" cy="133" r="7"/>
-          <circle class="r-lead" cx="366" cy="92" r="7"/><circle class="r-lead" cx="84" cy="236" r="7"/>
-          <!-- Bestandskunden -->
-          <circle class="r-cust" cx="120" cy="205" r="7"/><circle class="r-cust" cx="250" cy="132" r="7"/><circle class="r-cust" cx="400" cy="80" r="7"/><circle class="r-cust" cx="448" cy="44" r="7"/>
-          <rect class="r-depot" x="31" y="241" width="18" height="18" rx="2"/>
-          <text class="r-txt" x="58" y="278">Start der Tour</text>
-          <text class="r-txt" x="330" y="150">Korridor 2 km</text>
-        </svg>
-        <div class="legend">
-          <span><i class="dot depot"></i>Start</span>
-          <span><i class="dot cust"></i>Bestandskunde auf der Tour</span>
-          <span><i class="dot lead"></i>Lead im Korridor, zuerst anrufen</span>
-          <span><i class="dot out"></i>Lead außerhalb, später</span>
+        <h3>Potenzialliste je Hunter</h3>
+        <div class="plist" role="img" aria-label="Beispiel einer Potenzialliste: Accounts eines Hunters nach Score sortiert, mit Band und letzter Aktivität.">
+          <div class="plist-head"><span>Potenzialliste</span><b>Hunter Region Nord · 90 Accounts</b></div>
+          <ol>
+            <li><span class="bandb a">A</span><span class="pl-name">Metallbau Küste GmbH<small>Metallbau · Oldenburg</small></span><span class="pl-act">vor 5 Monaten</span><span class="pl-score">90</span></li>
+            <li><span class="bandb a">A</span><span class="pl-name">Fleischwaren Nord KG<small>Fleischverarbeitung · Cloppenburg</small></span><span class="pl-act">keine Aktivität</span><span class="pl-score">87</span></li>
+            <li><span class="bandb a">A</span><span class="pl-name">Logistik Weser GmbH<small>Logistik · Bremen</small></span><span class="pl-act">vor 6 Wochen</span><span class="pl-score">81</span></li>
+            <li><span class="bandb b">B</span><span class="pl-name">Pflegedienst Aller GmbH<small>Gesundheit und Pflege · Verden</small></span><span class="pl-act">vor 9 Monaten</span><span class="pl-score">71</span></li>
+            <li><span class="bandb c">C</span><span class="pl-name">Autoservice Hanse<small>Kfz-Werkstatt · Hamburg</small></span><span class="pl-act">vor 3 Tagen</span><span class="pl-score">52</span></li>
+          </ol>
         </div>
-        <p class="note">Der Hunter fährt die Tour ohnehin. Ein Termin im Korridor kostet ihn nur wenige Minuten Umweg. Die Breite des Korridors ist einstellbar, Standard sind 2 km.</p>
+        <p class="note">Aufgebaut wie der Accountbericht in Salesforce, nur sortiert nach der Chance auf einen Termin. Die letzte Aktivität steht daneben, damit frisch kontaktierte Accounts sofort auffallen. Beispielwerte, Firmen erfunden.</p>
       </div>
 
       <div class="panel">
-        <h3>Score: vier Fragen, eine Zahl</h3>
+        <h3>Score: drei Fragen, eine Zahl</h3>
         <div class="bars" aria-label="Beispielrechnung Score">
-          <div class="bar"><span>Fit <span class="w">Gewicht 30 %</span></span><div class="track"><div class="fill" style="width:90%"></div></div><span class="v">90</span></div>
-          <div class="bar"><span>Nähe <span class="w">Gewicht 30 %</span></span><div class="track"><div class="fill" style="width:95%"></div></div><span class="v">95</span></div>
-          <div class="bar"><span>Potenzial <span class="w">Gewicht 25 %</span></span><div class="track"><div class="fill" style="width:70%"></div></div><span class="v">70</span></div>
-          <div class="bar"><span>Erreichbarkeit <span class="w">Gewicht 15 %</span></span><div class="track"><div class="fill" style="width:60%"></div></div><span class="v">60</span></div>
+          <div class="bar"><span>Fit <span class="w">Gewicht 43 %</span></span><div class="track"><div class="fill" style="width:92%"></div></div><span class="v">92</span></div>
+          <div class="bar"><span>Potenzial <span class="w">Gewicht 36 %</span></span><div class="track"><div class="fill" style="width:85%"></div></div><span class="v">85</span></div>
+          <div class="bar"><span>Erreichbarkeit <span class="w">Gewicht 21 %</span></span><div class="track"><div class="fill" style="width:72%"></div></div><span class="v">72</span></div>
         </div>
         <div class="result">
-          <span class="score">82</span>
+          <span class="score">85</span>
           <div class="bands" aria-label="Bänder">
             <span class="band on">A ab 78</span><span class="band">B ab 58</span><span class="band">C darunter</span>
           </div>
         </div>
         <ul class="note" style="margin:0;padding-left:18px;display:grid;gap:3px">
           <li><b>Fit:</b> Passt Branche und Zahl der gewerblichen Mitarbeitenden?</li>
-          <li><b>Nähe:</b> Wie viele Minuten Umweg für den Hunter?</li>
           <li><b>Potenzial:</b> Wie viele Träger von Berufskleidung?</li>
           <li><b>Erreichbarkeit:</b> Gibt es Durchwahl und Ansprechpartner?</li>
         </ul>
@@ -393,7 +374,7 @@
           <h3>Telefonassistenz</h3>
         </div>
         <ul>
-          <li>Anrufliste des Tages entlang der Tour</li>
+          <li>Potenzialliste je Hunter mit letzter Aktivität</li>
           <li>Briefing, Leitfaden, Checkliste</li>
           <li>Termin buchen, Ergebnis erfassen</li>
           <li>Eigenes Wochenziel im Blick</li>
@@ -405,9 +386,9 @@
           <h3>Teamleitung</h3>
         </div>
         <ul>
-          <li>Stand der Region gegen das Wochenziel</li>
-          <li>Wo Unterstützung nötig ist</li>
-          <li>Termine und Quoten des Teams</li>
+          <li>Potenzial und Termine je Hunter</li>
+          <li>Offene Terminbestätigungen</li>
+          <li>Werdegang je Person über die Wochen</li>
         </ul>
       </div>
       <div class="panel role">
@@ -417,7 +398,7 @@
         </div>
         <ul>
           <li>Gebiet Nordwest auf einen Blick</li>
-          <li>Regionen Nord und NRW im Vergleich</li>
+          <li>Regionen und Hunter im Vergleich</li>
           <li>Wirkung des Cockpits gegen Kontrollgruppe</li>
         </ul>
       </div>
