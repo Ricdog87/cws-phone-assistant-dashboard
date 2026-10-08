@@ -44,8 +44,8 @@ export function App() {
             draggable={false}
           />
           <div className="mr-auto min-w-0">
-            <h1 className="text-base font-bold leading-tight">Lead-Cockpit Nordwest</h1>
-            <p className="truncate text-xs text-muted">New Business · {scope ?? sourceLabel}</p>
+            <h1 className="text-base font-bold leading-tight">Lead-Cockpit · New Business</h1>
+            <p className="truncate text-xs text-muted">{scope ?? sourceLabel}</p>
           </div>
           <UserBadge />
         </div>
