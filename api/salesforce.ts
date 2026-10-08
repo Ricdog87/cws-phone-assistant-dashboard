@@ -1,4 +1,4 @@
-import { handleSalesforceRequest, readSalesforceConfig } from '../server/salesforceHandler';
+import { handleSalesforceRequest, readSalesforceConfig } from '../server/salesforceHandler.js';
 
 /**
  * Serverless-Funktion für Vercel: legt Anrufprotokolle und Wiedervorlagen als Aufgabe in
