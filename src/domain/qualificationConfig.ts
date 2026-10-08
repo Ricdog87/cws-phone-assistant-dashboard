@@ -21,11 +21,8 @@ export const IDLE_CAP_MINUTES = 10;
 /** Darunter zeigt eine Kennzahl „zu wenig Daten“. */
 export const MIN_SAMPLE = 30;
 
-/**
- * Annahme, Abstimmung offen.
- * Die Namensliste kommt vom Vertrieb. Bis dahin nur die beiden festen Einträge.
- */
-export const COMPETITORS = ['Sonstiger', 'Unbekannt'] as const;
+/** Wettbewerber im Mietservice, Liste aus dem Vertrieb (Stand 08.10.2026). */
+export const COMPETITORS = ['MEWA', 'Bardusch', 'DBL', 'Alsco', 'Sonstiger', 'Unbekannt'] as const;
 
 /** Obergrenze aus dem Datenmodell, nicht eine eigene Fachregel. */
 export const PAIN_POINT_MAX_LENGTH = 200;

@@ -2,17 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DEMO_USER } from '@/app/demoUser';
 import { todayLocal, useCooldownCount, useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
-import { Button } from '@/components/Button';
 import { ACTIVITY_COOLDOWN_DAYS } from '@/domain/activity';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
-import type { OutcomeType } from '@/domain/types';
+import { emptyProtocol } from '@/domain/protocol';
+import type { CallProtocol, OutcomeType } from '@/domain/types';
 import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { HunterSelect } from './HunterSelect';
 import { OutcomeBar } from './OutcomeBar';
-import { openSalesforceCalendar } from './useEventBooking';
+import { openSalesforceCalendar } from './salesforceCalendar';
 import { useRecordOutcome, type RecallDraft } from './useRecordOutcome';
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -26,20 +26,7 @@ export function QueueView() {
   const selectedId = useAppStore((s) => s.selectedLeadId);
   const selectLead = useAppStore((s) => s.selectLead);
   const recordOutcome = useRecordOutcome(queue);
-  const outcomes = useAppStore((s) => s.outcomes);
-  const appointments = useAppStore((s) => s.appointments);
-  // Jüngster gebuchter Termin, der noch nicht in Salesforce eingetragen ist
-  const pendingConfirmation = useMemo(() => {
-    const entered = new Set(appointments.filter((a) => a.salesforceOpenedAt).map((a) => a.leadId));
-    return [...outcomes]
-      .reverse()
-      .find(
-        (o) =>
-          o.outcome === 'appointment' &&
-          !entered.has(o.leadId) &&
-          latest.get(o.leadId)?.outcome === 'appointment',
-      );
-  }, [outcomes, appointments, latest]);
+  const syncItems = useAppStore((s) => s.syncItems);
   const [busy, setBusy] = useState(false);
   // Lead, für den gerade die Wiedervorlage geplant wird
   const [planningFor, setPlanningFor] = useState<string | null>(null);
@@ -47,6 +34,14 @@ export function QueueView() {
   const selectedIndex = queue.findIndex((e) => e.lead.id === selectedId);
   const selected = selectedIndex >= 0 ? queue[selectedIndex] : undefined;
   const planning = selected !== undefined && planningFor === selected.lead.id;
+  // Protokoll gilt für den gewählten Lead und beginnt bei jedem Wechsel leer
+  const [protocol, setProtocol] = useState<CallProtocol>(emptyProtocol);
+  const selectedLeadId = selected?.lead.id;
+  useEffect(() => setProtocol(emptyProtocol()), [selectedLeadId]);
+  const latestSync = useMemo(() => {
+    const outcome = selectedLeadId ? latest.get(selectedLeadId) : undefined;
+    return outcome ? syncItems.find((item) => item.id === outcome.id)?.status : undefined;
+  }, [selectedLeadId, latest, syncItems]);
   const recalls = useOpenRecalls();
   const recallByLead = useMemo(
     () => new Map(recalls.map((recall) => [recall.leadId, recall])),
@@ -72,16 +67,16 @@ export function QueueView() {
         return;
       }
       // Termin vereinbaren öffnet den Salesforce-Kalender, noch in der Bedienhandlung
-      const salesforceOpened = outcome === 'appointment' && openSalesforceCalendar();
+      if (outcome === 'appointment') openSalesforceCalendar();
       setBusy(true);
       try {
-        await recordOutcome(selected, outcome, { recall, salesforceOpened });
+        await recordOutcome(selected, outcome, { recall, protocol });
         setPlanningFor(null);
       } finally {
         setBusy(false);
       }
     },
-    [selected, busy, recordOutcome],
+    [selected, busy, recordOutcome, protocol],
   );
 
   useEffect(() => {
@@ -144,26 +139,8 @@ export function QueueView() {
         </aside>
         <div className="flex min-h-0 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
-            {pendingConfirmation && pendingConfirmation.leadId !== selectedId && (
-              <div
-                role="status"
-                className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-brand-primary bg-panel px-4 py-2 text-sm"
-              >
-                <span>
-                  Termin mit <strong>{pendingConfirmation.leadName}</strong> gebucht, noch nicht in
-                  Salesforce eingetragen.
-                </span>
-                <Button onClick={() => selectLead(pendingConfirmation.leadId)}>
-                  Jetzt eintragen
-                </Button>
-              </div>
-            )}
             {selected ? (
-              <BriefingPanel
-                entry={selected}
-                latest={latest.get(selected.lead.id)}
-                callerName={DEMO_USER.fullName}
-              />
+              <BriefingPanel entry={selected} callerName={DEMO_USER.fullName} />
             ) : (
               <p className="text-sm text-muted">Kein Lead ausgewählt.</p>
             )}
@@ -172,7 +149,10 @@ export function QueueView() {
             <OutcomeBar
               leadName={selected.lead.name}
               latest={latest.get(selected.lead.id)}
+              latestSync={latestSync}
               recall={openRecall}
+              protocol={protocol}
+              onProtocolChange={setProtocol}
               busy={busy}
               planning={planning}
               today={new Date()}

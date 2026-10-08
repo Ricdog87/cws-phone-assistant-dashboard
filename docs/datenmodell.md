@@ -66,9 +66,28 @@ die Trainingsdaten gültig, auch wenn sich Gewichte oder Stammdaten später änd
 | `queuePosition`      | Position in der Warteschlange                              |
 | `sourceId`           | Datenquelle                                                |
 | `recallReason`       | Bei Wiedervorlage: `callback` oder `contractEnd`           |
+| `protocol`           | Gesprächsprotokoll, siehe unten                            |
 
 Ablage in IndexedDB (Datenbank `cws-lead-cockpit`, Tabelle `outcomes`). Export im
-Dashboard als CSV mit Semikolon, Dezimalkomma und BOM.
+Dashboard als CSV mit Semikolon, Dezimalkomma und BOM, mit den Spalten des Protokolls.
+
+## Gesprächsprotokoll
+
+`CallProtocol` in `src/domain/types.ts`, erfasst unter dem Briefing und mit dem Ergebnis
+gespeichert.
+
+| Feld               | Werte                                                                   |
+| ------------------ | ----------------------------------------------------------------------- |
+| `contactRole`      | Entscheider, Zentrale, Sonstige; Entscheider zählt als Nettokontakt     |
+| `solution`         | Kauft Berufskleidung, Mitarbeitende kaufen selbst, Wettbewerb, keine BK |
+| `competitor`       | Nur bei Wettbewerb: MEWA, Bardusch, DBL, Alsco, Sonstiger, Unbekannt    |
+| `companyDissolved` | Firma erloschen                                                         |
+| `centralDecision`  | Zentralentscheidung                                                     |
+| `existingCustomer` | Bestandskunde                                                           |
+| `doNotCall`        | Nicht mehr anrufen                                                      |
+| `note`             | Notiz zum Telefonat, höchstens 500 Zeichen, ohne private Angaben        |
+
+Die Liste der Lösungen und Wettbewerber kommt aus dem Vertrieb (Stand 08.10.2026).
 
 ## Wiedervorlage
 
@@ -76,23 +95,45 @@ Entsteht zusammen mit dem Ergebnis „Wiedervorlage“ und trägt denselben Zeit
 (`Recall` in `src/domain/types.ts`, Tabelle `recalls` ab Datenbankversion 6). Die Aufgabe
 selbst liegt in Salesforce.
 
-| Feld                 | Bedeutung                                                     |
-| -------------------- | ------------------------------------------------------------- |
-| `id`                 | Zufällige ID                                                  |
-| `leadId`, `leadName` | Bezug zum Lead                                                |
-| `hunterName`         | Accountinhaber beim Anlegen                                   |
-| `reason`             | `callback` (Rückruf vereinbart) oder `contractEnd`            |
-| `dueDate`            | Fällig am, YYYY-MM-DD                                         |
-| `dueTime`            | Uhrzeit HH:MM, nur beim Rückruf, sonst leer                   |
-| `contractEnd`        | Vertragsende YYYY-MM, nur beim Grund Vertragsende             |
-| `note`               | Kurznotiz, höchstens 200 Zeichen                              |
-| `createdAt`          | Zeitpunkt des Ergebnisses, das die Wiedervorlage anlegte      |
-| `salesforceOpenedAt` | Zeitpunkt, an dem „Neue Aufgabe“ in Salesforce geöffnet wurde |
+| Feld                 | Bedeutung                                                |
+| -------------------- | -------------------------------------------------------- |
+| `id`                 | Zufällige ID                                             |
+| `leadId`, `leadName` | Bezug zum Lead                                           |
+| `hunterName`         | Accountinhaber beim Anlegen                              |
+| `reason`             | `callback` (Rückruf vereinbart) oder `contractEnd`       |
+| `dueDate`            | Fällig am, YYYY-MM-DD                                    |
+| `dueTime`            | Uhrzeit HH:MM, nur beim Rückruf, sonst leer              |
+| `contractEnd`        | Vertragsende YYYY-MM, nur beim Grund Vertragsende        |
+| `note`               | Notiz aus dem Gesprächsprotokoll                         |
+| `createdAt`          | Zeitpunkt des Ergebnisses, das die Wiedervorlage anlegte |
 
 Offen ist eine Wiedervorlage, bis zum Lead ein späteres Ergebnis erfasst ist. In Salesforce
 wird sie zur Aufgabe (`Task`): Betreff „Wiedervorlage: Firma“, Fälligkeitsdatum
 (`ActivityDate`), Bezug zum Lead oder Account und Beschreibung mit Grund, Uhrzeit, Hunter
 und Notiz.
+
+## Postausgang nach Salesforce
+
+`SyncItem` in `src/domain/salesforceSync.ts`, Tabelle `syncItems` ab Datenbankversion 7
+(die frühere Tabelle `appointments` entfällt). Je Ergebnis und je Wiedervorlage ein
+Eintrag mit derselben ID, der fertigen Aufgabe (`task`), Status (`pending`, `synced`,
+`failed`, `notConnected`, `demo`), Zahl der Versuche und der ID der Aufgabe in Salesforce.
+
+| Aufgabe in Salesforce | Anrufprotokoll                       | Wiedervorlage                       |
+| --------------------- | ------------------------------------ | ----------------------------------- |
+| `Subject`             | Anruf: Firma                         | Wiedervorlage: Firma                |
+| `Status`              | Completed                            | Not Started                         |
+| `TaskSubtype`         | Call                                 | Task                                |
+| `ActivityDate`        | Tag des Anrufs                       | Fälligkeit                          |
+| `CallDisposition`     | Ergebnis, etwa „Kein Interesse“      | leer                                |
+| `ReminderDateTime`    | leer                                 | bei Uhrzeit, mit `IsReminderSet`    |
+| `Description`         | Ergebnis, Protokoll, Ansprechpartner | Grund, Uhrzeit, Notiz, Hunter       |
+| `WhatId` / `WhoId`    | Account oder Lead der Salesforce-ID  | Account oder Lead der Salesforce-ID |
+
+Für Auswertungen in Salesforce selbst braucht es Felder am Account, etwa
+`Aktuelle_Loesung__c`, `Wettbewerber__c` und die vier Häkchen; „Nicht mehr anrufen“
+entspricht beim Lead dem Standardfeld `DoNotCall`. Das ist mit dem Salesforce-Team
+abzustimmen.
 
 ## Feldzuordnung je Quelle
 

@@ -1,7 +1,7 @@
 /**
- * Links in die Salesforce-Oberfläche (Lightning). Die Terminvergabe passiert direkt im
- * Salesforce-Kalender, die Wiedervorlage als Aufgabe; das Cockpit öffnet nur die passende
- * Seite. Keine Zugangsdaten, keine API.
+ * Salesforce-IDs und Links in die Salesforce-Oberfläche (Lightning). Die Terminvergabe
+ * passiert direkt im Salesforce-Kalender; Anrufprotokolle und Wiedervorlagen überträgt die
+ * Serverfunktion /api/salesforce (siehe salesforceSync.ts).
  */
 
 export type SalesforceObject = 'Account' | 'Lead' | 'Contact';
@@ -37,52 +37,10 @@ export function normalizeSalesforceUrl(raw: string | null | undefined): string |
   }
 }
 
-export interface TaskDefaults {
-  subject: string;
-  /** Salesforce-ID des Accounts oder Leads, bei Demo-Daten null */
-  recordId: string | null;
-  /** Fälligkeitsdatum YYYY-MM-DD */
-  dueDate: string;
-  description?: string;
-}
-
-/** Vorbelegung als defaultFieldValues; Accounts gehen in „Bezug zu“ (WhatId), Leads und Kontakte in „Name“ (WhoId) */
-function defaultFieldValues(fields: [string, string][], recordId: string | null): string {
-  const object = salesforceObjectOf(recordId);
-  const related: [string, string][] = [];
-  if (recordId && object === 'Account') related.push(['WhatId', recordId]);
-  if (recordId && (object === 'Lead' || object === 'Contact')) related.push(['WhoId', recordId]);
-  const [subject, ...rest] = fields;
-  return [...(subject ? [subject] : []), ...related, ...rest]
-    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-    .join(',');
-}
-
-/** Formular „Neue Aufgabe“ für die Wiedervorlage, mit Fälligkeitsdatum (ActivityDate) */
-export function newTaskUrl(baseUrl: string, defaults: TaskDefaults): string {
-  const fields: [string, string][] = [
-    ['Subject', defaults.subject],
-    ['ActivityDate', defaults.dueDate],
-  ];
-  if (defaults.description) fields.push(['Description', defaults.description]);
-  return `${baseUrl}/lightning/o/Task/new?defaultFieldValues=${defaultFieldValues(fields, defaults.recordId)}`;
-}
-
-/** Aufgabenliste in Salesforce */
-export function tasksUrl(baseUrl: string): string {
-  return `${baseUrl}/lightning/o/Task/home`;
-}
-
 /**
  * Salesforce-Kalender in der Wochenansicht ab startDate (YYYY-MM-DD). Dort trägt die
  * Telefonassistenz den vereinbarten Termin mit Datum, Uhrzeit und Hunter ein.
  */
 export function calendarUrl(baseUrl: string, startDate: string): string {
   return `${baseUrl}/lightning/o/Event/home?startDate=${startDate}&view=week`;
-}
-
-/** Datensatz in Salesforce oder null, wenn die ID keine Salesforce-ID ist */
-export function recordUrl(baseUrl: string, recordId: string | null | undefined): string | null {
-  const object = salesforceObjectOf(recordId);
-  return object && recordId ? `${baseUrl}/lightning/r/${object}/${recordId}/view` : null;
 }

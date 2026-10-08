@@ -5,13 +5,12 @@ import { DashboardView } from '@/features/dashboard/DashboardView';
 import { DataView } from '@/features/data/DataView';
 import { MapView } from '@/features/map/MapView';
 import { QueueView } from '@/features/queue/QueueView';
-import { salesforceCalendarHref } from '@/features/queue/useEventBooking';
 import { RecallsView } from '@/features/recalls/RecallsView';
 import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { ScoringView } from '@/features/scoring/ScoringView';
 import { todayLocal } from './selectors';
 import { bootstrap, useAppStore, type TabId } from './store';
-import { allowedTab, isTab, navFor, tabsFor } from './tabs';
+import { allowedTab, tabsFor } from './tabs';
 import { UserBadge } from './UserBadge';
 import { LoginScreen } from './login/LoginScreen';
 
@@ -24,9 +23,7 @@ export function App() {
   const signedIn = useAppStore((s) => s.signedIn);
   const workplace = viewLevel === 'assistant';
   // Rechte je Rolle: Einstellungen (Scoring, Daten) nur für Teamleitung und Head of Sales
-  const nav = navFor(viewLevel);
   const tabs = tabsFor(viewLevel);
-  const calendarHref = salesforceCalendarHref();
   const activeTab = allowedTab(viewLevel, selectedTab);
   const badges = useTabBadges();
   const scope =
@@ -60,30 +57,10 @@ export function App() {
           </div>
           <UserBadge />
         </div>
-        {nav.length > 1 && (
+        {tabs.length > 1 && (
           <div className="flex items-center border-t border-border px-4 py-1.5">
             <nav aria-label="Bereiche" className="flex max-w-full gap-1 overflow-x-auto">
-              {nav.map((item) => {
-                if (!isTab(item)) {
-                  // Termine liegen in Salesforce: der Eintrag öffnet den Kalender im neuen Tab
-                  if (!calendarHref) return null;
-                  return (
-                    <a
-                      key={item.label}
-                      href={calendarHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Öffnet den Salesforce-Kalender in der Wochenansicht"
-                      className={`${NAV_ITEM} text-brand-ink hover:bg-surface`}
-                    >
-                      {item.label}
-                      <span aria-hidden className="ml-1 text-xs text-muted">
-                        ↗
-                      </span>
-                      <span className="sr-only"> (Salesforce-Kalender, neuer Tab)</span>
-                    </a>
-                  );
-                }
+              {tabs.map((item) => {
                 const active = item.id === activeTab;
                 return (
                   <button

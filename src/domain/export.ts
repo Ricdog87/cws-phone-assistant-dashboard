@@ -1,5 +1,13 @@
 import { OUTCOME_LABELS } from './outcomes';
-import type { CallOutcome, ContactUpdate } from './types';
+import {
+  CALL_SOLUTION_LABELS,
+  CONTACT_ROLE_LABELS,
+  PROTOCOL_FLAGS,
+  PROTOCOL_FLAG_LABELS,
+  isNetContact,
+} from './protocol';
+import type { TeamCall } from './teamCalls';
+import type { CallOutcome, CallProtocol, ContactUpdate } from './types';
 
 /** Byte Order Mark, damit Excel die Datei als UTF-8 erkennt */
 export const CSV_BOM = '\uFEFF';
@@ -11,6 +19,29 @@ function formatDecimal(value: number, digits: number): string {
 
 export function escapeCsvCell(value: string): string {
   return /[";\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/** Spalten des Gesprächsprotokolls, gleich in beiden Exporten */
+function protocolHeader(): string[] {
+  return [
+    'Gesprächspartner',
+    'Nettokontakt',
+    'Aktuelle Lösung',
+    'Wettbewerber',
+    ...PROTOCOL_FLAGS.map((flag) => PROTOCOL_FLAG_LABELS[flag]),
+    'Notiz',
+  ];
+}
+
+function protocolCells(protocol: CallProtocol | undefined): string[] {
+  return [
+    protocol?.contactRole ? CONTACT_ROLE_LABELS[protocol.contactRole] : '',
+    isNetContact(protocol) ? 'ja' : 'nein',
+    protocol?.solution ? CALL_SOLUTION_LABELS[protocol.solution] : '',
+    protocol?.competitor ?? '',
+    ...PROTOCOL_FLAGS.map((flag) => (protocol?.[flag] ? 'ja' : '')),
+    protocol?.note ?? '',
+  ];
 }
 
 const HEADER = [
@@ -30,6 +61,7 @@ const HEADER = [
   'Kontrolle',
   'Position',
   'Quelle',
+  ...protocolHeader(),
 ];
 
 /** Anrufergebnisse als CSV mit Semikolon, Dezimalkomma, CRLF und BOM */
@@ -52,6 +84,7 @@ export function outcomesToCsv(outcomes: readonly CallOutcome[]): string {
       o.isControl ? 'ja' : 'nein',
       String(o.queuePosition),
       o.sourceId,
+      ...protocolCells(o.protocol),
     ]
       .map(escapeCsvCell)
       .join(CSV_SEPARATOR),
@@ -91,4 +124,32 @@ export function contactsToCsv(contacts: readonly ContactUpdate[]): string {
       .join(CSV_SEPARATOR),
   );
   return CSV_BOM + [CONTACT_HEADER.join(CSV_SEPARATOR), ...rows].join('\r\n') + '\r\n';
+}
+
+const CALL_HEADER = [
+  'Datum',
+  'Firma',
+  'Ort',
+  'Hunter',
+  'Telefonassistenz',
+  'Ergebnis',
+  ...protocolHeader(),
+];
+
+/** Gespräche aus der Übersicht der Führung, etwa alle Firmen beim Wettbewerb */
+export function callsToCsv(calls: readonly TeamCall[]): string {
+  const rows = calls.map((call) =>
+    [
+      new Date(call.recordedAt).toLocaleDateString('de-DE'),
+      call.leadName,
+      call.city,
+      call.hunterName,
+      call.assistantName,
+      OUTCOME_LABELS[call.outcome],
+      ...protocolCells(call.protocol),
+    ]
+      .map(escapeCsvCell)
+      .join(CSV_SEPARATOR),
+  );
+  return CSV_BOM + [CALL_HEADER.join(CSV_SEPARATOR), ...rows].join('\r\n') + '\r\n';
 }

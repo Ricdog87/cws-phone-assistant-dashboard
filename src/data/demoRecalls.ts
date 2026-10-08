@@ -111,7 +111,6 @@ export function demoRecalls(leads: readonly Lead[], owner: string, today: Date):
       contractEnd,
       note: template.note,
       createdAt: created.toISOString(),
-      salesforceOpenedAt: index % 3 === 2 ? null : created.toISOString(),
     });
   });
   return recalls;

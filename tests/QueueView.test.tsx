@@ -85,11 +85,11 @@ describe('QueueView', () => {
     expect(open.mock.calls[0]?.[0]).toBe(
       `https://cws-workwear.lightning.force.com/lightning/o/Event/home?startDate=${todayLocal()}&view=week`,
     );
-    await waitFor(() => expect(useAppStore.getState().appointments).toHaveLength(1));
-    expect(useAppStore.getState().appointments[0]).toMatchObject({ leadName: first });
-    expect(useAppStore.getState().appointments[0]?.salesforceOpenedAt).toBeTruthy();
-    // Kalender ist schon offen, keine Erinnerung nötig
-    expect(screen.queryByRole('status')).toBeNull();
+    await waitFor(() => expect(useAppStore.getState().outcomes).toHaveLength(1));
+    expect(useAppStore.getState().outcomes[0]).toMatchObject({
+      leadName: first,
+      outcome: 'appointment',
+    });
   });
 
   it('öffnet den Kalender auch über Taste 1', async () => {
@@ -113,7 +113,7 @@ describe('QueueView', () => {
     expect(within(bar).getByRole('button', { name: /Wiedervorlage/ })).toBeInTheDocument();
   });
 
-  it('plant mit Taste 2 eine Wiedervorlage mit Datum, Uhrzeit und Notiz', async () => {
+  it('plant mit Taste 2 eine Wiedervorlage mit Datum, Uhrzeit und der Notiz aus dem Protokoll', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
     const first = selectedName();
@@ -124,8 +124,8 @@ describe('QueueView', () => {
     expect(useAppStore.getState().outcomes).toHaveLength(0);
     expect(within(form).getByLabelText('Datum')).toHaveValue(nextBusinessDay(new Date()));
 
+    await user.type(screen.getByLabelText('Notiz zum Telefonat'), 'Einkauf entscheidet mit');
     await user.type(within(form).getByLabelText('Uhrzeit (optional)'), '14:00');
-    await user.type(within(form).getByLabelText('Notiz (optional)'), 'Einkauf entscheidet mit');
     await user.click(within(form).getByRole('button', { name: 'Wiedervorlage speichern' }));
     await waitFor(() => expect(useAppStore.getState().recalls).toHaveLength(1));
 
@@ -136,7 +136,6 @@ describe('QueueView', () => {
       outcome: 'callback',
       recallReason: 'callback',
     });
-    expect(recalls).toHaveLength(1);
     expect(recalls[0]).toMatchObject({
       leadName: first,
       reason: 'callback',
@@ -144,10 +143,69 @@ describe('QueueView', () => {
       dueTime: '14:00',
       note: 'Einkauf entscheidet mit',
       createdAt: outcomes[0]?.recordedAt,
-      salesforceOpenedAt: null,
     });
+    // Anrufprotokoll und Wiedervorlage gehen automatisch an Salesforce, mit Demo-Daten simuliert
+    await waitFor(() =>
+      expect(useAppStore.getState().syncItems.map((item) => [item.task.kind, item.status])).toEqual(
+        [
+          ['callLog', 'demo'],
+          ['recall', 'demo'],
+        ],
+      ),
+    );
     expect(screen.queryByRole('form', { name: 'Wiedervorlage planen' })).toBeNull();
     expect(selectedName()).not.toBe(first);
+  });
+
+  it('speichert das Gesprächsprotokoll mit dem Ergebnis und schickt es an Salesforce', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const protocol = screen.getByRole('group', { name: 'Gesprächsprotokoll' });
+    expect(within(protocol).getByLabelText('Wettbewerber')).toBeDisabled();
+
+    await user.selectOptions(within(protocol).getByLabelText('Gesprächspartner'), 'Entscheider');
+    await user.selectOptions(
+      within(protocol).getByLabelText('Aktuelle Lösung'),
+      'Wettbewerb (Mietservice)',
+    );
+    await user.selectOptions(within(protocol).getByLabelText('Wettbewerber'), 'MEWA');
+    await user.click(within(protocol).getByLabelText('Zentralentscheidung'));
+    await user.type(within(protocol).getByLabelText('Notiz zum Telefonat'), 'Vertrag bis 2027');
+    await user.click(screen.getByRole('button', { name: /Kein Interesse/ }));
+
+    await waitFor(() => expect(useAppStore.getState().outcomes).toHaveLength(1));
+    expect(useAppStore.getState().outcomes[0]?.protocol).toEqual({
+      contactRole: 'decisionMaker',
+      solution: 'competitor',
+      competitor: 'MEWA',
+      companyDissolved: false,
+      centralDecision: true,
+      existingCustomer: false,
+      doNotCall: false,
+      note: 'Vertrag bis 2027',
+    });
+    await waitFor(() => expect(useAppStore.getState().syncItems).toHaveLength(1));
+    const task = useAppStore.getState().syncItems[0]?.task;
+    expect(task).toMatchObject({
+      kind: 'callLog',
+      status: 'Completed',
+      callDisposition: 'Kein Interesse',
+    });
+    expect(task?.description).toContain('Aktuelle Lösung: Wettbewerb: MEWA');
+    expect(task?.description).toContain('Hinweise: Zentralentscheidung');
+    // Nächster Lead beginnt mit leerem Protokoll
+    await waitFor(() =>
+      expect(within(protocol).getByLabelText('Notiz zum Telefonat')).toHaveValue(''),
+    );
+  });
+
+  it('schlägt bei Wettbewerb das Vertragsende als Grund der Wiedervorlage vor', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    await user.selectOptions(screen.getByLabelText('Aktuelle Lösung'), 'Wettbewerb (Mietservice)');
+    await user.click(screen.getByRole('button', { name: /Wiedervorlage/ }));
+    const form = screen.getByRole('form', { name: 'Wiedervorlage planen' });
+    expect(within(form).getByLabelText('Vertragsende')).toBeInTheDocument();
   });
 
   it('bricht die Wiedervorlage mit Escape ab, ohne zu buchen', async () => {

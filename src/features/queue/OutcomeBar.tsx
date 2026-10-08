@@ -1,15 +1,21 @@
 import { Button } from '@/components/Button';
 import { formatDateTime, formatDay } from '@/components/format';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
-import type { CallOutcome, OutcomeType, Recall } from '@/domain/types';
+import { SYNC_STATUS_LABELS, type SyncStatus } from '@/domain/salesforceSync';
+import type { CallOutcome, CallProtocol, OutcomeType, Recall } from '@/domain/types';
+import { ProtocolPanel } from './ProtocolPanel';
 import { RecallForm } from './RecallForm';
 import type { RecallDraft } from './useRecordOutcome';
 
 interface OutcomeBarProps {
   leadName: string;
   latest: CallOutcome | undefined;
+  /** Übertragung des letzten Ergebnisses nach Salesforce */
+  latestSync: SyncStatus | undefined;
   /** Offene Wiedervorlage zum Lead */
   recall: Recall | undefined;
+  protocol: CallProtocol;
+  onProtocolChange(protocol: CallProtocol): void;
   busy: boolean;
   /** Formular Wiedervorlage ist geöffnet */
   planning: boolean;
@@ -22,14 +28,16 @@ interface OutcomeBarProps {
 const CALENDAR_HINT = 'Öffnet den Salesforce-Kalender in der Wochenansicht';
 
 /**
- * Ergebnisleiste unter dem Briefing, immer sichtbar: Termin, Wiedervorlage, nicht
- * erreicht, kein Interesse. „Termin vereinbaren“ öffnet den Salesforce-Kalender, die
- * Wiedervorlage fragt vor dem Buchen das Datum ab.
+ * Gesprächsprotokoll und Ergebnis an einem Fleck, immer sichtbar unter dem Briefing.
+ * Erst Auswahlfelder und Notiz, dann das Ergebnis; beides geht automatisch nach Salesforce.
  */
 export function OutcomeBar({
   leadName,
   latest,
+  latestSync,
   recall,
+  protocol,
+  onProtocolChange,
   busy,
   planning,
   today,
@@ -40,11 +48,17 @@ export function OutcomeBar({
   return (
     <section
       aria-label="Ergebnis erfassen"
-      className="border-t-2 border-brand-ink bg-panel px-6 py-3"
+      className="space-y-3 border-t-2 border-brand-ink bg-panel px-6 py-3"
     >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-muted">Gesprächsprotokoll</h3>
+        <span className="text-xs text-muted">geht mit dem Ergebnis automatisch an Salesforce</span>
+      </div>
+      <ProtocolPanel protocol={protocol} onChange={onProtocolChange} />
       {planning ? (
         <RecallForm
           leadName={leadName}
+          defaultReason={protocol.solution === 'competitor' ? 'contractEnd' : 'callback'}
           today={today}
           busy={busy}
           onSave={onRecallSave}
@@ -52,7 +66,7 @@ export function OutcomeBar({
           onBookAppointment={() => onRecord('appointment')}
         />
       ) : (
-        <>
+        <div>
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {OUTCOME_TYPES.map((type, index) => (
               <Button
@@ -80,10 +94,11 @@ export function OutcomeBar({
                 <strong className="text-brand-ink">{OUTCOME_LABELS[latest.outcome]}</strong> am{' '}
                 {formatDateTime(latest.recordedAt)}
                 {recall && ` · fällig ${formatDay(recall.dueDate)}`}
+                {latestSync && ` · ${SYNC_STATUS_LABELS[latestSync]}`}
               </span>
             )}
           </div>
-        </>
+        </div>
       )}
     </section>
   );

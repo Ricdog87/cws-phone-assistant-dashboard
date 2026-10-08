@@ -5,7 +5,7 @@ import { formatInt, formatOne } from '@/components/format';
 import { BoardHeader } from './BoardHeader';
 import { BoardSections, type BoardSection } from './BoardSections';
 import { progressPercent } from './memberFormat';
-import type { AppointmentFilter } from './TeamAppointmentsTable';
+import type { AppointmentFilter } from '@/domain/appointments';
 import { useBoardFocus, type BoardFocus } from './useBoardFocus';
 import { useRegionBoard } from './useRegionBoard';
 import { useTeamStanding } from './useTeamStanding';
@@ -13,7 +13,8 @@ import { useTeamStanding } from './useTeamStanding';
 const keyOf = (memberId: string) => memberId;
 
 /**
- * Teamleitung: vier Kennzahlen oben, darunter ein Bereich mit Team, Hunter und Terminen.
+ * Teamleitung: Termine heute und diese Woche, Anrufe heute, Wochenziel; darunter ein
+ * Bereich mit Team, Hunter, Terminen und Gesprächen.
  * Ein Klick auf eine Person öffnet ihre Kennzahlen mit Werdegang und Hunter-Zuordnung.
  */
 export function TeamLeadView() {
@@ -23,22 +24,21 @@ export function TeamLeadView() {
   const appointmentGap = Math.max(0, team.weeklyAppointmentGoal - team.weekAppointments);
   const { focus, select } = useBoardFocus();
   const [section, setSection] = useState<BoardSection>('team');
-  const [appointmentFilter, setAppointmentFilter] = useState<AppointmentFilter>('all');
-  const open = board.appointments.filter((item) => item.status === 'open').length;
-  const openPressed = section === 'appointments' && appointmentFilter === 'open';
+  const [appointmentFilter, setAppointmentFilter] = useState<AppointmentFilter>('week');
+  const todayPressed = section === 'appointments' && appointmentFilter === 'today';
 
   function focusTeam(next: Exclude<BoardFocus, 'all'>) {
     select(next);
     setSection('team');
   }
 
-  function showOpenAppointments() {
-    if (openPressed) {
-      setAppointmentFilter('all');
+  function showTodayAppointments() {
+    if (todayPressed) {
+      setAppointmentFilter('week');
       return;
     }
     setSection('appointments');
-    setAppointmentFilter('open');
+    setAppointmentFilter('today');
   }
 
   return (
@@ -51,6 +51,14 @@ export function TeamLeadView() {
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatTile
+            label="Termine heute"
+            value={formatInt(team.dayAppointments)}
+            hint={`${formatInt(team.dayCalls)} Anrufe heute im Team`}
+            pressed={todayPressed}
+            onSelect={showTodayAppointments}
+            filterLabel="Heutige Termine zeigen"
+          />
           <StatTile
             label="Termine diese Woche"
             value={formatInt(team.weekAppointments)}
@@ -87,15 +95,6 @@ export function TeamLeadView() {
             filterLabel="Personen im Wochenziel zeigen"
             fillPercent={progressPercent(team.atWeeklyGoal, team.headcount)}
             fillReached={team.atWeeklyGoal === team.headcount}
-          />
-          <StatTile
-            label="Noch nicht in Salesforce"
-            value={formatInt(open)}
-            suffix={`von ${formatInt(board.appointments.length)}`}
-            hint={open === 0 ? 'Alle Termine eingetragen' : 'Termine dieser Woche ohne Eintrag'}
-            pressed={openPressed}
-            onSelect={showOpenAppointments}
-            filterLabel="Offene Termine zeigen"
           />
         </div>
 

@@ -7,22 +7,19 @@ import { formatInt } from '@/components/format';
 import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { buildBriefing, contactLabel } from '@/domain/briefing';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
-import type { CallOutcome, QueueEntry } from '@/domain/types';
-import { salesforceUrl } from '@/app/services';
+import type { QueueEntry } from '@/domain/types';
 import { RecallTask } from '@/features/recalls/RecallTask';
 import { useOpenRecall } from '@/features/recalls/useRecalls';
-import { SalesforceBooking } from './SalesforceBooking';
 import { ContactCapture } from './ContactCapture';
 import { useBriefing } from './useBriefing';
 
 interface BriefingPanelProps {
   entry: QueueEntry;
-  latest: CallOutcome | undefined;
   /** Name der anrufenden Person für den Einstiegssatz */
   callerName: string;
 }
 
-export function BriefingPanel({ entry, latest, callerName }: BriefingPanelProps) {
+export function BriefingPanel({ entry, callerName }: BriefingPanelProps) {
   const { lead } = entry;
   const recall = useOpenRecall(lead.id);
   const { briefing, pending } = useBriefing(entry);
@@ -50,9 +47,6 @@ export function BriefingPanel({ entry, latest, callerName }: BriefingPanelProps)
         </div>
       </header>
 
-      {latest?.outcome === 'appointment' && (
-        <SalesforceBooking key={`termin-${lead.id}`} lead={lead} salesforceUrl={salesforceUrl} />
-      )}
       {recall && <RecallTask key={`wv-${recall.id}`} recall={recall} />}
 
       <section

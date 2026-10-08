@@ -3,6 +3,7 @@ import { BandBadge } from '@/components/BandBadge';
 import { ControlTag } from '@/components/ControlTag';
 import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { OUTCOME_LABELS } from '@/domain/outcomes';
+import { PROTOCOL_FLAG_LABELS, protocolFlags } from '@/domain/protocol';
 import type { CallOutcome, QueueEntry, Recall } from '@/domain/types';
 
 interface QueueListProps {
@@ -36,6 +37,10 @@ export function QueueList({ queue, selectedId, latest, recalls, today, onSelect 
         const selected = entry.lead.id === selectedId;
         const outcome = latest.get(entry.lead.id);
         const recall = recalls?.get(entry.lead.id);
+        // Merkmale, die gegen einen weiteren Anruf sprechen, sichtbar machen
+        const blockers = protocolFlags(outcome?.protocol).filter(
+          (flag) => flag !== 'centralDecision',
+        );
         return (
           <li
             key={entry.lead.id}
@@ -57,6 +62,12 @@ export function QueueList({ queue, selectedId, latest, recalls, today, onSelect 
               <div className="truncate text-xs text-muted">
                 {entry.lead.industry || 'Branche unbekannt'} · {entry.lead.city}
                 {outcome && !recall && ` · ${OUTCOME_LABELS[outcome.outcome]}`}
+                {blockers.length > 0 && (
+                  <span className="font-bold text-brand-primary">
+                    {' '}
+                    · {blockers.map((flag) => PROTOCOL_FLAG_LABELS[flag]).join(', ')}
+                  </span>
+                )}
                 {recall && (
                   <span
                     className={recall.dueDate <= today ? 'font-bold text-brand-primary' : undefined}

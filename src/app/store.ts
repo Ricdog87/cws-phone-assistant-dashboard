@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import {
   DEFAULT_BRIEFING_MODE,
-  appointmentRepository,
   contactRepository,
   outcomeRepository,
   recallRepository,
+  syncRepository,
   type BriefingMode,
 } from './services';
 import { MockProvider } from '@/data/providers/mockProvider';
@@ -14,18 +14,16 @@ import {
   type LoadReport,
   type ProviderId,
 } from '@/data/providers/types';
-import {
-  InMemoryAppointmentRepository,
-  type AppointmentRepository,
-} from '@/data/appointmentRepository';
 import { InMemoryContactRepository, type ContactRepository } from '@/data/contactRepository';
 import { InMemoryRecallRepository, type RecallRepository } from '@/data/recallRepository';
+import { InMemorySyncRepository, type SyncRepository } from '@/data/syncRepository';
+import { needsSync, type SalesforceTaskInput, type SyncItem } from '@/domain/salesforceSync';
+import { postTask, type TaskSender } from './salesforceClient';
 import type { OutcomeRepository } from '@/data/repository';
 import type { AgentGoals } from '@/domain/agentGoals';
 import { DAILY_CALL_GOAL, WEEKLY_APPOINTMENT_GOAL } from '@/domain/goals';
 import { DEFAULT_WEIGHTS, DIMENSION_KEYS, clampWeight } from '@/domain/scoring';
 import type {
-  Appointment,
   CallOutcome,
   ContactUpdate,
   DimensionKey,
@@ -65,10 +63,10 @@ export interface AppState {
   outcomes: CallOutcome[];
   /** Im Gespräch erfasste Kontakte, Rückweg nach Salesforce per CSV */
   contacts: ContactUpdate[];
-  /** Vereinbarte Termine und ob sie in Salesforce eingetragen sind */
-  appointments: Appointment[];
-  /** Wiedervorlagen mit Fälligkeit und ob die Aufgabe in Salesforce angelegt ist */
+  /** Wiedervorlagen mit Fälligkeit */
   recalls: Recall[];
+  /** Postausgang nach Salesforce mit Status je Anrufergebnis und Wiedervorlage */
+  syncItems: SyncItem[];
   viewLevel: ViewLevel;
   /** Simulierte Anmeldung per Single Sign-on */
   signedIn: boolean;
@@ -92,23 +90,29 @@ export interface AppState {
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
   addOutcome(outcome: CallOutcome): Promise<void>;
-  /** Löscht Anrufergebnisse, erfasste Kontakte, Termine und Wiedervorlagen */
+  /** Löscht Anrufergebnisse, erfasste Kontakte, Wiedervorlagen und den Postausgang */
   clearOutcomes(): Promise<void>;
   loadContacts(): Promise<void>;
   addContact(contact: ContactUpdate): Promise<void>;
-  loadAppointments(): Promise<void>;
-  addAppointment(appointment: Appointment): Promise<void>;
   loadRecalls(): Promise<void>;
   /** Legt eine Wiedervorlage an oder ersetzt sie mit derselben ID */
   addRecall(recall: Recall): Promise<void>;
+  loadSyncItems(): Promise<void>;
+  /** Stellt eine Aufgabe in den Postausgang; id ist die ID des Ergebnisses oder der Wiedervorlage */
+  enqueueSync(id: string, task: SalesforceTaskInput): Promise<void>;
+  /** Überträgt alles Offene; mit Demo-Daten wird die Übertragung nur simuliert */
+  flushSync(): Promise<void>;
 }
 
 export function createAppStore(
   repository: OutcomeRepository,
   contactStore: ContactRepository = new InMemoryContactRepository(),
-  appointmentStore: AppointmentRepository = new InMemoryAppointmentRepository(),
   recallStore: RecallRepository = new InMemoryRecallRepository(),
+  syncStore: SyncRepository = new InMemorySyncRepository(),
+  sendTask: TaskSender = postTask,
 ) {
+  // Ein Durchlauf zur Zeit, damit keine Aufgabe doppelt in Salesforce landet
+  let flushing: Promise<void> | null = null;
   // Anmeldung dieses Browser-Tabs wiederherstellen, etwa nach dem Neuladen
   const restoredLevel = loadSession();
   const initialAssignments = loadAssignments() ?? defaultAssignments();
@@ -133,8 +137,8 @@ export function createAppStore(
     selectedLeadId: null,
     outcomes: [],
     contacts: [],
-    appointments: [],
     recalls: [],
+    syncItems: [],
     viewLevel: restoredLevel ?? 'teamLead',
     signedIn: restoredLevel !== null,
 
@@ -226,10 +230,10 @@ export function createAppStore(
       await Promise.all([
         repository.clear(),
         contactStore.clear(),
-        appointmentStore.clear(),
         recallStore.clear(),
+        syncStore.clear(),
       ]);
-      set({ outcomes: [], contacts: [], appointments: [], recalls: [] });
+      set({ outcomes: [], contacts: [], recalls: [], syncItems: [] });
     },
 
     async loadContacts() {
@@ -241,17 +245,6 @@ export function createAppStore(
       set({ contacts: [...get().contacts.filter((c) => c.id !== contact.id), contact] });
     },
 
-    async loadAppointments() {
-      set({ appointments: await appointmentStore.list() });
-    },
-
-    async addAppointment(appointment) {
-      await appointmentStore.add(appointment);
-      set({
-        appointments: [...get().appointments.filter((a) => a.id !== appointment.id), appointment],
-      });
-    },
-
     async loadRecalls() {
       set({ recalls: await recallStore.list() });
     },
@@ -260,25 +253,73 @@ export function createAppStore(
       await recallStore.add(recall);
       set({ recalls: [...get().recalls.filter((r) => r.id !== recall.id), recall] });
     },
+
+    async loadSyncItems() {
+      set({ syncItems: await syncStore.list() });
+    },
+
+    async enqueueSync(id, task) {
+      const item: SyncItem = {
+        id,
+        task,
+        status: 'pending',
+        attempts: 0,
+        salesforceId: null,
+        updatedAt: new Date().toISOString(),
+      };
+      await syncStore.put(item);
+      set({ syncItems: [...get().syncItems.filter((entry) => entry.id !== id), item] });
+    },
+
+    async flushSync() {
+      if (flushing) return flushing;
+      const save = async (item: SyncItem) => {
+        await syncStore.put(item);
+        set({ syncItems: get().syncItems.map((entry) => (entry.id === item.id ? item : entry)) });
+      };
+      flushing = (async () => {
+        for (const item of get().syncItems.filter(needsSync)) {
+          const updatedAt = new Date().toISOString();
+          // Demo-Leads haben keine Salesforce-IDs, die Übertragung wird nur simuliert
+          if (get().sourceId === 'mock') {
+            await save({ ...item, status: 'demo', updatedAt });
+            continue;
+          }
+          const result = await sendTask(item.task);
+          await save({
+            ...item,
+            status: result.status,
+            salesforceId: result.salesforceId,
+            attempts: item.attempts + 1,
+            updatedAt,
+          });
+        }
+      })().finally(() => {
+        flushing = null;
+      });
+      return flushing;
+    },
   }));
 }
 
 export const useAppStore = createAppStore(
   outcomeRepository,
   contactRepository,
-  appointmentRepository,
   recallRepository,
+  syncRepository,
 );
 
-/** Startdaten laden: Demo-Leads, Anrufergebnisse, Kontakte, Termine und Wiedervorlagen */
+/** Startdaten laden: Demo-Leads, Anrufergebnisse, Kontakte, Wiedervorlagen, Postausgang */
 export async function bootstrap(): Promise<void> {
-  const { loadFromProvider, loadOutcomes, loadContacts, loadAppointments, loadRecalls } =
+  const { loadFromProvider, loadOutcomes, loadContacts, loadRecalls, loadSyncItems, flushSync } =
     useAppStore.getState();
   await Promise.all([
     loadFromProvider(new MockProvider()),
     loadOutcomes(),
     loadContacts(),
-    loadAppointments(),
     loadRecalls(),
+    loadSyncItems(),
   ]);
+  // Was beim letzten Mal nicht übertragen wurde, jetzt nachholen
+  await flushSync();
 }

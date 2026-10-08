@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  calendarUrl,
-  newTaskUrl,
-  normalizeSalesforceUrl,
-  recordUrl,
-  salesforceObjectOf,
-  tasksUrl,
-} from '@/domain/salesforce';
+import { calendarUrl, normalizeSalesforceUrl, salesforceObjectOf } from '@/domain/salesforce';
 
 const BASE = 'https://beispiel.lightning.force.com';
 const ACCOUNT = '001000000000001AAA';
@@ -39,37 +32,10 @@ describe('normalizeSalesforceUrl', () => {
   });
 });
 
-describe('Kalender und Datensatz', () => {
-  it('verlinkt Kalender und Datensatz', () => {
+describe('calendarUrl', () => {
+  it('öffnet den Kalender in der Wochenansicht ab dem Tag', () => {
     expect(calendarUrl(BASE, '2026-10-08')).toBe(
       `${BASE}/lightning/o/Event/home?startDate=2026-10-08&view=week`,
-    );
-    expect(recordUrl(BASE, ACCOUNT)).toBe(`${BASE}/lightning/r/Account/${ACCOUNT}/view`);
-    expect(recordUrl(BASE, 'DEMO-1')).toBeNull();
-  });
-});
-
-describe('newTaskUrl', () => {
-  it('legt die Wiedervorlage als Aufgabe mit Fälligkeit und Lead an', () => {
-    const url = newTaskUrl(BASE, {
-      subject: 'Wiedervorlage: Bau Fehn',
-      recordId: LEAD,
-      dueDate: '2026-10-12',
-      description: 'Grund: Rückruf vereinbart',
-    });
-    expect(url).toBe(
-      `${BASE}/lightning/o/Task/new?defaultFieldValues=` +
-        `Subject=Wiedervorlage%3A%20Bau%20Fehn,WhoId=${LEAD},ActivityDate=2026-10-12,` +
-        `Description=Grund%3A%20R%C3%BCckruf%20vereinbart`,
-    );
-    expect(tasksUrl(BASE)).toBe(`${BASE}/lightning/o/Task/home`);
-  });
-
-  it('lässt den Bezug bei Demo-IDs weg', () => {
-    expect(
-      newTaskUrl(BASE, { subject: 'Wiedervorlage: X', recordId: 'DEMO-1', dueDate: '2026-10-12' }),
-    ).toBe(
-      `${BASE}/lightning/o/Task/new?defaultFieldValues=Subject=Wiedervorlage%3A%20X,ActivityDate=2026-10-12`,
     );
   });
 });

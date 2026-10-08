@@ -1,13 +1,16 @@
+import { todayLocal } from '@/app/selectors';
 import { formatInt } from '@/components/format';
-import { TEAM_APPOINTMENT_STATUS_LABELS, type TeamAppointment } from '@/domain/appointments';
+import { SyncBadge } from '@/components/SyncBadge';
+import {
+  filterAppointments,
+  type AppointmentFilter,
+  type TeamAppointment,
+} from '@/domain/appointments';
 import { LiveTag } from './AssistantBrick';
 
-export type AppointmentFilter = 'all' | TeamAppointment['status'];
-
 const FILTERS: { id: AppointmentFilter; label: string }[] = [
-  { id: 'all', label: 'Alle' },
-  { id: 'open', label: 'Noch nicht in Salesforce' },
-  { id: 'entered', label: 'Eingetragen' },
+  { id: 'today', label: 'Heute' },
+  { id: 'week', label: 'Diese Woche' },
 ];
 
 function formatBooked(iso: string): string {
@@ -20,7 +23,7 @@ function formatBooked(iso: string): string {
   });
 }
 
-/** Filter über der Terminliste: alle, noch nicht eingetragen, eingetragen */
+/** Umschalter über der Terminliste: heute oder die ganze Woche */
 export function AppointmentFilterSwitch({
   appointments,
   filter,
@@ -30,10 +33,8 @@ export function AppointmentFilterSwitch({
   filter: AppointmentFilter;
   onChange(filter: AppointmentFilter): void;
 }) {
-  const count = (id: AppointmentFilter) =>
-    id === 'all' ? appointments.length : appointments.filter((a) => a.status === id).length;
   return (
-    <div role="group" aria-label="Termine filtern" className="flex flex-wrap gap-1">
+    <div role="group" aria-label="Zeitraum" className="flex flex-wrap gap-1">
       {FILTERS.map((item) => {
         const active = item.id === filter;
         return (
@@ -48,7 +49,10 @@ export function AppointmentFilterSwitch({
                 : 'border-border text-brand-ink hover:border-brand-ink'
             }`}
           >
-            {item.label} <span className="tabular-nums">{formatInt(count(item.id))}</span>
+            {item.label}{' '}
+            <span className="tabular-nums">
+              {formatInt(filterAppointments(appointments, item.id, todayLocal()).length)}
+            </span>
           </button>
         );
       })}
@@ -56,7 +60,7 @@ export function AppointmentFilterSwitch({
   );
 }
 
-/** Termine dieser Woche mit Status in Salesforce, noch nicht eingetragene zuerst */
+/** Termine mit Status des Anrufprotokolls in Salesforce, neueste zuerst */
 export function TeamAppointmentsTable({
   appointments,
   filter,
@@ -64,10 +68,13 @@ export function TeamAppointmentsTable({
   appointments: readonly TeamAppointment[];
   filter: AppointmentFilter;
 }) {
-  const rows =
-    filter === 'all' ? appointments : appointments.filter((item) => item.status === filter);
+  const rows = filterAppointments(appointments, filter, todayLocal());
   if (rows.length === 0) {
-    return <p className="px-4 py-6 text-sm text-muted">Keine Termine in dieser Auswahl.</p>;
+    return (
+      <p className="px-4 py-6 text-sm text-muted">
+        {filter === 'today' ? 'Heute noch kein Termin.' : 'Keine Termine in dieser Woche.'}
+      </p>
+    );
   }
   return (
     <div className="overflow-x-auto">
@@ -106,15 +113,7 @@ export function TeamAppointmentsTable({
                 </span>
               </td>
               <td className="px-4 py-2.5 text-right">
-                <span
-                  className={`whitespace-nowrap rounded border px-2 py-0.5 text-xs font-bold ${
-                    row.status === 'open'
-                      ? 'border-brand-primary text-brand-primary'
-                      : 'border-border text-muted'
-                  }`}
-                >
-                  {TEAM_APPOINTMENT_STATUS_LABELS[row.status]}
-                </span>
+                <SyncBadge status={row.status} />
               </td>
             </tr>
           ))}

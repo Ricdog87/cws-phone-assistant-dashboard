@@ -7,9 +7,6 @@ export const RECALL_REASON_LABELS: Record<RecallReason, string> = {
   contractEnd: 'Vertragsende',
 };
 
-/** Kurznotiz zur Wiedervorlage, kein Gesprächsprotokoll */
-export const RECALL_NOTE_MAX_LENGTH = 200;
-
 /** Erster des Monats, neun Monate vor Vertragsende, sonst der nächste Werktag. */
 export function suggestRecallDate(contractEnd: string, today: Date): string | 'bookNow' {
   const match = /^(\d{4})-(\d{2})$/.exec(contractEnd);
@@ -88,32 +85,6 @@ export function recallBucket(dueDate: string, today: string): RecallBucket {
 /** Fällig heute oder überfällig */
 export function dueRecallCount(recalls: readonly Recall[], today: string): number {
   return recalls.filter((recall) => recall.dueDate <= today).length;
-}
-
-/** Betreff der Aufgabe in Salesforce */
-export function taskSubject(leadName: string): string {
-  return `Wiedervorlage: ${leadName}`;
-}
-
-/** Beschreibung der Aufgabe in Salesforce, ohne Telefonnummern */
-export function taskDescription(input: {
-  assistantName: string;
-  hunterName: string | null;
-  reason: RecallReason;
-  dueTime: string | null;
-  contractEnd: string | null;
-  note: string | null;
-}): string {
-  return [
-    `Angelegt von ${input.assistantName} über das Lead-Cockpit.`,
-    `Grund: ${RECALL_REASON_LABELS[input.reason]}`,
-    input.dueTime ? `Uhrzeit: ${input.dueTime} Uhr` : null,
-    input.contractEnd ? `Vertragsende: ${formatMonth(input.contractEnd)}` : null,
-    input.hunterName ? `Hunter: ${input.hunterName}` : null,
-    input.note ? `Notiz: ${input.note}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
 }
 
 /** Grund in Worten, beim Vertragsende mit Monat */

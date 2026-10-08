@@ -1,22 +1,19 @@
 import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAppStore } from '@/app/store';
-import { allowedTab, homeTab, navFor, tabsFor } from '@/app/tabs';
+import { allowedTab, homeTab, tabsFor } from '@/app/tabs';
 import { MockProvider } from '@/data/providers/mockProvider';
 import { HunterSelect } from '@/features/queue/HunterSelect';
 
 describe('Reiter je Rolle', () => {
-  it('gibt der Telefonassistenz Termine und Wiedervorlagen, aber keine Einstellungen', () => {
-    expect(navFor('assistant').map((item) => item.label)).toEqual([
+  it('gibt der Telefonassistenz Wiedervorlagen, aber keinen Kalender und keine Einstellungen', () => {
+    // Den Kalender hat die Telefonassistenz in Salesforce offen
+    expect(tabsFor('assistant').map((tab) => tab.label)).toEqual([
       'Anrufliste',
-      'Termine',
       'Wiedervorlagen',
       'Dashboard',
       'Karte',
     ]);
-    // Termine haben keine eigene Ansicht, der Eintrag öffnet den Salesforce-Kalender
-    expect(navFor('assistant')[1]).toMatchObject({ link: 'salesforceCalendar' });
-    expect(tabsFor('assistant').map((tab) => tab.label)).not.toContain('Termine');
   });
 
   it('gibt Teamleitung und Head of Sales Scoring und Daten', () => {

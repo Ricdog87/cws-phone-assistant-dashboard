@@ -11,6 +11,7 @@ const member = teamStanding(
       givenName: 'Erika',
       familyName: 'Beispiel',
       dayCalls: 40,
+      dayAppointments: 0,
       weekCalls: 180,
       weekAppointments: 3,
       live: false,

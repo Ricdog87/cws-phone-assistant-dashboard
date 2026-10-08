@@ -5,6 +5,10 @@ import { useAppStore } from '@/app/store';
 import { MockProvider } from '@/data/providers/mockProvider';
 import { TeamLeadView } from '@/features/dashboard/TeamLeadView';
 
+function sectionButton(name: RegExp): HTMLElement {
+  return within(screen.getByRole('group', { name: 'Bereich' })).getByRole('button', { name });
+}
+
 describe('Dashboard Teamleitung', () => {
   beforeEach(async () => {
     await act(async () => {
@@ -14,27 +18,24 @@ describe('Dashboard Teamleitung', () => {
     act(() => useAppStore.getState().signIn('teamLead'));
   });
 
-  it('zeigt vier Kennzahlen und einen Bereich mit Team, Hunter und Terminen', () => {
+  it('zeigt Termine heute und diese Woche, Anrufe und Wochenziel', () => {
     render(<TeamLeadView />);
-    for (const label of [
-      'Termine diese Woche',
-      'Anrufe heute',
-      'Im Wochenziel',
-      'Noch nicht in Salesforce',
-    ]) {
+    for (const label of ['Termine heute', 'Termine diese Woche', 'Anrufe heute', 'Im Wochenziel']) {
       expect(screen.getByRole('button', { name: new RegExp(`^${label}`) })).toBeInTheDocument();
     }
+    expect(screen.getByRole('button', { name: /^Termine heute/ })).toHaveTextContent('15');
     const sections = within(screen.getByRole('group', { name: 'Bereich' })).getAllByRole('button');
     expect(sections.map((button) => button.textContent?.split(' ')[0])).toEqual([
       'Team',
       'Hunter',
       'Termine',
+      'Gespräche',
     ]);
-    expect(sections[0]).toHaveAttribute('aria-pressed', 'true');
-    // Team: eine Zeile je Person mit Hunter
+    // Team: eine Zeile je Person mit Hunter und Terminen heute
     const table = screen.getByRole('table');
     expect(within(table).getAllByRole('row')).toHaveLength(23);
     expect(within(table).getByRole('columnheader', { name: 'Hunter' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Termine heute' })).toBeInTheDocument();
   });
 
   it('öffnet beim Klick auf eine Person ihre Kennzahlen mit Werdegang', async () => {
@@ -48,22 +49,34 @@ describe('Dashboard Teamleitung', () => {
     );
   });
 
-  it('zeigt die Hunter mit Gebiet und springt von der Kachel zu offenen Terminen', async () => {
+  it('springt von der Kachel zu den heutigen Terminen', async () => {
     const user = userEvent.setup();
     render(<TeamLeadView />);
-    const group = screen.getByRole('group', { name: 'Bereich' });
-    await user.click(within(group).getByRole('button', { name: /Hunter/ }));
+    await user.click(screen.getByRole('button', { name: /^Termine heute/ }));
+    expect(sectionButton(/Termine/)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^Heute/ })).toHaveAttribute('aria-pressed', 'true');
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(15);
+  });
+
+  it('zeigt die Hunter mit Gebiet', async () => {
+    const user = userEvent.setup();
+    render(<TeamLeadView />);
+    await user.click(sectionButton(/Hunter/));
     const hunters = screen.getByRole('table');
     expect(within(hunters).getAllByRole('row')).toHaveLength(7);
     expect(within(hunters).getByText('Oldenburg und Ostfriesland')).toBeInTheDocument();
+  });
 
-    await user.click(screen.getByRole('button', { name: /^Noch nicht in Salesforce/ }));
-    expect(within(group).getByRole('button', { name: /Termine/ })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+  it('filtert die Gespräche nach Wettbewerber', async () => {
+    const user = userEvent.setup();
+    render(<TeamLeadView />);
+    await user.click(sectionButton(/Gespräche/));
+    expect(screen.getByText(/Nettokontakte/)).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Aktuelle Lösung'), 'competitor');
+    await user.selectOptions(screen.getByLabelText('Wettbewerber'), 'MEWA');
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect(row).toHaveTextContent('Noch nicht in Salesforce');
+    expect(rows.length).toBeGreaterThan(3);
+    for (const row of rows) expect(row).toHaveTextContent('Wettbewerb: MEWA');
   });
 });

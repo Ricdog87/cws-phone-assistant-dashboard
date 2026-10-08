@@ -3,11 +3,6 @@ import { LlmBriefingGenerator } from '@/data/briefing/llmGenerator';
 import { RuleBasedBriefingGenerator } from '@/data/briefing/ruleBasedGenerator';
 import type { BriefingGenerator } from '@/data/briefing/types';
 import {
-  DexieAppointmentRepository,
-  InMemoryAppointmentRepository,
-  type AppointmentRepository,
-} from '@/data/appointmentRepository';
-import {
   DexieContactRepository,
   InMemoryContactRepository,
   type ContactRepository,
@@ -18,6 +13,11 @@ import {
   InMemoryRecallRepository,
   type RecallRepository,
 } from '@/data/recallRepository';
+import {
+  DexieSyncRepository,
+  InMemorySyncRepository,
+  type SyncRepository,
+} from '@/data/syncRepository';
 import { normalizeSalesforceUrl } from '@/domain/salesforce';
 import { createGeocoder } from '@/data/geocoding';
 import { DexieGeocodeCache, InMemoryGeocodeCache, type GeocodeCache } from '@/data/geocoding/cache';
@@ -44,9 +44,9 @@ export const contactRepository: ContactRepository = db
   ? new DexieContactRepository(db)
   : new InMemoryContactRepository();
 
-export const appointmentRepository: AppointmentRepository = db
-  ? new DexieAppointmentRepository(db)
-  : new InMemoryAppointmentRepository();
+export const syncRepository: SyncRepository = db
+  ? new DexieSyncRepository(db)
+  : new InMemorySyncRepository();
 
 export const recallRepository: RecallRepository = db
   ? new DexieRecallRepository(db)

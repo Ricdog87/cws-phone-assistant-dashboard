@@ -17,24 +17,33 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
-/** Buchungszeitpunkt in dieser Woche zwischen Montag und heute, Arbeitszeit 8 bis 16 Uhr */
-function demoBookedAt(today: Date, seed: number): string {
-  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const weekday = date.getDay() === 0 ? 7 : date.getDay();
-  date.setDate(date.getDate() - (seed % weekday));
-  date.setHours(8 + (Math.floor(seed / 8) % 8), (seed >>> 4) % 60);
-  // Nie in der Zukunft: heute gebuchte Termine liegen vor dem aktuellen Zeitpunkt
-  if (date.getTime() > today.getTime()) {
-    return new Date(today.getTime() - ((seed >>> 8) % 120) * 60_000).toISOString();
+/**
+ * Buchungszeitpunkt: heute zwischen 8 Uhr und jetzt, sonst an einem früheren Werktag dieser
+ * Woche zwischen 8 und 16 Uhr. Am Montag liegen alle Termine auf heute.
+ */
+function demoBookedAt(now: Date, seed: number, onToday: boolean): string {
+  const weekday = now.getDay() === 0 ? 7 : now.getDay();
+  if (onToday || weekday === 1) {
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const start = midnight + 8 * 60 * 60_000;
+    // Vor 8 Uhr liegen die Buchungen kurz vor jetzt, nie vor Mitternacht
+    if (now.getTime() <= start) {
+      return new Date(Math.max(midnight, now.getTime() - ((seed % 50) + 5) * 60_000)).toISOString();
+    }
+    const span = Math.max(1, Math.floor((now.getTime() - start) / 60_000));
+    return new Date(start + (seed % span) * 60_000).toISOString();
   }
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  date.setDate(date.getDate() - (1 + (seed % (weekday - 1))));
+  date.setHours(8 + (Math.floor(seed / 8) % 8), (seed >>> 4) % 60);
   return date.toISOString();
 }
 
 /**
  * Fiktive Termine der Demo-Personen einer Region: so viele, wie sie diese Woche
  * vereinbart haben, bei Firmen ihres Hunters, je Firma höchstens einer. Firmen mit
- * Wiedervorlage der Live-Assistenz bleiben frei. Etwa jeder vierte ist noch nicht in
- * Salesforce eingetragen.
+ * Wiedervorlage der Live-Assistenz bleiben frei. Davon heute so viele, wie die Person heute
+ * vereinbart hat.
  */
 export function demoTeamAppointments(
   regionId: string,
@@ -68,10 +77,10 @@ export function demoTeamAppointments(
         id: `demo-${member.id}-${i}`,
         leadId: null,
         leadName: lead.name,
-        bookedAt: demoBookedAt(today, seed),
+        bookedAt: demoBookedAt(today, seed, i < member.dayAppointments),
         hunterName: hunter,
         assistantName: `${member.givenName} ${member.familyName}`,
-        status: seed % 4 === 0 ? 'open' : 'entered',
+        status: 'demo',
         live: false,
       });
     }

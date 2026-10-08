@@ -6,7 +6,6 @@ import {
   openRecalls,
   recallBucket,
   recallReasonText,
-  taskDescription,
   weekdayAfterDays,
 } from '@/domain/recall';
 import { latestOutcomeByLead } from '@/domain/outcomes';
@@ -25,7 +24,6 @@ function recall(overrides: Partial<Recall>): Recall {
     contractEnd: null,
     note: null,
     createdAt: '2026-10-08T09:00:00.000Z',
-    salesforceOpenedAt: null,
     ...overrides,
   };
 }
@@ -87,27 +85,10 @@ describe('Wiedervorlagen', () => {
     ).toBe(2);
   });
 
-  it('beschreibt die Aufgabe für Salesforce ohne Telefonnummern', () => {
+  it('nennt beim Vertragsende den Monat', () => {
     expect(recallReasonText({ reason: 'contractEnd', contractEnd: '2027-09' })).toBe(
       'Vertragsende 09/2027',
     );
-    expect(
-      taskDescription({
-        assistantName: 'Nele Faber',
-        hunterName: 'Jonas Tiedemann',
-        reason: 'callback',
-        dueTime: '14:00',
-        contractEnd: null,
-        note: 'Einkauf entscheidet mit',
-      }),
-    ).toBe(
-      [
-        'Angelegt von Nele Faber über das Lead-Cockpit.',
-        'Grund: Rückruf vereinbart',
-        'Uhrzeit: 14:00 Uhr',
-        'Hunter: Jonas Tiedemann',
-        'Notiz: Einkauf entscheidet mit',
-      ].join('\n'),
-    );
+    expect(recallReasonText({ reason: 'callback', contractEnd: null })).toBe('Rückruf vereinbart');
   });
 });

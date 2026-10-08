@@ -3,7 +3,6 @@ import { Button } from '@/components/Button';
 import { formatDay } from '@/components/format';
 import { CONTRACT_RECALL_MONTHS_BEFORE } from '@/domain/qualificationConfig';
 import {
-  RECALL_NOTE_MAX_LENGTH,
   RECALL_REASON_LABELS,
   nextBusinessDay,
   suggestRecallDate,
@@ -14,6 +13,8 @@ import type { RecallDraft } from './useRecordOutcome';
 
 interface RecallFormProps {
   leadName: string;
+  /** Vorschlag für den Grund, etwa Vertragsende bei Wettbewerb */
+  defaultReason?: RecallReason;
   today: Date;
   busy: boolean;
   onSave(draft: RecallDraft): void;
@@ -44,10 +45,12 @@ function monthOptions(today: Date): { value: string; label: string }[] {
 
 /**
  * Wiedervorlage planen: vereinbarter Rückruf mit Datum und optionaler Uhrzeit oder
- * Vertragsende, aus dem sich das Datum nach der bestehenden Regel ergibt.
+ * Vertragsende, aus dem sich das Datum nach der bestehenden Regel ergibt. Geht mit dem
+ * Ergebnis automatisch als Aufgabe nach Salesforce.
  */
 export function RecallForm({
   leadName,
+  defaultReason = 'callback',
   today,
   busy,
   onSave,
@@ -56,11 +59,11 @@ export function RecallForm({
 }: RecallFormProps) {
   const id = useId();
   const dateRef = useRef<HTMLInputElement>(null);
-  const [reason, setReason] = useState<RecallReason>('callback');
+  const monthRef = useRef<HTMLSelectElement>(null);
+  const [reason, setReason] = useState<RecallReason>(defaultReason);
   const [dueDate, setDueDate] = useState(() => nextBusinessDay(today));
   const [dueTime, setDueTime] = useState('');
   const [contractEnd, setContractEnd] = useState('');
-  const [note, setNote] = useState('');
   const months = useMemo(() => monthOptions(today), [today]);
   const minDate = isoDate(today);
 
@@ -79,19 +82,17 @@ export function RecallForm({
     reason === 'callback' ? dueDate >= minDate : suggested !== null && suggested !== 'bookNow';
 
   useEffect(() => {
-    dateRef.current?.focus();
+    (dateRef.current ?? monthRef.current)?.focus();
   }, []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!valid || !effectiveDate || effectiveDate === 'bookNow') return;
-    const trimmed = note.trim();
     onSave({
       reason,
       dueDate: effectiveDate,
       dueTime: reason === 'callback' && dueTime ? dueTime : null,
       contractEnd: reason === 'contractEnd' ? contractEnd : null,
-      note: trimmed ? trimmed : null,
     });
   }
 
@@ -183,6 +184,7 @@ export function RecallForm({
           <label className="block text-xs text-muted">
             Vertragsende
             <select
+              ref={monthRef}
               value={contractEnd}
               onChange={(event) => setContractEnd(event.target.value)}
               className="mt-1 block rounded border border-border bg-panel px-2 py-1.5 text-sm text-brand-ink"
@@ -215,17 +217,7 @@ export function RecallForm({
         </div>
       )}
 
-      <label className="block text-xs text-muted">
-        Notiz (optional)
-        <input
-          type="text"
-          value={note}
-          maxLength={RECALL_NOTE_MAX_LENGTH}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder="z. B. erst nach 14 Uhr erreichbar, Einkauf entscheidet mit"
-          className="mt-1 block w-full rounded border border-border bg-panel px-2 py-1.5 text-sm text-brand-ink"
-        />
-      </label>
+      <p className="text-xs text-muted">Die Notiz kommt aus dem Gesprächsprotokoll.</p>
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" variant="primary" disabled={!valid || busy}>

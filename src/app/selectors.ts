@@ -3,6 +3,7 @@ import { callDay, goalProgress, type CallDay, type GoalProgress } from '@/domain
 import { latestOutcomeByLead } from '@/domain/outcomes';
 import { buildQueue, cooldownCount, ownerCounts, type OwnerCount } from '@/domain/queue';
 import { scoreLeads } from '@/domain/scoring';
+import type { SyncStatus } from '@/domain/salesforceSync';
 import type { CallOutcome, QueueEntry, ScoredLead } from '@/domain/types';
 import { useAppStore } from './store';
 
@@ -59,4 +60,17 @@ export function useGoalProgress(): GoalProgress {
 /** Wochentag und restliche Tage bis Sonntag. Bewusst ohne Memo, damit Mitternacht zählt. */
 export function useCallDay(): CallDay {
   return callDay(new Date());
+}
+
+/**
+ * Status der Übertragung nach Salesforce je Ergebnis- oder Wiedervorlage-ID. Demo-Einträge
+ * ohne eigenen Postausgang gelten mit Demo-Daten als simuliert übertragen.
+ */
+export function useSyncStatus(): (id: string) => SyncStatus {
+  const syncItems = useAppStore((s) => s.syncItems);
+  const sourceId = useAppStore((s) => s.sourceId);
+  return useMemo(() => {
+    const byId = new Map(syncItems.map((item) => [item.id, item.status]));
+    return (id: string) => byId.get(id) ?? (sourceId === 'mock' ? 'demo' : 'pending');
+  }, [syncItems, sourceId]);
 }

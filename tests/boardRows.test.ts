@@ -10,6 +10,7 @@ function person(id: string, weekAppointments: number, dayCalls: number): MemberA
     givenName,
     familyName,
     dayCalls,
+    dayAppointments: 0,
     weekCalls: dayCalls * 4,
     weekAppointments,
     live: false,

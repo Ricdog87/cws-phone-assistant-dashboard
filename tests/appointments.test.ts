@@ -1,80 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DexieAppointmentRepository,
-  InMemoryAppointmentRepository,
-} from '@/data/appointmentRepository';
-import { AppDatabase } from '@/data/db';
-import {
-  latestAppointmentByLead,
-  liveTeamAppointments,
-  sortTeamAppointments,
-} from '@/domain/appointments';
-import type { Appointment } from '@/domain/types';
-
-function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
-  return {
-    id: 'A-1',
-    leadId: 'L-1',
-    leadName: 'Metallbau Beispiel GmbH',
-    hunterName: 'Jonas Tiedemann',
-    createdAt: '2026-10-08T09:00:00.000Z',
-    salesforceOpenedAt: null,
-    ...overrides,
-  };
-}
-
-describe('latestAppointmentByLead', () => {
-  it('nimmt je Lead den zuletzt erfassten Eintrag', () => {
-    const latest = latestAppointmentByLead([
-      makeAppointment({ id: 'a', createdAt: '2026-10-08T09:00:00Z' }),
-      makeAppointment({ id: 'b', createdAt: '2026-10-08T10:00:00Z' }),
-    ]);
-    expect(latest.get('L-1')?.id).toBe('b');
-  });
-});
+import { bookedOn, liveTeamAppointments, sortTeamAppointments } from '@/domain/appointments';
 
 describe('Terminübersicht', () => {
-  it('zeigt gebuchte Termine mit Status in Salesforce, offene zuerst', () => {
-    const rows = sortTeamAppointments(
-      liveTeamAppointments(
-        [makeAppointment({ leadId: 'L-1', salesforceOpenedAt: '2026-10-08T09:05:00Z' })],
-        [
-          {
-            id: 'o1',
-            leadId: 'L-1',
-            leadName: 'Metallbau Beispiel GmbH',
-            owner: 'Jonas Tiedemann',
-            recordedAt: '2026-10-08T09:00:00Z',
-          },
-          {
-            id: 'o2',
-            leadId: 'L-2',
-            leadName: 'Bau Beispiel KG',
-            owner: null,
-            recordedAt: '2026-10-08T08:00:00Z',
-          },
-        ],
-        'Nele Faber',
-      ),
-    );
-    expect(rows.map((row) => [row.id, row.status])).toEqual([
-      ['o2', 'open'],
-      ['o1', 'entered'],
-    ]);
-    expect(rows[0]).toMatchObject({ hunterName: 'nicht zugeordnet', live: true });
-  });
-});
+  const booked = [
+    {
+      id: 'o1',
+      leadId: 'L-1',
+      leadName: 'Metallbau Beispiel GmbH',
+      owner: 'Jonas Tiedemann',
+      recordedAt: '2026-10-08T07:00:00Z',
+    },
+    {
+      id: 'o2',
+      leadId: 'L-2',
+      leadName: 'Bau Beispiel KG',
+      owner: null,
+      recordedAt: '2026-10-08T09:00:00Z',
+    },
+  ];
 
-describe.each([
-  ['Dexie', () => new DexieAppointmentRepository(new AppDatabase(`termine-${Math.random()}`))],
-  ['InMemory', () => new InMemoryAppointmentRepository()],
-])('%s-Terminablage', (_name, create) => {
-  it('speichert, listet chronologisch und leert', async () => {
-    const repo = create();
-    await repo.add(makeAppointment({ id: 'b', createdAt: '2026-10-08T11:00:00Z' }));
-    await repo.add(makeAppointment({ id: 'a', createdAt: '2026-10-08T09:00:00Z' }));
-    expect((await repo.list()).map((a) => a.id)).toEqual(['a', 'b']);
-    await repo.clear();
-    expect(await repo.list()).toEqual([]);
+  it('zeigt gebuchte Termine mit dem Status ihres Anrufprotokolls, neueste zuerst', () => {
+    const rows = sortTeamAppointments(
+      liveTeamAppointments(booked, new Map([['o1', 'synced' as const]]), 'Nele Faber'),
+    );
+    expect(rows.map((row) => [row.id, row.status, row.hunterName])).toEqual([
+      ['o2', 'pending', 'nicht zugeordnet'],
+      ['o1', 'synced', 'Jonas Tiedemann'],
+    ]);
+    expect(rows.every((row) => row.live && row.assistantName === 'Nele Faber')).toBe(true);
+  });
+
+  it('erkennt Termine des Tages in Ortszeit', () => {
+    const local = new Date(2026, 9, 8, 10, 30).toISOString();
+    expect(bookedOn({ bookedAt: local }, '2026-10-08')).toBe(true);
+    expect(bookedOn({ bookedAt: local }, '2026-10-07')).toBe(false);
   });
 });

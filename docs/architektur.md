@@ -19,7 +19,7 @@ Zustand als Store, Dexie für IndexedDB, react-leaflet mit OpenStreetMap-Kacheln
                               └──────────────────┘
 
 IndexedDB-Tabellen (src/data/db.ts): outcomes, columnMappings, geocodeCache, contacts,
-appointments
+recalls, syncItems (Postausgang nach Salesforce)
 ```
 
 ## Schichten
@@ -36,43 +36,71 @@ appointments
 Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 
 Rechte je Rolle stehen in `src/app/tabs.ts`: Die Telefonassistenz sieht Anrufliste,
-Termine, Wiedervorlagen, Dashboard und Karte, Teamleitung und Head of Sales Dashboard,
-Karte und die Einstellungen (Scoring, Daten). „Termine“ ist kein Reiter mit eigener
-Ansicht, sondern ein Link auf den Salesforce-Kalender in der Wochenansicht
-(`NavLinkDefinition`). `setTab` im Store und `allowedTab()` lassen andere Reiter nicht zu.
+Wiedervorlagen, Dashboard und Karte, Teamleitung und Head of Sales Dashboard, Karte und
+die Einstellungen (Scoring, Daten). Einen Kalender-Link gibt es nicht, den
+Salesforce-Kalender hat die Telefonassistenz ohnehin offen. `setTab` im Store und
+`allowedTab()` lassen andere Reiter nicht zu.
 
 ### Führungsansichten
 
 Teamleitung und Head of Sales bauen auf `features/dashboard/BoardSections.tsx` auf: oben
-die Kennzahl-Kacheln, darunter ein Bereich mit drei Ansichten statt vieler Blöcke
-untereinander. Team (Rang, Person, Hunter, Termine mit Balken, Anrufe, Status; Klick
-öffnet rechts `MemberDetail` mit Werdegang und Hunter-Zuordnung, sonst die größten
-Lücken), Hunter (`HunterTable`, Gebiet und Zahl der Telefonassistenzen) und Termine
-(`TeamAppointmentsTable` mit Filter nach Status in Salesforce). Die Kacheln filtern die
-Team-Ansicht, „Noch nicht in Salesforce“ springt zu den offenen Terminen.
+die Kacheln Termine heute, Termine diese Woche, Anrufe heute und Wochenziel, darunter ein
+Bereich mit vier Ansichten statt vieler Blöcke untereinander. Team (Rang, Person, Hunter,
+Termine heute und der Woche, Anrufe, Status; Klick öffnet rechts `MemberDetail` mit
+Werdegang und Hunter-Zuordnung, sonst die größten Lücken), Hunter (`HunterTable`, Gebiet
+und Zahl der Telefonassistenzen), Termine (`TeamAppointmentsTable`, heute oder Woche, mit
+Status in Salesforce) und Gespräche (`TeamCallsTable`, je Firma das jüngste Protokoll,
+Filter nach aktueller Lösung und Wettbewerber, Nettokontakte, CSV-Export über
+`callsToCsv`). „Termine heute“ springt zu den heutigen Terminen, die anderen Kacheln
+filtern die Team-Ansicht. `dayAppointments` je Person kommt aus den Demo-Werten, bei der
+Live-Person aus den erfassten Anrufen.
 
-### Termine und Wiedervorlagen
+### Gesprächsprotokoll, Termine und Wiedervorlagen
 
-- Die Ergebnisleiste (`features/queue/OutcomeBar.tsx`) steht fest unter dem Briefing,
-  damit „Termin vereinbart“ und „Wiedervorlage“ ohne Scrollen erreichbar sind.
-- „Wiedervorlage“ öffnet `RecallForm`: Rückruf mit Datum, Uhrzeit und Notiz oder
-  Vertragsende; das Datum dazu liefert `suggestRecallDate()` aus `domain/recall.ts`
-  (`CONTRACT_RECALL_MONTHS_BEFORE`, `BOOKING_LEAD_DAYS_MIN`). Erst das Speichern bucht das
-  Ergebnis `callback` und legt eine `Recall` mit demselben Zeitpunkt an.
+- Gesprächsprotokoll und Ergebnis stehen fest unter dem Briefing
+  (`features/queue/OutcomeBar.tsx` mit `ProtocolPanel`): Gesprächspartner, Aktuelle Lösung,
+  Wettbewerber (`COMPETITORS` in `qualificationConfig.ts`), vier Häkchen, Notiz. Das
+  Protokoll (`CallProtocol`, `domain/protocol.ts`) wird mit dem Ergebnis im `CallOutcome`
+  gespeichert und beginnt bei jedem Leadwechsel leer. Nettokontakt heißt Entscheider
+  erreicht (`isNetContact`).
+- „Termin vereinbaren“ öffnet den Salesforce-Kalender in der Wochenansicht ab heute
+  (`calendarUrl()`), dort entsteht der Termin.
+- „Wiedervorlage“ öffnet `RecallForm`: Rückruf mit Datum und Uhrzeit oder Vertragsende,
+  bei Wettbewerb vorgewählt; das Datum dazu liefert `suggestRecallDate()` aus
+  `domain/recall.ts` (`CONTRACT_RECALL_MONTHS_BEFORE`, `BOOKING_LEAD_DAYS_MIN`). Die Notiz
+  kommt aus dem Protokoll. Erst das Speichern bucht das Ergebnis `callback` und legt eine
+  `Recall` mit demselben Zeitpunkt an.
 - Offen ist eine Wiedervorlage, bis zum Account ein späteres Ergebnis erfasst ist
   (`isRecallOpen`, `openRecalls`). Der Reiter Wiedervorlagen gruppiert nach Fälligkeit.
-- Wie beim Termin entsteht die Aufgabe in Salesforce über einen Link
-  (`newTaskUrl`, `/lightning/o/Task/new` mit `ActivityDate`); das Cockpit merkt sich nur,
-  dass das Formular geöffnet wurde.
+- Anrufprotokoll und Wiedervorlage gehen automatisch nach Salesforce, siehe unten.
 - Mit Demo-Daten zeigt der Reiter Wiedervorlagen zusätzlich fiktive Wiedervorlagen aus
   früheren Anrufen (`demoRecalls`). Sie überschneiden sich nicht mit den Terminen der
   Kolleginnen und Kollegen.
+
+### Übertragung an Salesforce
+
+- `domain/salesforceSync.ts` baut die Aufgaben: `callLogTask()` als erledigte Aufgabe
+  „Anruf“ (TaskSubtype Call, CallDisposition = Ergebnis, Beschreibung mit Protokoll und
+  Ansprechpartner), `recallTask()` als offene Aufgabe mit ActivityDate und Erinnerung.
+  Accounts gehen in WhatId, Leads und Kontakte in WhoId; Demo-IDs bleiben ohne Bezug.
+- Der Store hält den Postausgang (`syncItems`). `flushSync()` läuft nach jedem Ergebnis und
+  beim Start, nie doppelt; mit Demo-Daten wird nur simuliert (Status `demo`).
+- `app/salesforceClient.ts` ruft `/api/salesforce` auf. Die Serverfunktion
+  (`api/salesforce.ts`, lokal `server/salesforceProxyPlugin.ts`) nutzt
+  `server/salesforceHandler.ts`: Prüfung mit Zod (nur Standardfelder, strikte IDs), Token
+  per OAuth Client Credentials, genau ein `POST /sobjects/Task`, bei 401 einmal neu
+  anmelden, Protokoll ohne Inhalte. Ohne `SALESFORCE_SYNC_ENABLED=true` antwortet sie mit
+  503, das Cockpit zeigt „Salesforce nicht verbunden“ und versucht es später erneut.
+- Offen mit dem Salesforce-Team: Connected App und Ausführungsbenutzer, Zuordnung der
+  Aufgaben zur Telefonassistenz (OwnerId), Felder am Account für Aktuelle Lösung,
+  Wettbewerber und die Häkchen, damit sich auch in Salesforce danach filtern lässt.
 
 ## Datenfluss
 
 1. Beim Start lädt `bootstrap()` die Demo-Daten und die gespeicherten Anrufergebnisse.
 2. Der Store hält Rohdaten und Einstellungen: Leads, gewählte Potenzialliste
-   (`ownerFilter`), Gewichte, Stichprobe, Auswahl, Ergebnisse, Kontakte, Termine.
+   (`ownerFilter`), Gewichte, Stichprobe, Auswahl, Ergebnisse, Kontakte, Wiedervorlagen
+   und den Postausgang nach Salesforce.
 3. `useScoredLeads()` und `useQueue()` in `src/app/selectors.ts` berechnen daraus per
    `useMemo` die bewerteten Leads und die Warteschlange. Abgeleitete Werte liegen nie im
    Store, damit sie nicht veralten.
@@ -81,10 +109,9 @@ Team-Ansicht, „Noch nicht in Salesforce“ springt zu den offenen Terminen.
 5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen. Im
    Gespräch erfasste Kontakte liegen als `ContactUpdate` über das `ContactRepository`
    ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce. Termine
-   entstehen direkt in Salesforce: „Termin vereinbaren“ öffnet den Kalender in der
-   Wochenansicht ab heute (`calendarUrl()` in `src/domain/salesforce.ts`), dazu gibt es
-   Links auf den Datensatz und die Aufgabe zur Wiedervorlage. Das `AppointmentRepository`
-   hält nur, wann für einen gebuchten Termin Salesforce geöffnet wurde.
+   entstehen direkt im Salesforce-Kalender. Anrufprotokolle und Wiedervorlagen stellt
+   `useRecordOutcome` als Aufgabe in den Postausgang (`SyncItem`, `SyncRepository`),
+   `flushSync()` im Store überträgt sie.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
    Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
    0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine

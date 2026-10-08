@@ -25,7 +25,10 @@ const FIELDS: { key: keyof ContactDraft; label: string; type: string; autoComple
   { key: 'email', label: 'E-Mail', type: 'email', autoComplete: 'off' },
 ];
 
-/** Im Gespräch gewonnene Kontaktdaten erfassen, Rückweg nach Salesforce über den Export */
+/**
+ * Ansprechpartner aus dem Gespräch erfassen, ohne einen Kontakt in Salesforce anzulegen. Geht
+ * mit dem Anrufprotokoll nach Salesforce, zusätzlich über den Kontakt-Export.
+ */
 export function ContactCapture({ lead }: ContactCaptureProps) {
   const contacts = useAppStore((s) => s.contacts);
   const addContact = useAppStore((s) => s.addContact);
@@ -78,8 +81,8 @@ export function ContactCapture({ lead }: ContactCaptureProps) {
       )}
       {!latest && !open && (
         <p className="mt-2 text-sm text-muted">
-          Name, Funktion, Durchwahl oder E-Mail aus dem Gespräch. Geht mit dem Kontakt-Export zurück
-          nach Salesforce.
+          Name, Funktion, Durchwahl oder E-Mail aus dem Gespräch. Steht im Anrufprotokoll in
+          Salesforce, ohne einen Kontakt anzulegen.
         </p>
       )}
 

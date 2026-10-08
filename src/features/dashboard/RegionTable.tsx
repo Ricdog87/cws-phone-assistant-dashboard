@@ -11,6 +11,7 @@ interface RegionTableProps {
 }
 
 interface Figures {
+  dayAppointments: number;
   weekAppointments: number;
   weeklyAppointmentGoal: number;
   dayCalls: number;
@@ -39,6 +40,9 @@ function FigureCells({ figures }: { figures: Figures }) {
   const gap = Math.max(0, figures.weeklyAppointmentGoal - figures.weekAppointments);
   return (
     <>
+      <td className="px-4 py-3 text-right font-bold tabular-nums">
+        {formatInt(figures.dayAppointments)}
+      </td>
       <td className="px-4 py-3">
         <ProgressCell value={figures.weekAppointments} goal={figures.weeklyAppointmentGoal} />
       </td>
@@ -70,6 +74,9 @@ export function RegionTable({ regions, total, selectedRegionId, onSelect }: Regi
           <tr>
             <th scope="col" className="px-4 py-3 font-normal">
               Region
+            </th>
+            <th scope="col" className="px-4 py-3 text-right font-normal">
+              Termine heute
             </th>
             <th scope="col" className="px-4 py-3 font-normal">
               Termine diese Woche

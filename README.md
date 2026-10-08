@@ -33,16 +33,17 @@ Weitere Befehle:
 | `npm run format`          | Formatierung anwenden                     |
 | `npm run export:branchen` | Branchengrundwerte als CSV nach `export/` |
 
-Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
+Im Browser keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap. Für die
+Übertragung an Salesforce gibt es eine Serverfunktion (siehe unten), die erst nach
+Freischaltung arbeitet.
 
 ## Bedienung
 
 | Reiter         | Inhalt                                                                          | Rollen                     |
 | -------------- | ------------------------------------------------------------------------------- | -------------------------- |
-| Anrufliste     | Warteschlange links, Briefing rechts, Ergebnisleiste unten mit Taste 1 bis 4    | Telefonassistenz           |
-| Termine        | Öffnet den Salesforce-Kalender in der Wochenansicht ab heute, neuer Tab         | Telefonassistenz           |
+| Anrufliste     | Warteschlange links, Briefing rechts, Protokoll und Ergebnis unten (Taste 1–4)  | Telefonassistenz           |
 | Wiedervorlagen | Rückrufe und Vertragsenden nach Fälligkeit, Anrufen mit einem Klick             | Telefonassistenz           |
-| Dashboard      | Je Rolle: eigene Ziele, Team oder Vertriebsgebiet                               | alle                       |
+| Dashboard      | Je Rolle: eigene Ziele; Führung mit Team, Hunter, Terminen und Gesprächen       | alle                       |
 | Karte          | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat | alle                       |
 | Scoring        | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung        | Teamleitung, Head of Sales |
 | Daten          | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                        | Teamleitung, Head of Sales |
@@ -51,38 +52,61 @@ Einstellungen (Scoring, Daten) und die Zuordnung der Telefonassistenzen zu den H
 sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sieht ihre
 Zuordnung, ändern kann sie sie nicht.
 
-Die Ergebnisleiste mit „Termin vereinbart“, „Wiedervorlage“, „Nicht erreicht“ und „Kein
-Interesse“ steht immer sichtbar unter dem Briefing. Tastatur in der Anrufliste: Pfeil hoch
-und runter wechselt den Lead, 1 Termin vereinbart, 2 Wiedervorlage, 3 Nicht erreicht,
-4 Kein Interesse. Nach dem Buchen springt die Auswahl auf den nächsten offenen Lead.
+Unter dem Briefing steht immer sichtbar das Gesprächsprotokoll mit dem Ergebnis, alles an
+einem Fleck: erst die Auswahlfelder Gesprächspartner (Entscheider, Zentrale, Sonstige),
+Aktuelle Lösung (kauft Berufskleidung, Mitarbeitende kaufen selbst, Wettbewerb, keine
+Berufskleidung) und Wettbewerber (MEWA, Bardusch, DBL, Alsco, Sonstiger), dazu die
+Häkchen Firma erloschen, Zentralentscheidung, Bestandskunde und Nicht mehr anrufen, dann
+die Notiz zum Telefonat. Darunter die Ergebnisse „Termin vereinbaren“, „Wiedervorlage“,
+„Nicht erreicht“ und „Kein Interesse“. Tastatur: Pfeil hoch und runter wechselt den Lead,
+1 bis 4 buchen das Ergebnis. Nach dem Buchen springt die Auswahl auf den nächsten offenen
+Lead, das Protokoll beginnt leer. Ein Gespräch mit dem Entscheider zählt als Nettokontakt.
 
 Die Wiedervorlage fragt vor dem Buchen nach dem Grund: „Rückruf vereinbart“ mit Datum
-(Vorschlag nächster Werktag), optionaler Uhrzeit und Notiz, oder „Vertragsende bekannt“.
+(Vorschlag nächster Werktag) und optionaler Uhrzeit, oder „Vertragsende bekannt“; bei
+Wettbewerb ist das Vertragsende vorgewählt. Die Notiz kommt aus dem Protokoll.
 Beim Vertragsende ergibt sich das Datum aus der bestehenden Regel (erster Werktag des
 Monats, neun Monate vorher); liegt das Ende zu nah, schlägt das Cockpit vor, jetzt einen
 Termin zu vereinbaren. Escape bricht ab. Der Reiter Wiedervorlagen zeigt alle offenen
 Wiedervorlagen nach Fälligkeit (überfällig, heute, nächste 7 Tage, später); die Zahl am
 Reiter nennt die heute fälligen. „Anrufen“ öffnet den Account im Briefing. Eine
-Wiedervorlage ist erledigt, sobald zum Account ein neues Ergebnis erfasst ist. „In
-Salesforce anlegen“ öffnet das Formular „Neue Aufgabe“ mit Betreff, Fälligkeitsdatum und
-Notiz.
+Wiedervorlage ist erledigt, sobald zum Account ein neues Ergebnis erfasst ist. Jede
+Wiedervorlage geht automatisch als offene Aufgabe mit Fälligkeit und Erinnerung nach
+Salesforce.
 
 Die Terminvergabe passiert direkt in Salesforce. „Termin vereinbaren“ (Taste 1) öffnet in
 einem neuen Tab den Salesforce-Kalender in der Wochenansicht ab heute
 (`/lightning/o/Event/home?startDate=…&view=week`). Dort trägt die Telefonassistenz Datum,
 Uhrzeit, Hunter und Einladung ein. Das Cockpit erfasst das Ergebnis „Termin vereinbart“ und
-merkt sich, dass der Kalender geöffnet wurde; die Teamleitung sieht den Status. Der
-Eintrag „Termine“ in der Navigation öffnet denselben Kalender, eine eigene Terminseite im
-Cockpit gibt es nicht. Standard ist `https://cws-workwear.lightning.force.com`; eine andere Adresse,
+überträgt das Anrufprotokoll. Einen eigenen Kalender-Link gibt es im Cockpit nicht, die
+Telefonassistenz hat den Salesforce-Kalender ohnehin offen. Standard ist `https://cws-workwear.lightning.force.com`; eine andere Adresse,
 etwa eine Sandbox, steht in `VITE_SALESFORCE_URL` (siehe `.env.example`, in Vercel unter
 Environment Variables).
 
+### Übertragung an Salesforce
+
+Jedes Ergebnis geht mit seinem Protokoll automatisch als erledigte Aufgabe „Anruf“ nach
+Salesforce (Betreff „Anruf: Firma“, Anrufergebnis, Beschreibung mit Gesprächspartner,
+aktueller Lösung, Hinweisen, Ansprechpartner und Notiz), jede Wiedervorlage als offene
+Aufgabe mit Fälligkeit. Das Cockpit legt nur Aufgaben an und ändert keine anderen Daten.
+Ein Postausgang im Browser hält Einträge, bis sie übertragen sind, und versucht es beim
+nächsten Start erneut; Status je Eintrag: In Salesforce, Wird übertragen, Fehler, Salesforce
+nicht verbunden. Mit Demo-Daten wird die Übertragung nur simuliert.
+
+Die Serverfunktion `api/salesforce.ts` (lokal über den Vite-Server) meldet sich per OAuth
+Client Credentials an einer Connected App an. Zugangsdaten nur serverseitig:
+`SALESFORCE_SYNC_ENABLED`, `SALESFORCE_LOGIN_URL`, `SALESFORCE_CLIENT_ID`,
+`SALESFORCE_CLIENT_SECRET` (siehe `.env.example`). Erst einschalten, wenn die echte
+Anmeldung (Entra ID) und der Zugriffsschutz der Vercel-Umgebung stehen; sonst könnte jeder
+mit dem Link Aufgaben anlegen.
+
 Im Gespräch gewonnene Kontaktdaten (Name, Funktion, Durchwahl, E-Mail) werden im Briefing
 unter „Neu erfasster Kontakt“ gespeichert. Das Dashboard exportiert sie als eigene CSV mit
-der Lead-ID als Schlüssel, damit sie per Import zurück an den Lead in Salesforce gehen.
+der Lead-ID als Schlüssel, damit sie per Import zurück an den Lead in Salesforce gehen;
+zusätzlich stehen sie als Ansprechpartner im Anrufprotokoll, ohne einen Kontakt anzulegen.
 Salesforce bleibt das führende System, das Cockpit hält nichts dauerhaft.
 
-Anrufergebnisse, Kontakte und Termine liegen in der IndexedDB des Browsers und überstehen einen
+Anrufergebnisse, Kontakte, Wiedervorlagen und der Postausgang liegen in der IndexedDB des Browsers und überstehen einen
 Reload. Sie gelten nur für diesen Browser auf diesem Rechner. Vor dem Leeren der
 Browserdaten exportieren.
 
@@ -110,16 +134,18 @@ beim Neuladen bestehen.
 3. Abmelden, als Nele Faber anmelden: Die Anrufliste startet mit der Leadliste ihres
    Hunters (Auswahl „Hunter“), sortiert nach Score, mit letzter Aktivität; Accounts mit
    Aktivität in den letzten 14 Tagen sind gesperrt, Briefing mit Aufhängern und persönlichem
-   Einstiegssatz. „Termin vereinbaren“ (Taste 1) öffnet den Salesforce-Kalender in der
-   Wochenansicht und erfasst den Termin. Taste 2 plant eine Wiedervorlage mit
-   Datum. „Termine“ in der Navigation öffnet den Salesforce-Kalender, der Reiter
-   Wiedervorlagen zeigt mit Demo-Daten auch Wiedervorlagen aus früheren Anrufen.
-4. Abmelden, als Martina Weidmann anmelden: oben vier Kennzahlen (Termine der Woche,
-   Anrufe heute, im Wochenziel, noch nicht in Salesforce), darunter ein Bereich mit den
-   Ansichten Team, Hunter und Termine. Team zeigt je Person Hunter, Termine und Anrufe; ein
-   Klick öffnet rechts Werdegang und das Auswahlfeld „Arbeitet für Hunter“. Termine zeigt
-   den Termin von Nele Faber (markiert als „erfasst“) mit Status in Salesforce. Die Kachel
-   „Noch nicht in Salesforce“ springt direkt zu den offenen Terminen.
+   Einstiegssatz. Unten das Gesprächsprotokoll ausfüllen, dann „Termin vereinbaren“
+   (Taste 1, öffnet den Salesforce-Kalender) oder Taste 2 für eine Wiedervorlage mit
+   Datum. Der Reiter Wiedervorlagen zeigt mit Demo-Daten auch Wiedervorlagen aus früheren
+   Anrufen, jede mit Status in Salesforce.
+4. Abmelden, als Martina Weidmann anmelden: oben Termine heute, Termine diese Woche,
+   Anrufe heute und Wochenziel, darunter ein Bereich mit den Ansichten Team, Hunter,
+   Termine und Gespräche. Team zeigt je Person Hunter, Termine heute und der Woche und
+   Anrufe; ein Klick öffnet rechts Werdegang und das Auswahlfeld „Arbeitet für Hunter“.
+   Termine zeigt heute oder die Woche mit Status in Salesforce, die Kachel „Termine heute“
+   springt dorthin. Gespräche listet je Firma das jüngste Protokoll, filterbar nach
+   aktueller Lösung und Wettbewerber, mit Nettokontakten und CSV-Export, etwa alle Firmen
+   bei MEWA für die gezielte Ansprache.
 5. Als Steffen Sixthor: dieselben Bausteine je Region, dazu der Regionsvergleich.
 
 Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link

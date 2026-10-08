@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["vite.config.ts", "tailwind.config.ts", "eslint.config.js", "server"]
+  "include": ["vite.config.ts", "tailwind.config.ts", "eslint.config.js", "server", "api"]
 }

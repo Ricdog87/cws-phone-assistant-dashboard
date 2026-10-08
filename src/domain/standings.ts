@@ -6,6 +6,8 @@ export interface MemberActivity {
   givenName: string;
   familyName: string;
   dayCalls: number;
+  /** Heute vereinbarte Termine, ohne eigenes Tagesziel */
+  dayAppointments: number;
   weekCalls: number;
   weekAppointments: number;
   /** True, wenn die Zahlen aus erfassten Anrufen dieser Sitzung stammen. */
@@ -26,6 +28,7 @@ export interface TeamStanding {
   members: MemberStanding[];
   headcount: number;
   dayCalls: number;
+  dayAppointments: number;
   weekCalls: number;
   weekAppointments: number;
   dailyCallGoal: number;
@@ -41,6 +44,7 @@ export interface DirectorStanding {
   teamCount: number;
   headcount: number;
   dayCalls: number;
+  dayAppointments: number;
   weekCalls: number;
   weekAppointments: number;
   dailyCallGoal: number;
@@ -52,13 +56,17 @@ export interface DirectorStanding {
 
 export function applyLiveActivity(
   members: readonly MemberActivity[],
-  live: Pick<MemberActivity, 'id' | 'dayCalls' | 'weekCalls' | 'weekAppointments'>,
+  live: Pick<
+    MemberActivity,
+    'id' | 'dayCalls' | 'dayAppointments' | 'weekCalls' | 'weekAppointments'
+  >,
 ): MemberActivity[] {
   return members.map((member) =>
     member.id === live.id
       ? {
           ...member,
           dayCalls: live.dayCalls,
+          dayAppointments: live.dayAppointments,
           weekCalls: live.weekCalls,
           weekAppointments: live.weekAppointments,
           live: true,
@@ -94,6 +102,7 @@ export function teamStanding(
     return a.fullName.localeCompare(b.fullName, 'de');
   });
   const dayCalls = ranked.reduce((sum, member) => sum + member.dayCalls, 0);
+  const dayAppointments = ranked.reduce((sum, member) => sum + member.dayAppointments, 0);
   const weekCalls = ranked.reduce((sum, member) => sum + member.weekCalls, 0);
   const weekAppointments = ranked.reduce((sum, member) => sum + member.weekAppointments, 0);
   return {
@@ -102,6 +111,7 @@ export function teamStanding(
     members: ranked,
     headcount: ranked.length,
     dayCalls,
+    dayAppointments,
     weekCalls,
     weekAppointments,
     dailyCallGoal: ranked.length * DAILY_CALL_GOAL,
@@ -116,6 +126,7 @@ export function teamStanding(
 /** Verdichtet mehrere Teams. Die Zeilen bleiben je Team, damit weitere Länder dazukommen. */
 export function directorStanding(teams: readonly TeamStanding[]): DirectorStanding {
   const dayCalls = teams.reduce((sum, team) => sum + team.dayCalls, 0);
+  const dayAppointments = teams.reduce((sum, team) => sum + team.dayAppointments, 0);
   const weekCalls = teams.reduce((sum, team) => sum + team.weekCalls, 0);
   const weekAppointments = teams.reduce((sum, team) => sum + team.weekAppointments, 0);
   const headcount = teams.reduce((sum, team) => sum + team.headcount, 0);
@@ -124,6 +135,7 @@ export function directorStanding(teams: readonly TeamStanding[]): DirectorStandi
     teamCount: teams.length,
     headcount,
     dayCalls,
+    dayAppointments,
     weekCalls,
     weekAppointments,
     dailyCallGoal: teams.reduce((sum, team) => sum + team.dailyCallGoal, 0),

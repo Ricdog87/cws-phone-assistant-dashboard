@@ -34,7 +34,7 @@ export function DashboardView() {
 function AssistantDashboard() {
   const outcomes = useAppStore((s) => s.outcomes);
   const contacts = useAppStore((s) => s.contacts);
-  const appointments = useAppStore((s) => s.appointments);
+  const recalls = useAppStore((s) => s.recalls);
   const clearOutcomes = useAppStore((s) => s.clearOutcomes);
   const metrics = useMemo(() => computeMetrics(outcomes), [outcomes]);
   const goals = useGoalProgress();
@@ -55,7 +55,11 @@ function AssistantDashboard() {
   }
 
   function reset() {
-    if (window.confirm('Alle erfassten Anrufergebnisse, Kontakte und Termine endgültig löschen?')) {
+    if (
+      window.confirm(
+        'Alle erfassten Anrufergebnisse, Kontakte und Wiedervorlagen endgültig löschen?',
+      )
+    ) {
       void clearOutcomes();
     }
   }
@@ -137,9 +141,7 @@ function AssistantDashboard() {
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={reset}
-                disabled={
-                  outcomes.length === 0 && contacts.length === 0 && appointments.length === 0
-                }
+                disabled={outcomes.length === 0 && contacts.length === 0 && recalls.length === 0}
               >
                 Löschen
               </Button>

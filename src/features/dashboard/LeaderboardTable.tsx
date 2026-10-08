@@ -64,6 +64,9 @@ export function LeaderboardTable({
                 Hunter
               </th>
             )}
+            <th scope="col" className={`${cell} text-right font-normal`}>
+              Termine heute
+            </th>
             <th scope="col" className={`${cell} font-normal`}>
               Termine diese Woche
             </th>
@@ -128,6 +131,9 @@ export function LeaderboardTable({
                     {hunterOf(member) ?? 'nicht zugeordnet'}
                   </td>
                 )}
+                <td className={`${cell} text-right font-bold tabular-nums`}>
+                  {formatInt(member.dayAppointments)}
+                </td>
                 <td className={cell}>
                   <GoalCell
                     value={member.weekAppointments}

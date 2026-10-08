@@ -109,19 +109,27 @@ export interface ContactUpdate {
   capturedAt: string;
 }
 
-/** Termin aus dem Cockpit; Datum, Uhrzeit und Einladung liegen in Salesforce */
-export interface Appointment {
-  id: string;
-  leadId: string;
-  leadName: string;
-  /** Accountinhaber beim Buchen */
-  hunterName: string | null;
-  createdAt: string;
-  /** Zeitpunkt, an dem das Salesforce-Formular über das Cockpit geöffnet wurde */
-  salesforceOpenedAt: string | null;
+/** Aktuelle Lösung für Berufskleidung, Auswahl aus dem Vertrieb */
+export type CallSolution = 'companyBuys' | 'employeesBuy' | 'competitor' | 'none';
+
+/**
+ * Gesprächsprotokoll zum Anruf, alles auf einem Fleck: Gesprächspartner, aktuelle Lösung,
+ * Merkmale und Notiz. Geht mit dem Ergebnis als Aufgabe „Anruf“ nach Salesforce.
+ */
+export interface CallProtocol {
+  /** Wer am Telefon war; Entscheider zählt als Nettokontakt */
+  contactRole: ContactRole | null;
+  solution: CallSolution | null;
+  /** Anbieter bei Wettbewerb, Werte aus COMPETITORS */
+  competitor: string | null;
+  companyDissolved: boolean;
+  centralDecision: boolean;
+  existingCustomer: boolean;
+  doNotCall: boolean;
+  note: string | null;
 }
 
-/** Wiedervorlage aus dem Cockpit; die Aufgabe selbst liegt in Salesforce */
+/** Wiedervorlage aus dem Cockpit; geht automatisch als Aufgabe nach Salesforce */
 export interface Recall {
   id: string;
   leadId: string;
@@ -135,11 +143,10 @@ export interface Recall {
   dueTime: string | null;
   /** Vertragsende YYYY-MM, nur beim Grund Vertragsende */
   contractEnd: string | null;
+  /** Notiz aus dem Gesprächsprotokoll */
   note: string | null;
   /** Gleich dem Zeitpunkt des Anrufergebnisses, das die Wiedervorlage angelegt hat */
   createdAt: string;
-  /** Zeitpunkt, an dem die Aufgabe in Salesforce über das Cockpit geöffnet wurde */
-  salesforceOpenedAt: string | null;
 }
 
 export interface HunterFeedback {
@@ -175,6 +182,8 @@ export interface CallOutcome {
   qualificationStatus?: QualificationStatus;
   contactUpdateId?: string | null;
   recallReason?: RecallReason | null;
+  /** Gesprächsprotokoll aus der Maske */
+  protocol?: CallProtocol;
   /** Nur im Pilot-Arm standard, Sekunden Recherche vor dem Anruf */
   researchSeconds?: number;
 }

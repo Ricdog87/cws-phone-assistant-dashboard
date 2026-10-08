@@ -16,6 +16,7 @@ describe('teamStanding', () => {
     expect(team.dayCalls).toBe(878);
     expect(team.weekCalls).toBe(3493);
     expect(team.weekAppointments).toBe(51);
+    expect(team.dayAppointments).toBe(15);
     expect(team.dailyCallGoal).toBe(1100);
     expect(team.weeklyAppointmentGoal).toBe(88);
     expect(team.atWeeklyGoal).toBe(5);
@@ -28,6 +29,7 @@ describe('teamStanding', () => {
     const replaced = applyLiveActivity(DEMO_MEMBERS, {
       id: LIVE_ASSISTANT_ID,
       dayCalls: 2,
+      dayAppointments: 1,
       weekCalls: 2,
       weekAppointments: 1,
     });
@@ -38,6 +40,7 @@ describe('teamStanding', () => {
     const next = teamStanding(replaced, DEMO_TEAM_ID, DEMO_TEAM_NAME);
     expect(next.dayCalls).toBe(880);
     expect(next.weekAppointments).toBe(52);
+    expect(next.dayAppointments).toBe(16);
     expect(next.atWeeklyGoal).toBe(5);
   });
 
@@ -45,6 +48,7 @@ describe('teamStanding', () => {
     const same = applyLiveActivity(DEMO_MEMBERS, {
       id: 'unbekannt',
       dayCalls: 9,
+      dayAppointments: 9,
       weekCalls: 9,
       weekAppointments: 9,
     });
@@ -55,6 +59,7 @@ describe('teamStanding', () => {
     expect(teamStanding([], 'leer', 'Leer')).toMatchObject({
       headcount: 0,
       dayCalls: 0,
+      dayAppointments: 0,
       weekCalls: 0,
       weekAppointments: 0,
       dailyCallGoal: 0,
@@ -85,6 +90,7 @@ describe('DEMO_REGIONS', () => {
       dayCalls: 739,
       weekCalls: 2843,
       weekAppointments: 41,
+      dayAppointments: 12,
       atWeeklyGoal: 4,
       underDailyGoal: 13,
     });
@@ -93,6 +99,7 @@ describe('DEMO_REGIONS', () => {
     expect(director.headcount).toBe(40);
     expect(director.dayCalls).toBe(1617);
     expect(director.weekAppointments).toBe(92);
+    expect(director.dayAppointments).toBe(27);
     expect(director.dailyCallGoal).toBe(2000);
     expect(director.weeklyAppointmentGoal).toBe(160);
     expect(director.atWeeklyGoal).toBe(9);
@@ -110,6 +117,7 @@ describe('directorStanding', () => {
           givenName: 'Ann',
           familyName: 'Berg',
           dayCalls: 10,
+          dayAppointments: 1,
           weekCalls: 40,
           weekAppointments: 1,
           live: false,

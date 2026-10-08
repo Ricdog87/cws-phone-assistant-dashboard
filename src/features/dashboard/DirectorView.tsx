@@ -8,7 +8,7 @@ import { BoardSections, type BoardSection } from './BoardSections';
 import { progressPercent } from './memberFormat';
 import { RegionTable } from './RegionTable';
 import { SectionTitle } from './SectionTitle';
-import type { AppointmentFilter } from './TeamAppointmentsTable';
+import type { AppointmentFilter } from '@/domain/appointments';
 import { useBoardFocus, type BoardFocus } from './useBoardFocus';
 import { useRegionBoard } from './useRegionBoard';
 import { useDirectorStanding } from './useTeamStanding';
@@ -21,7 +21,8 @@ export function DirectorView() {
   const appointmentGap = Math.max(0, standing.weeklyAppointmentGoal - standing.weekAppointments);
   const { focus, select } = useBoardFocus();
   const [section, setSection] = useState<BoardSection>('team');
-  const [appointmentFilter, setAppointmentFilter] = useState<AppointmentFilter>('all');
+  const [appointmentFilter, setAppointmentFilter] = useState<AppointmentFilter>('week');
+  const todayPressed = section === 'appointments' && appointmentFilter === 'today';
   const [regionId, setRegionId] = useState<string>(regions[0]?.id ?? '');
 
   const region = regions.find((item) => item.id === regionId) ?? regions[0];
@@ -43,7 +44,22 @@ export function DirectorView() {
           subtitle={`${formatInt(standing.teamCount)} Regionen · ${formatInt(standing.headcount)} Telefonassistenzen · Teamleitungen ${regions.map((item) => item.leadName).join(' und ')}`}
         />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatTile
+            label="Termine heute"
+            value={formatInt(standing.dayAppointments)}
+            hint={`${formatInt(standing.dayCalls)} Anrufe heute im Gebiet`}
+            pressed={todayPressed}
+            onSelect={() => {
+              if (todayPressed) {
+                setAppointmentFilter('week');
+                return;
+              }
+              setSection('appointments');
+              setAppointmentFilter('today');
+            }}
+            filterLabel="Heutige Termine der gewählten Region zeigen"
+          />
           <StatTile
             label="Termine diese Woche"
             value={formatInt(standing.weekAppointments)}

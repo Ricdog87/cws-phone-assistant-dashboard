@@ -1,36 +1,40 @@
 import { useCallback } from 'react';
 import { newId } from '@/app/ids';
 import { useAppStore } from '@/app/store';
+import { latestContactByLead } from '@/domain/contacts';
+import { emptyProtocol, normalizeProtocol } from '@/domain/protocol';
 import { nextOpenLeadId } from '@/domain/queue';
+import { callLogTask, recallTask } from '@/domain/salesforceSync';
 import { normalizeWeights } from '@/domain/scoring';
-import type { CallOutcome, OutcomeType, QueueEntry, Recall } from '@/domain/types';
+import type { CallOutcome, CallProtocol, OutcomeType, QueueEntry, Recall } from '@/domain/types';
 
-/** Angaben aus dem Formular Wiedervorlage */
-export type RecallDraft = Pick<Recall, 'reason' | 'dueDate' | 'dueTime' | 'contractEnd' | 'note'>;
+/** Angaben aus dem Formular Wiedervorlage; die Notiz kommt aus dem Gesprächsprotokoll */
+export type RecallDraft = Pick<Recall, 'reason' | 'dueDate' | 'dueTime' | 'contractEnd'>;
 
 export interface RecordOptions {
+  /** Gesprächsprotokoll aus der Maske */
+  protocol?: CallProtocol;
   /** Wiedervorlage mit Grund und Datum, nur beim Ergebnis callback */
   recall?: RecallDraft;
-  /** Der Salesforce-Kalender wurde beim Termin geöffnet */
-  salesforceOpened?: boolean;
 }
 
 /**
- * Ergebnis buchen und anschließend zum nächsten offenen Lead springen. Eine Wiedervorlage
- * entsteht zusammen mit dem Ergebnis und trägt denselben Zeitpunkt; beim Termin merkt sich
- * das Cockpit, dass der Salesforce-Kalender geöffnet wurde.
+ * Ergebnis mit Gesprächsprotokoll buchen, als Aufgabe „Anruf“ in den Postausgang nach
+ * Salesforce stellen und zum nächsten offenen Lead springen. Eine Wiedervorlage entsteht
+ * zusammen mit dem Ergebnis, trägt denselben Zeitpunkt und geht als offene Aufgabe mit.
  */
 export function useRecordOutcome(queue: readonly QueueEntry[]) {
   const addOutcome = useAppStore((s) => s.addOutcome);
   const addRecall = useAppStore((s) => s.addRecall);
-  const addAppointment = useAppStore((s) => s.addAppointment);
+  const enqueueSync = useAppStore((s) => s.enqueueSync);
+  const flushSync = useAppStore((s) => s.flushSync);
   const selectLead = useAppStore((s) => s.selectLead);
 
   return useCallback(
     async (entry: QueueEntry, outcome: OutcomeType, options: RecordOptions = {}) => {
-      const { recall, salesforceOpened } = options;
-      const { weights, sourceId, outcomes } = useAppStore.getState();
+      const { weights, sourceId, outcomes, contacts, agentName } = useAppStore.getState();
       const recordedAt = new Date().toISOString();
+      const protocol = normalizeProtocol(options.protocol ?? emptyProtocol());
       const record: CallOutcome = {
         id: newId(),
         leadId: entry.lead.id,
@@ -45,33 +49,29 @@ export function useRecordOutcome(queue: readonly QueueEntry[]) {
         isControl: entry.isControl,
         queuePosition: entry.position,
         sourceId,
-        ...(recall ? { recallReason: recall.reason } : {}),
+        protocol,
+        ...(options.recall ? { recallReason: options.recall.reason } : {}),
       };
       await addOutcome(record);
-      if (outcome === 'appointment' && salesforceOpened) {
-        await addAppointment({
+      const contact = latestContactByLead(contacts).get(entry.lead.id);
+      await enqueueSync(record.id, callLogTask(record, agentName, contact));
+      if (options.recall) {
+        const recall: Recall = {
+          ...options.recall,
           id: newId(),
           leadId: entry.lead.id,
           leadName: entry.lead.name,
           hunterName: entry.lead.owner ?? null,
+          note: protocol.note,
           createdAt: recordedAt,
-          salesforceOpenedAt: recordedAt,
-        });
+        };
+        await addRecall(recall);
+        await enqueueSync(recall.id, recallTask(recall, agentName));
       }
-      if (recall) {
-        await addRecall({
-          ...recall,
-          id: newId(),
-          leadId: entry.lead.id,
-          leadName: entry.lead.name,
-          hunterName: entry.lead.owner ?? null,
-          createdAt: recordedAt,
-          salesforceOpenedAt: null,
-        });
-      }
+      void flushSync();
       const processed = new Set([...outcomes.map((o) => o.leadId), entry.lead.id]);
       selectLead(nextOpenLeadId(queue, entry.lead.id, processed) ?? entry.lead.id);
     },
-    [addOutcome, addRecall, addAppointment, selectLead, queue],
+    [addOutcome, addRecall, enqueueSync, flushSync, selectLead, queue],
   );
 }

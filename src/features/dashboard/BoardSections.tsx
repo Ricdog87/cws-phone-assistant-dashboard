@@ -8,17 +8,17 @@ import { withRanks } from './boardRows';
 import { HunterTable } from './HunterTable';
 import { LeaderboardTable } from './LeaderboardTable';
 import { MemberDetail } from './MemberDetail';
-import {
-  AppointmentFilterSwitch,
-  TeamAppointmentsTable,
-  type AppointmentFilter,
-} from './TeamAppointmentsTable';
+import { filterAppointments, type AppointmentFilter } from '@/domain/appointments';
+import { todayLocal } from '@/app/selectors';
+import { AppointmentFilterSwitch, TeamAppointmentsTable } from './TeamAppointmentsTable';
+import { CallsFilterBar, CallsSummary, TeamCallsTable } from './TeamCallsTable';
+import { ALL_CALLS, filterCalls, type CallFilter } from '@/domain/teamCalls';
 import { matchesFocus, type BoardFocus } from './useBoardFocus';
 import { useCardSelection } from './useCardSelection';
 import { useHunterOptions, type RegionBoard } from './useRegionBoard';
 import { ViewModeSwitch, type ViewMode } from './ViewModeSwitch';
 
-export type BoardSection = 'team' | 'hunters' | 'appointments';
+export type BoardSection = 'team' | 'hunters' | 'appointments' | 'calls';
 
 interface BoardSectionsProps {
   regionId: string;
@@ -39,9 +39,10 @@ interface BoardSectionsProps {
 }
 
 /**
- * Ein Bereich mit drei Ansichten statt vieler Blöcke untereinander: Team (Anrufe und
- * Termine je Person, Klick öffnet Werdegang und Hunter-Zuordnung), Hunter (Potenzialliste)
- * und Termine (Status in Salesforce).
+ * Ein Bereich mit vier Ansichten statt vieler Blöcke untereinander: Team (Anrufe und
+ * Termine je Person, Klick öffnet Werdegang und Hunter-Zuordnung), Hunter (Potenzialliste),
+ * Termine (heute oder Woche, Status in Salesforce) und Gespräche (Protokolle, Filter nach
+ * aktueller Lösung und Wettbewerber, Export).
  */
 export function BoardSections({
   regionId,
@@ -64,7 +65,9 @@ export function BoardSections({
   const [mode, setMode] = useState<ViewMode>('list');
   const visible = withRanks(members).filter(({ member }) => matchesFocus(member, focus));
   const selected = members.find((member) => keyOf(member.id) === selectedKey);
-  const open = board.appointments.filter((item) => item.status === 'open').length;
+  const today = filterAppointments(board.appointments, 'today', todayLocal()).length;
+  const [callFilter, setCallFilter] = useState<CallFilter>(ALL_CALLS);
+  const calls = filterCalls(board.calls, callFilter);
   const hunterOfName = useMemo(
     () => new Map(board.hunters.flatMap((row) => row.assistants.map((name) => [name, row.hunter]))),
     [board.hunters],
@@ -84,8 +87,9 @@ export function BoardSections({
       id: 'appointments',
       label: 'Termine',
       count: board.appointments.length,
-      note: open > 0 ? `${formatInt(open)} offen` : undefined,
+      note: `${formatInt(today)} heute`,
     },
+    { id: 'calls', label: 'Gespräche', count: board.calls.length },
   ];
 
   return (
@@ -138,6 +142,14 @@ export function BoardSections({
             {section === 'hunters' && (
               <span className="text-xs text-muted">Wenigste Termine oben</span>
             )}
+            {section === 'calls' && (
+              <CallsFilterBar
+                calls={board.calls}
+                filter={callFilter}
+                onChange={setCallFilter}
+                fileLabel={regionId}
+              />
+            )}
             {section === 'appointments' && (
               <AppointmentFilterSwitch
                 appointments={board.appointments}
@@ -180,6 +192,15 @@ export function BoardSections({
         {section === 'hunters' && <HunterTable rows={board.hunters} />}
         {section === 'appointments' && (
           <TeamAppointmentsTable appointments={board.appointments} filter={appointmentFilter} />
+        )}
+        {section === 'calls' && (
+          <>
+            <CallsSummary
+              calls={board.calls}
+              onCompetitor={(name) => setCallFilter({ solution: 'competitor', competitor: name })}
+            />
+            <TeamCallsTable calls={calls} />
+          </>
         )}
       </section>
 

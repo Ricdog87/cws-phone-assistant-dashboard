@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { Appointment, CallOutcome, ContactUpdate, Recall } from '@/domain/types';
+import type { SyncItem } from '@/domain/salesforceSync';
+import type { CallOutcome, ContactUpdate, Recall } from '@/domain/types';
 import type { ColumnMapping } from './csvMapping';
 
 export interface StoredColumnMapping {
@@ -26,8 +27,8 @@ export class AppDatabase extends Dexie {
   columnMappings!: Table<StoredColumnMapping, string>;
   geocodeCache!: Table<GeocodeCacheEntry, string>;
   contacts!: Table<ContactUpdate, string>;
-  appointments!: Table<Appointment, string>;
   recalls!: Table<Recall, string>;
+  syncItems!: Table<SyncItem, string>;
 
   constructor(name = 'cws-lead-cockpit') {
     super(name);
@@ -51,6 +52,11 @@ export class AppDatabase extends Dexie {
     // Wiedervorlagen mit Fälligkeit; die Aufgabe selbst liegt in Salesforce
     this.version(6).stores({
       recalls: 'id, leadId, dueDate, createdAt',
+    });
+    // Postausgang nach Salesforce; Termine merkt sich das Cockpit nicht mehr eigens
+    this.version(7).stores({
+      syncItems: 'id, status, updatedAt',
+      appointments: null,
     });
   }
 }
