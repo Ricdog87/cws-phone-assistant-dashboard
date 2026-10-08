@@ -13,7 +13,6 @@ const config: LlmConfig = {
 
 const request = buildBriefingRequest(
   makeLead({ city: 'Oldenburg', industry: 'Metallbau', certification: 'ISO 9001' }),
-  3.1,
 );
 
 const answer = {

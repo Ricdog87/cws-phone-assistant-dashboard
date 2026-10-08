@@ -56,8 +56,8 @@ export function DataView() {
                 <StatTile label="Geladen" value={formatInt(report.loaded)} />
                 <StatTile label="Davon nachgeschlagen" value={formatInt(report.geocoded)} />
                 <StatTile
-                  label="Verworfen, ohne Koordinaten"
-                  value={formatInt(report.rejectedMissingCoordinates)}
+                  label="Ohne Kartenposition"
+                  value={formatInt(report.withoutCoordinates)}
                 />
                 <StatTile label="Verworfen, fehlerhaft" value={formatInt(report.rejectedInvalid)} />
               </div>

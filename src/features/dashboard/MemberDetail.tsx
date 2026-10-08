@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef } from 'react';
 import { Button } from '@/components/Button';
 import { formatInt } from '@/components/format';
+import { demoHistory } from '@/data/demoHistory';
 import type { MemberStanding } from '@/domain/standings';
 import { LiveTag, ThinBar } from './AssistantBrick';
 import { noun } from './memberFormat';
+import { WeeklyTrend } from './WeeklyTrend';
 
 interface MemberDetailProps {
   id: string;
@@ -113,6 +115,8 @@ export function MemberDetail({ id, member, groupLabel, onClose }: MemberDetailPr
           </dd>
         </div>
       </dl>
+
+      <WeeklyTrend points={demoHistory(member)} goal={member.weeklyAppointmentGoal} />
     </section>
   );
 }

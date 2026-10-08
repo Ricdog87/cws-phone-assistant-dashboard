@@ -9,8 +9,10 @@ import {
   buildIcs,
   formatSlot,
   latestAppointmentByLead,
+  liveTeamAppointments,
   mailtoHref,
-  nextTourDate,
+  nextWorkday,
+  sortTeamAppointments,
   toAppointment,
   validateAppointmentDraft,
   type AppointmentDraft,
@@ -45,16 +47,14 @@ function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
   };
 }
 
-describe('nextTourDate', () => {
-  it('liefert den nächsten Tourtag ab morgen', () => {
+describe('nextWorkday', () => {
+  it('liefert den nächsten Werktag ab morgen', () => {
     // 08.10.2026 ist ein Donnerstag
-    expect(nextTourDate('Dienstag', '2026-10-08')).toBe('2026-10-13');
-    expect(nextTourDate('Freitag', '2026-10-08')).toBe('2026-10-09');
-    expect(nextTourDate('Donnerstag', '2026-10-08')).toBe('2026-10-15');
-  });
-
-  it('nimmt bei unbekanntem Wochentag den nächsten Tag', () => {
-    expect(nextTourDate('Feiertag', '2026-12-31')).toBe('2027-01-01');
+    expect(nextWorkday('2026-10-08')).toBe('2026-10-09');
+    // Freitag und Samstag springen auf Montag
+    expect(nextWorkday('2026-10-09')).toBe('2026-10-12');
+    expect(nextWorkday('2026-10-10')).toBe('2026-10-12');
+    expect(nextWorkday('2026-12-31')).toBe('2027-01-01');
   });
 });
 
@@ -179,5 +179,29 @@ describe.each([
     expect((await repo.list()).map((a) => a.id)).toEqual(['a', 'b']);
     await repo.clear();
     expect(await repo.list()).toEqual([]);
+  });
+});
+
+describe('Terminübersicht', () => {
+  it('zeigt gebuchte Termine ohne Details und den Bestätigungsstatus', () => {
+    const rows = sortTeamAppointments(
+      liveTeamAppointments(
+        [
+          makeAppointment({ id: 'a', leadId: 'L-1', confirmationOpenedAt: '2026-10-08T10:00:00Z' }),
+          makeAppointment({ id: 'b', leadId: 'L-2', start: '2026-10-12T08:00:00.000Z' }),
+        ],
+        [
+          { id: 'o1', leadId: 'L-1', leadName: 'Metallbau Beispiel GmbH', owner: 'Jonas Ahlers' },
+          { id: 'o3', leadId: 'L-3', leadName: 'Bau Beispiel KG', owner: null },
+        ],
+        'Nele Faber',
+      ),
+    );
+    expect(rows.map((row) => [row.id, row.status])).toEqual([
+      ['o3', 'details_missing'],
+      ['b', 'open'],
+      ['a', 'confirmed'],
+    ]);
+    expect(rows[0]).toMatchObject({ start: null, hunterName: 'nicht zugeordnet', live: true });
   });
 });

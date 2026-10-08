@@ -26,8 +26,8 @@ export interface LoadReport {
   loaded: number;
   /** Davon über den Geocoder ergänzte Koordinaten */
   geocoded: number;
-  /** Zeilen ohne Koordinaten, die auch nicht nachgeschlagen werden konnten */
-  rejectedMissingCoordinates: number;
+  /** Geladen, aber ohne Kartenposition (nicht nachgeschlagen oder nicht gefunden) */
+  withoutCoordinates: number;
   /** Zeilen mit Validierungsfehlern */
   rejectedInvalid: number;
   rowErrors: RowError[];
@@ -38,7 +38,7 @@ export function emptyReport(count: number): LoadReport {
     total: count,
     loaded: count,
     geocoded: 0,
-    rejectedMissingCoordinates: 0,
+    withoutCoordinates: 0,
     rejectedInvalid: 0,
     rowErrors: [],
   };

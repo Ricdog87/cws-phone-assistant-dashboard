@@ -29,6 +29,8 @@ export const SALESFORCE_FIELD_MAPPING: FieldMapping = {
   siteExpansion: 'Standorterweiterung__c',
   managementChange: 'GF_Wechsel__c',
   isCustomer: null, // offen: Abgleich über Account mit aktivem Vertrag
+  owner: 'Owner.Name',
+  lastActivity: 'LastActivityDate',
 };
 
 export class SalesforceProvider implements LeadProvider {

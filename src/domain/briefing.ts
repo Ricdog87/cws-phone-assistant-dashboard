@@ -6,12 +6,7 @@ import type { QueueEntry } from './types';
  */
 
 export type HookKind =
-  | 'open_positions'
-  | 'site_expansion'
-  | 'management_change'
-  | 'certification'
-  | 'on_route'
-  | 'wearers';
+  'open_positions' | 'site_expansion' | 'management_change' | 'certification' | 'wearers';
 
 export interface Hook {
   kind: HookKind;
@@ -26,18 +21,16 @@ export interface Briefing {
   openingLine: string;
 }
 
-/** Bis zu diesem Umweg gilt ein Lead als direkt an der Route */
-export const ON_ROUTE_MAX_DETOUR_MINUTES = 5;
-
-export function buildHooks(entry: Pick<QueueEntry, 'lead' | 'detourMinutes'>): Hook[] {
-  const { lead, detourMinutes } = entry;
+export function buildHooks(entry: Pick<QueueEntry, 'lead'>): Hook[] {
+  const { lead } = entry;
   const hooks: Hook[] = [];
 
   if (lead.openPositions > 0) {
+    const one = lead.openPositions === 1;
     hooks.push({
       kind: 'open_positions',
-      text: `${lead.openPositions} offene Stellen im gewerblichen Bereich`,
-      opener: `ich habe gesehen, dass Sie gerade ${lead.openPositions} gewerbliche Stellen besetzen. Neue Mitarbeitende brauchen ab dem ersten Tag passende Berufskleidung.`,
+      text: `${lead.openPositions} ${one ? 'offene Stelle' : 'offene Stellen'} im gewerblichen Bereich`,
+      opener: `ich habe gesehen, dass Sie gerade ${one ? 'eine gewerbliche Stelle' : `${lead.openPositions} gewerbliche Stellen`} besetzen. Neue Mitarbeitende brauchen ab dem ersten Tag passende Berufskleidung.`,
     });
   }
   if (lead.siteExpansion) {
@@ -63,14 +56,6 @@ export function buildHooks(entry: Pick<QueueEntry, 'lead' | 'detourMinutes'>): H
       opener: `Sie sind nach ${lead.certification} zertifiziert. Wir dokumentieren die Pflege der Kleidung so, dass es im Audit passt.`,
     });
   }
-  if (detourMinutes <= ON_ROUTE_MAX_DETOUR_MINUTES) {
-    hooks.push({
-      kind: 'on_route',
-      text: `Liegt an der Serviceroute, ${formatMinutes(detourMinutes)} Umweg`,
-      opener:
-        'unser Servicefahrer ist ohnehin regelmäßig bei Ihnen in der Nähe. Ein Termin vor Ort ist deshalb kurzfristig möglich.',
-    });
-  }
   if (hooks.length === 0) {
     hooks.push({
       kind: 'wearers',
@@ -88,10 +73,7 @@ export function contactLabel(entry: Pick<QueueEntry, 'lead'>): string {
   return contactRole ? `${contactName}, ${contactRole}` : contactName;
 }
 
-export function buildBriefing(
-  entry: Pick<QueueEntry, 'lead' | 'detourMinutes'>,
-  callerName = '[Name]',
-): Briefing {
+export function buildBriefing(entry: Pick<QueueEntry, 'lead'>, callerName = '[Name]'): Briefing {
   const hooks = buildHooks(entry);
   const greeting = entry.lead.contactName ? `Guten Tag ${entry.lead.contactName}` : 'Guten Tag';
   const first = hooks[0];
@@ -101,8 +83,4 @@ export function buildBriefing(
     hooks,
     openingLine: `${greeting}, hier ist ${callerName} von CWS Workwear,${opener} Hätten Sie diese Woche 15 Minuten für einen kurzen Termin vor Ort?`,
   };
-}
-
-export function formatMinutes(minutes: number): string {
-  return `${minutes.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Min.`;
 }

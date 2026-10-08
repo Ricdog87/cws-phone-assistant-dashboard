@@ -7,7 +7,7 @@ Zustand als Store, Dexie für IndexedDB, react-leaflet mit OpenStreetMap-Kacheln
 
 ```
 ┌──────────────┐    load()     ┌────────────┐   leads, Gewichte,   ┌──────────────┐
-│ LeadProvider │ ────────────▶ │  Store     │   Korridor ────────▶ │  domain/     │
+│ LeadProvider │ ────────────▶ │  Store     │   Hunter ──────────▶ │  domain/     │
 │ Mock, CSV,   │               │ (Zustand)  │ ◀──────────────────── │  scoring,    │
 │ Clay, D&B,   │               │            │   ScoredLead,        │  sampling,   │
 │ Salesforce   │               │            │   QueueEntry         │  briefing    │
@@ -18,27 +18,28 @@ Zustand als Store, Dexie für IndexedDB, react-leaflet mit OpenStreetMap-Kacheln
                               │ OutcomeRepository│  Dexie (IndexedDB)
                               └──────────────────┘
 
-IndexedDB-Tabellen (src/data/db.ts): outcomes, columnMappings, geocodeCache
+IndexedDB-Tabellen (src/data/db.ts): outcomes, columnMappings, geocodeCache, contacts,
+appointments
 ```
 
 ## Schichten
 
-| Ordner            | Aufgabe                                                                                                         | Darf importieren                          |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `src/domain/`     | Fachlogik als reine Funktionen: Geometrie, Scoring, Stichprobe, Warteschlange, Briefing, Kennzahlen, CSV-Export | nur `domain/`                             |
-| `src/data/`       | Datenquellen (Provider), CSV-Zuordnung, Demo-Daten, Repository                                                  | `domain/`                                 |
-| `src/app/`        | App-Shell, Reiter, Store, abgeleitete Selektoren                                                                | alles                                     |
-| `src/features/*`  | Je Reiter ein Ordner mit Ansicht und eigenen Hooks                                                              | `app/`, `components/`, `domain/`, `data/` |
-| `src/components/` | Wiederverwendbare UI-Bausteine ohne Fachlogik                                                                   | `domain/types`                            |
-| `src/styles/`     | Marken-Tokens als CSS-Variablen, Tailwind-Basis, Kartenstile                                                    | –                                         |
+| Ordner            | Aufgabe                                                                                                       | Darf importieren                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `src/domain/`     | Fachlogik als reine Funktionen: Scoring, Stichprobe, Warteschlange, Briefing, Termine, Kennzahlen, CSV-Export | nur `domain/`                             |
+| `src/data/`       | Datenquellen (Provider), CSV-Zuordnung, Demo-Daten, Repository                                                | `domain/`                                 |
+| `src/app/`        | App-Shell, Reiter, Store, abgeleitete Selektoren                                                              | alles                                     |
+| `src/features/*`  | Je Reiter ein Ordner mit Ansicht und eigenen Hooks                                                            | `app/`, `components/`, `domain/`, `data/` |
+| `src/components/` | Wiederverwendbare UI-Bausteine ohne Fachlogik                                                                 | `domain/types`                            |
+| `src/styles/`     | Marken-Tokens als CSS-Variablen, Tailwind-Basis, Kartenstile                                                  | –                                         |
 
 Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 
 ## Datenfluss
 
 1. Beim Start lädt `bootstrap()` die Demo-Daten und die gespeicherten Anrufergebnisse.
-2. Der Store hält Rohdaten und Einstellungen: Leads, Route, Gewichte, Korridor,
-   Stichprobe, Auswahl, Ergebnisse.
+2. Der Store hält Rohdaten und Einstellungen: Leads, gewählte Potenzialliste
+   (`ownerFilter`), Gewichte, Stichprobe, Auswahl, Ergebnisse, Kontakte, Termine.
 3. `useScoredLeads()` und `useQueue()` in `src/app/selectors.ts` berechnen daraus per
    `useMemo` die bewerteten Leads und die Warteschlange. Abgeleitete Werte liegen nie im
    Store, damit sie nicht veralten.
@@ -136,24 +137,32 @@ Import aus Salesforce-Berichten: Die Spaltenerkennung in `src/data/csvMapping.ts
 deutschen Feldbezeichnungen (Account-ID, Accountname, PLZ und Stadt der Liefer- oder
 Rechnungsanschrift, Mitarbeiter, Branchenebene 2). Die Reihenfolge der Aliase ist die
 Priorität: Lieferanschrift vor Rechnungsanschrift, weil die Rechnungsanschrift oft die
-Zentrale ist und nicht der Standort auf der Tour.
+Zentrale ist und nicht der Standort. Accountinhaber und Letzte Aktivität werden mit
+übernommen. Koordinaten sind optional: Ohne Adresse oder ohne Nachschlagen fehlt der Lead
+nur auf der Karte, in der Anrufliste ist er vollständig.
 
 Salesforce ist das führende System. Angereichert wird vor dem Cockpit: D&B und Clay
 schreiben an den Lead in Salesforce, das Cockpit lädt die fertigen Leads und schreibt
 nur Ergebnisse, Termine und im Gespräch erfasste Kontakte zurück.
 
-### Vertriebsgebiet und Touren
+### Vertriebsgebiet und Hunter
 
 - `src/data/territory/`: Landesgrenzen des Vertriebsgebiets Nordwest (Schleswig-Holstein,
   Hamburg, Bremen, Niedersachsen, Nordrhein-Westfalen). Quelle Natural Earth, Admin 1
   (gemeinfrei), vereinfacht auf rund 0,5 km. Die Datei ist erzeugt und wird nicht von Hand
   bearbeitet. Die Karte dunkelt alles außerhalb leicht ab und zeigt die Landesgrenzen.
-- `src/data/tours.ts`: zehn Beispieltouren entlang der Autobahnen, fünf je Region
-  (Nord und NRW), je mit Wochentag. Die aktive Tour liegt im Store (`setTour`), Warteschlange,
-  Korridor und Karte folgen ihr. Die Fachlogik rechnet unverändert mit genau einer Route.
-- Für echte Touren wird eine Quelle analog zum `LeadProvider` ergänzt (etwa aus
-  Salesforce mit Tour, Tourtag und Reihenfolge der Bestandskunden) und liefert
-  `ServiceTour`-Objekte. Alle Berechnungen arbeiten bereits mit beliebigen Polylines.
+- Keine Routenplanung: Im New Business arbeitet die Telefonassistenz die Potenzialliste
+  eines Hunters ab. Der Hunter ist der Accountinhaber (`Lead.owner`), die Auswahl liegt im
+  Store (`ownerFilter`), Warteschlange und Karte folgen ihr.
+- `src/data/hunters.ts`: fiktive Hunter mit Region und E-Mail für die Demo. Für echte
+  Daten kommt die E-Mail später aus Entra ID; bis dahin bleibt sie im Terminformular leer.
+- `src/data/demoOwnership.ts`, `demoAssignments.ts`, `demoAppointments.ts`,
+  `demoHistory.ts`: erfundene Zuordnung, Termine und Vorwochen für die Demo. Mit
+  importierten Daten zeigt das Dashboard nur echte Accountinhaber und die Termine aus
+  diesem Browser.
+- Teamleitung und Head of Sales sehen je Region die Potenzialliste je Hunter
+  (`src/domain/hunterBoard.ts`), die Terminbestätigungen der Woche und je Person den
+  Werdegang der letzten sechs Wochen.
 
 ### Briefing
 
@@ -215,9 +224,9 @@ Regeln und Begründung stehen in `docs/scoring.md`, Abschnitt 6.
 Die Karte bleibt nach dem ersten Rendern montiert und ist nur ausgeblendet, wenn ein
 anderer Reiter aktiv ist. Beim Einblenden ruft `FitOnActivate` zuerst `invalidateSize()`
 und dann `fitBounds()` auf, weil Leaflet die Größe eines ausgeblendeten Containers nicht
-kennt. Farben kommen über CSS-Klassen (`src/styles/map.css`) aus den Tokens. Der Korridor
-ist eine breite Linie, deren Pixelbreite bei jedem Zoom aus der Korridorbreite in
-Kilometern berechnet wird.
+kennt. Farben kommen über CSS-Klassen (`src/styles/map.css`) aus den Tokens. Leads der
+gewählten Potenzialliste sind kräftig, die anderer Hunter blass; ein Klick öffnet den
+Lead in der Anrufliste und wechselt bei Bedarf die Potenzialliste.
 
 ## Tests
 

@@ -42,7 +42,6 @@ export const briefingRequestSchema = z.strictObject({
   ansprechpartnerBekannt: z.boolean(),
   funktionAnsprechpartner: z.string().max(100).nullable(),
   durchwahlBekannt: z.boolean(),
-  umwegMinuten: z.number().min(0).max(1000),
 });
 
 export type BriefingRequest = z.output<typeof briefingRequestSchema>;

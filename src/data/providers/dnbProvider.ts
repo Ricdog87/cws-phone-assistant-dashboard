@@ -30,6 +30,8 @@ export const DNB_FIELD_MAPPING: FieldMapping = {
   siteExpansion: null,
   managementChange: null, // offen: über Änderungen der Führungspersonen ableitbar?
   isCustomer: null, // kommt aus dem CRM
+  owner: null, // kommt aus dem CRM
+  lastActivity: null, // kommt aus dem CRM
 };
 
 export class DnbProvider implements LeadProvider {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { BandBadge } from '@/components/BandBadge';
 import { ControlTag } from '@/components/ControlTag';
-import { formatMin } from '@/components/format';
+import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { OUTCOME_LABELS } from '@/domain/outcomes';
 import type { CallOutcome, QueueEntry } from '@/domain/types';
 
@@ -9,10 +9,12 @@ interface QueueListProps {
   queue: readonly QueueEntry[];
   selectedId: string | null;
   latest: ReadonlyMap<string, CallOutcome>;
+  /** Heute als YYYY-MM-DD für die Anzeige der letzten Aktivität */
+  today: string;
   onSelect(id: string): void;
 }
 
-export function QueueList({ queue, selectedId, latest, onSelect }: QueueListProps) {
+export function QueueList({ queue, selectedId, latest, today, onSelect }: QueueListProps) {
   const selectedRef = useRef<HTMLLIElement>(null);
 
   // Ausgewählten Lead bei Tastaturnavigation im sichtbaren Bereich halten
@@ -21,7 +23,9 @@ export function QueueList({ queue, selectedId, latest, onSelect }: QueueListProp
   }, [selectedId]);
 
   if (queue.length === 0) {
-    return <p className="p-4 text-sm text-muted">Keine Leads im Korridor.</p>;
+    return (
+      <p className="p-4 text-sm text-muted">Keine offenen Accounts in dieser Potenzialliste.</p>
+    );
   }
 
   return (
@@ -52,8 +56,13 @@ export function QueueList({ queue, selectedId, latest, onSelect }: QueueListProp
                 {outcome && ` · ${OUTCOME_LABELS[outcome.outcome]}`}
               </div>
             </div>
-            <div className="text-right text-xs tabular-nums text-muted">
-              {formatMin(entry.detourMinutes)}
+            <div
+              className="w-24 text-right text-xs text-muted"
+              title={
+                entry.lead.lastActivity ? `Letzte Aktivität ${entry.lead.lastActivity}` : undefined
+              }
+            >
+              {activityLabel(daysSinceActivity(entry.lead.lastActivity, today))}
             </div>
             <div className="w-8 text-right text-sm font-bold tabular-nums">{entry.score}</div>
           </li>

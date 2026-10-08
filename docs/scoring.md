@@ -1,26 +1,18 @@
 # Scoring-Regeln
 
 Dieses Dokument beschreibt die Regeln in Prosa, damit Vertrieb und Fachbereich sie ohne
-Quelltext prüfen können. Umsetzung: `src/domain/geo.ts`, `src/domain/scoring.ts`,
+Quelltext prüfen können. Umsetzung: `src/domain/scoring.ts`,
 `src/domain/sampling.ts`, `src/domain/queue.ts`.
 
-## 1. Abstand zur Route und Umweg
+## 1. Keine Routenplanung im New Business
 
-Die Serviceroute ist eine Linie aus Stützpunkten. Für jeden Lead wird der kleinste
-Abstand zu allen Teilstücken dieser Linie berechnet. Den nächstgelegenen Punkt auf dem
-Teilstück bestimmen wir in einer lokalen Projektion, bei der Längengrade mit dem Kosinus
-des Breitengrads gestaucht werden. Die eigentliche Entfernung zu diesem Punkt misst die
-Haversine-Formel als Luftlinie in Kilometern.
+Entscheidung vom 08.10.2026: Im New Business ist die Routenplanung wenig sinnvoll. Die
+Telefonassistenz arbeitet die Potenzialliste eines Hunters ab (Accountinhaber in
+Salesforce), nicht die Umgebung einer Servicetour. Die frühere Dimension „Nähe“ und der
+Korridor entfallen. Fit, Potenzial und Erreichbarkeit behalten ihre Regeln und ihr
+Gewichtsverhältnis.
 
-Aus dem Abstand ergibt sich der Umweg in Minuten:
-
-> Umweg = (2 × Abstand ÷ 45 km/h × 60) + 2 Minuten, gerundet auf eine Nachkommastelle
-
-Die 2 steht für Hin- und Rückweg, 45 km/h für die angenommene Durchschnittsgeschwindigkeit,
-die 2 Minuten am Ende für den Aufwand je zusätzlichem Stopp. Beide Werte sind als
-Konstanten hinterlegt (`AVERAGE_SPEED_KMH`, `STOP_OVERHEAD_MINUTES`).
-
-## 2. Die vier Dimensionen
+## 2. Die drei Dimensionen
 
 Jede Dimension liegt zwischen 0 und 100.
 
@@ -34,10 +26,6 @@ Fit = Branchengrundwert × Größenfaktor, höchstens 100.
 | alle anderen               | 0,60         |
 
 Die Grundwerte je Branche stehen in `src/domain/branchen.json`. Sie sind vorläufig und vom Vertrieb zu bestätigen. `npm run export:branchen` schreibt sie nach `export/branchengrundwerte.csv`.
-
-**Nähe** misst, wie gut der Lead in die Route passt.
-Nähe = 100 − (Umweg − 2) × 9, nicht unter 0. Ein Lead direkt an der Route (Umweg 2 Minuten)
-erhält 100, ab rund 13 Minuten Umweg 0.
 
 **Potenzial** misst das Volumen. Potenzial = Trägerzahl ÷ 2,2, höchstens 100.
 Ab 220 Trägern ist das Potenzial voll ausgeschöpft.
@@ -57,9 +45,9 @@ Die Summe wird auf 100 gedeckelt.
 
 ## 3. Gesamtscore und Bänder
 
-Die vier Gewichte sind im Reiter Scoring zwischen 0 und 50 einstellbar. Standard:
-Fit 30, Nähe 30, Potenzial 25, Erreichbarkeit 15. Die Gewichte werden auf die Summe 100
-normiert, es zählt also nur ihr Verhältnis zueinander.
+Die drei Gewichte sind im Reiter Scoring zwischen 0 und 50 einstellbar. Standard:
+Fit 30, Potenzial 25, Erreichbarkeit 15. Die Gewichte werden auf die Summe 100 normiert,
+es zählt also nur ihr Verhältnis zueinander (rund 43 : 36 : 21).
 
 > Score = gerundete Summe aus Dimension × normiertes Gewicht ÷ 100
 
@@ -69,12 +57,13 @@ normiert, es zählt also nur ihr Verhältnis zueinander.
 | B    | 58 bis 77 |
 | C    | unter 58  |
 
-## 4. Korridor
+## 4. Potenzialliste und Warteschlange
 
-Nur Leads, deren Luftlinie zur Route höchstens der Korridorbreite entspricht, kommen in die
-Warteschlange. Standard 2,0 km, einstellbar von 1 bis 10 km. Leads außerhalb bleiben auf
-der Karte sichtbar, aber blass. Bestandskunden kommen nie in die Warteschlange und stehen
-auf der Karte in eigener Farbe.
+In die Warteschlange kommen alle Neukunden-Accounts der gewählten Potenzialliste: ein
+Hunter (Accountinhaber) oder alle Hunter. Bestandskunden kommen nie in die Warteschlange
+und stehen auf der Karte in eigener Farbe. Die letzte Aktivität aus Salesforce wird je
+Account angezeigt, beeinflusst die Reihenfolge aber nicht. Eine Sperrfrist nach der
+letzten Aktivität ist eine fachliche Entscheidung und noch offen.
 
 Die Warteschlange ist absteigend nach Score sortiert. Bei gleichem Score bleibt die
 Reihenfolge der Datenquelle erhalten.
@@ -148,14 +137,14 @@ als Annahme umgesetzt und mit dem Prototyp beziehungsweise dem Fachbereich abzug
 
 1. **Branchengrundwerte** (`src/domain/branchen.json`): Werte sind Platzhalter und vom
    Vertrieb zu bestätigen. Unbekannte Branchen erhalten 50.
-2. **Nähe auf gerundetem Umweg**: Die Nähe wird aus dem auf eine Nachkommastelle gerundeten
-   Umweg berechnet.
-3. **Alle Gewichte auf null**: Dann werden alle vier Dimensionen gleich gewichtet (je 25).
+2. **Sperrfrist nach letzter Aktivität**: Ob und wie lange ein kürzlich kontaktierter
+   Account nicht angerufen wird, legt die Teamleitung fest.
+3. **Alle Gewichte auf null**: Dann werden alle drei Dimensionen gleich gewichtet.
 4. **Rundung der Stichprobengröße**: kaufmännisch, damit entfällt die Stichprobe bei
    Warteschlangen unter 7 Leads.
 5. **Seed** der Stichprobe: 20240611.
 6. **Briefing-Texte** (`src/domain/briefing.ts`): Formulierungen der Aufhänger und des
-   Einstiegssatzes sowie die Grenze „an der Route“ (bis 5 Minuten Umweg).
+   Einstiegssatzes.
 7. **Zielgröße der Kalibrierung**: Wiedervorlagen zählen als „kein Termin“, auch wenn
    daraus später ein Termin wird. „Nicht erreicht“ zählt ebenfalls mit, weil die
    Erreichbarkeit Teil des Scores ist. Alternative: nur erreichte Gespräche auswerten.

@@ -30,6 +30,8 @@ export const CLAY_FIELD_MAPPING: FieldMapping = {
   siteExpansion: 'Signal Expansion',
   managementChange: 'Signal Leadership Change',
   isCustomer: null, // kommt aus dem CRM, nicht aus Clay
+  owner: null, // kommt aus dem CRM
+  lastActivity: null, // kommt aus dem CRM
 };
 
 export class ClayProvider implements LeadProvider {

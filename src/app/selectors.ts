@@ -1,27 +1,39 @@
 import { useMemo } from 'react';
 import { callDay, goalProgress, type CallDay, type GoalProgress } from '@/domain/goals';
 import { latestOutcomeByLead } from '@/domain/outcomes';
-import { buildQueue } from '@/domain/queue';
+import { buildQueue, ownerCounts, type OwnerCount } from '@/domain/queue';
 import { scoreLeads } from '@/domain/scoring';
 import type { CallOutcome, QueueEntry, ScoredLead } from '@/domain/types';
 import { useAppStore } from './store';
 
-/** Alle Leads bewertet, einschließlich Bestandskunden und Leads außerhalb des Korridors */
+/** Alle Leads bewertet, einschließlich Bestandskunden */
 export function useScoredLeads(): ScoredLead[] {
   const leads = useAppStore((s) => s.leads);
-  const route = useAppStore((s) => s.route);
   const weights = useAppStore((s) => s.weights);
-  const corridorKm = useAppStore((s) => s.corridorKm);
-  return useMemo(
-    () => scoreLeads(leads, route, weights, corridorKm),
-    [leads, route, weights, corridorKm],
-  );
+  return useMemo(() => scoreLeads(leads, weights), [leads, weights]);
 }
 
+/** Warteschlange der gewählten Potenzialliste, ohne Bestandskunden */
 export function useQueue(): QueueEntry[] {
   const scored = useScoredLeads();
   const controlEnabled = useAppStore((s) => s.controlEnabled);
-  return useMemo(() => buildQueue(scored, controlEnabled), [scored, controlEnabled]);
+  const ownerFilter = useAppStore((s) => s.ownerFilter);
+  return useMemo(
+    () => buildQueue(scored, controlEnabled, ownerFilter),
+    [scored, controlEnabled, ownerFilter],
+  );
+}
+
+/** Hunter mit Zahl der Neukunden-Accounts für die Auswahl der Potenzialliste */
+export function useOwnerCounts(): OwnerCount[] {
+  const leads = useAppStore((s) => s.leads);
+  return useMemo(() => ownerCounts(leads), [leads]);
+}
+
+/** Heutiges Datum in Ortszeit als YYYY-MM-DD */
+export function todayLocal(date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 export function useLatestOutcomes(): Map<string, CallOutcome> {

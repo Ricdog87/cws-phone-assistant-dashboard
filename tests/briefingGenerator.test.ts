@@ -18,10 +18,7 @@ const lead = makeLead({
 
 const entry: QueueEntry = {
   lead,
-  distanceKm: 0.4,
-  detourMinutes: 3.1,
-  inCorridor: true,
-  dimensions: { fit: 88, proximity: 90, potential: 40, reachability: 70 },
+  dimensions: { fit: 88, potential: 40, reachability: 70 },
   score: 75,
   band: 'B',
   isControl: false,
@@ -45,7 +42,7 @@ const ok = (body: unknown) =>
 
 describe('buildBriefingRequest', () => {
   it('übermittelt keine Namen, Telefonnummern oder Straßen', () => {
-    const request = buildBriefingRequest(lead, 3.1);
+    const request = buildBriefingRequest(lead);
     const serialized = JSON.stringify(request);
     for (const secret of ['Geheimbetrieb', 'Janssen', '0000-123', 'Hafenstraße']) {
       expect(serialized).not.toContain(secret);

@@ -5,26 +5,16 @@ import {
   type LatLngExpression,
 } from 'leaflet';
 import { useEffect, useMemo, useRef } from 'react';
-import {
-  CircleMarker,
-  MapContainer,
-  Polygon,
-  Polyline,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from 'react-leaflet';
-import { useQueue, useScoredLeads } from '@/app/selectors';
+import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { todayLocal, useQueue, useScoredLeads } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
-import { formatKm, formatMin } from '@/components/format';
-import { corridorPolygon } from '@/domain/geo';
-import type { Route, ScoredLead } from '@/domain/types';
+import { activityLabel, daysSinceActivity } from '@/domain/activity';
+import type { ScoredLead } from '@/domain/types';
 import { MapLegend } from './MapLegend';
 import { TERRITORY_POINTS } from '@/data/territory';
-import { OtherToursLayer, TerritoryLayer } from './TerritoryLayer';
+import { TerritoryLayer } from './TerritoryLayer';
 import { applyMarkerClasses, markerClass } from './mapUtils';
 
 const FALLBACK_CENTER: LatLngExpression = [53.15, 8.0];
@@ -55,62 +45,32 @@ function FitOnActivate({
   return null;
 }
 
-function CorridorLayer({ route, corridorKm }: { route: Route; corridorKm: number }) {
-  const positions = useMemo(
-    () => route.points.map((p) => [p.lat, p.lng] as [number, number]),
-    [route.points],
-  );
-  const zone = useMemo(
-    () => corridorPolygon(route.points, corridorKm).map((p) => [p.lat, p.lng] as [number, number]),
-    [route.points, corridorKm],
-  );
+type Positioned = ScoredLead & { lead: { lat: number; lng: number } };
 
-  return (
-    <>
-      {zone.length > 0 && (
-        <Polygon
-          positions={zone}
-          pathOptions={{
-            className: 'map-corridor',
-            fill: true,
-            weight: 1,
-            dashArray: '6 4',
-          }}
-          interactive={false}
-        />
-      )}
-      <Polyline
-        positions={positions}
-        pathOptions={{
-          className: 'map-route',
-          weight: 4,
-          lineCap: 'round',
-          lineJoin: 'round',
-          fill: false,
-        }}
-        interactive={false}
-      />
-    </>
-  );
+function hasPosition(entry: ScoredLead): entry is Positioned {
+  return entry.lead.lat !== null && entry.lead.lng !== null;
 }
 
 function LeadMarker({
   entry,
+  inList,
   selected,
   isControl,
+  today,
   onSelect,
   onOpenQueue,
 }: {
-  entry: ScoredLead;
+  entry: Positioned;
+  inList: boolean;
   selected: boolean;
   isControl: boolean;
+  today: string;
   onSelect(): void;
   onOpenQueue(): void;
 }) {
   const { lead } = entry;
-  const inQueue = entry.inCorridor;
   const ref = useRef<LeafletCircleMarker>(null);
-  const className = markerClass(entry.band, entry.inCorridor, selected);
+  const className = markerClass(entry.band, inList, selected);
 
   // Leaflet übernimmt className nur beim Anlegen, spätere Änderungen direkt am Element setzen
   useEffect(() => {
@@ -135,8 +95,9 @@ function LeadMarker({
           <div className="text-xs text-muted">
             {lead.industry} · {lead.city}
             <br />
-            Score {entry.score} · {formatKm(entry.distanceKm)} · {formatMin(entry.detourMinutes)}{' '}
-            Umweg
+            Score {entry.score} · Hunter {lead.owner ?? 'nicht zugeordnet'}
+            <br />
+            Letzte Aktivität {activityLabel(daysSinceActivity(lead.lastActivity, today))}
             {isControl && (
               <>
                 <br />
@@ -144,13 +105,9 @@ function LeadMarker({
               </>
             )}
           </div>
-          {inQueue ? (
-            <Button variant="primary" className="w-full" onClick={onOpenQueue}>
-              In Anrufliste öffnen
-            </Button>
-          ) : (
-            <div className="text-xs">Außerhalb des Korridors, nicht in der Warteschlange.</div>
-          )}
+          <Button variant="primary" className="w-full" onClick={onOpenQueue}>
+            {inList ? 'In Anrufliste öffnen' : `Liste von ${lead.owner ?? 'allen Huntern'} öffnen`}
+          </Button>
         </div>
       </Popup>
     </CircleMarker>
@@ -160,8 +117,8 @@ function LeadMarker({
 export function MapView({ active }: { active: boolean }) {
   const scored = useScoredLeads();
   const queue = useQueue();
-  const route = useAppStore((s) => s.route);
-  const corridorKm = useAppStore((s) => s.corridorKm);
+  const ownerFilter = useAppStore((s) => s.ownerFilter);
+  const setOwnerFilter = useAppStore((s) => s.setOwnerFilter);
   const selectedId = useAppStore((s) => s.selectedLeadId);
   const selectLead = useAppStore((s) => s.selectLead);
   const setTab = useAppStore((s) => s.setTab);
@@ -170,8 +127,12 @@ export function MapView({ active }: { active: boolean }) {
     () => new Set(queue.filter((e) => e.isControl).map((e) => e.lead.id)),
     [queue],
   );
+  const inList = (entry: ScoredLead) => ownerFilter === null || entry.lead.owner === ownerFilter;
   const prospects = scored.filter((e) => !e.lead.isCustomer);
-  const customers = scored.filter((e) => e.lead.isCustomer);
+  const positioned = prospects.filter(hasPosition);
+  const customers = scored.filter((e) => e.lead.isCustomer).filter(hasPosition);
+  const withoutPosition = prospects.filter((e) => inList(e) && !hasPosition(e)).length;
+  const today = todayLocal();
 
   // Beim ersten Öffnen das ganze Vertriebsgebiet zeigen
   const bounds = useMemo(() => latLngBounds(TERRITORY_POINTS), []);
@@ -190,19 +151,20 @@ export function MapView({ active }: { active: boolean }) {
         />
         <FitOnActivate active={active} bounds={bounds} />
         <TerritoryLayer />
-        <OtherToursLayer />
-        <CorridorLayer route={route} corridorKm={corridorKm} />
-        {/* Leads außerhalb zuerst, damit die aktiven oben liegen */}
-        {[...prospects]
-          .sort((a, b) => Number(a.inCorridor) - Number(b.inCorridor))
+        {/* Andere Listen zuerst, damit die gewählte Potenzialliste oben liegt */}
+        {[...positioned]
+          .sort((a, b) => Number(inList(a)) - Number(inList(b)))
           .map((entry) => (
             <LeadMarker
               key={entry.lead.id}
               entry={entry}
+              inList={inList(entry)}
               selected={entry.lead.id === selectedId}
               isControl={controlIds.has(entry.lead.id)}
+              today={today}
               onSelect={() => selectLead(entry.lead.id)}
               onOpenQueue={() => {
+                if (!inList(entry)) setOwnerFilter(entry.lead.owner ?? null);
                 selectLead(entry.lead.id);
                 setTab('queue');
               }}
@@ -221,7 +183,7 @@ export function MapView({ active }: { active: boolean }) {
           </CircleMarker>
         ))}
       </MapContainer>
-      <MapLegend corridorKm={corridorKm} tourId={route.id} />
+      <MapLegend owner={ownerFilter} withoutPosition={withoutPosition} />
     </div>
   );
 }

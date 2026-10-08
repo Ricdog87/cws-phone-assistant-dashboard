@@ -3,7 +3,9 @@ import { BandBadge } from '@/components/BandBadge';
 import { Button } from '@/components/Button';
 import { ControlTag } from '@/components/ControlTag';
 import { Meter } from '@/components/Meter';
-import { formatDateTime, formatInt, formatKm, formatMin } from '@/components/format';
+import { todayLocal } from '@/app/selectors';
+import { formatDateTime, formatInt } from '@/components/format';
+import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { buildBriefing, contactLabel } from '@/domain/briefing';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
@@ -88,8 +90,10 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
             <Fact label="Branche">{lead.industry || 'unbekannt'}</Fact>
             <Fact label="Mitarbeitende">{formatInt(lead.commercialEmployees)}</Fact>
             <Fact label="Träger">{formatInt(lead.wearerCount)}</Fact>
-            <Fact label="Luftlinie">{formatKm(entry.distanceKm)}</Fact>
-            <Fact label="Umweg">{formatMin(entry.detourMinutes)}</Fact>
+            <Fact label="Hunter">{lead.owner ?? 'nicht zugeordnet'}</Fact>
+            <Fact label="Letzte Aktivität">
+              {activityLabel(daysSinceActivity(lead.lastActivity, todayLocal()))}
+            </Fact>
           </dl>
         </section>
 

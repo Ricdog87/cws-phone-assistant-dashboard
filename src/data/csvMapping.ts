@@ -7,7 +7,7 @@ export interface CsvFieldSpec {
   field: CsvTargetField;
   label: string;
   required: boolean;
-  kind: 'text' | 'number' | 'boolean';
+  kind: 'text' | 'number' | 'boolean' | 'date';
   /**
    * Spaltennamen, die beim automatischen Vorschlag erkannt werden (klein geschrieben).
    * Die Reihenfolge ist die Priorität, etwa Lieferanschrift vor Rechnungsanschrift,
@@ -187,6 +187,27 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
     kind: 'boolean',
     aliases: ['bestandskunde', 'ist kunde', 'existing customer'],
   },
+  {
+    field: 'owner',
+    label: 'Hunter (Accountinhaber)',
+    required: false,
+    kind: 'text',
+    aliases: [
+      'accountinhaber',
+      'account owner',
+      'inhaber',
+      'hunter',
+      'lead-inhaber',
+      'leadinhaber',
+    ],
+  },
+  {
+    field: 'lastActivity',
+    label: 'Letzte Aktivität',
+    required: false,
+    kind: 'date',
+    aliases: ['letzte aktivität', 'letzte aktivitaet', 'last activity', 'last activity date'],
+  },
 ];
 
 /** Zielfeld auf Quellspalte, leerer Wert heißt nicht zugeordnet */
@@ -239,11 +260,6 @@ export function fieldLabel(field: CsvTargetField): string {
 export function mappingProblems(mapping: ColumnMapping): string[] {
   const problems: string[] = [];
   if (!mapping.name) problems.push('Firmenname ist nicht zugeordnet.');
-  const hasCoordinates = Boolean(mapping.lat && mapping.lng);
-  const hasAddress = Boolean(mapping.city || mapping.postalCode);
-  if (!hasCoordinates && !hasAddress) {
-    problems.push('Weder Breiten- und Längengrad noch Ort oder PLZ sind zugeordnet.');
-  }
   if (Boolean(mapping.lat) !== Boolean(mapping.lng)) {
     problems.push('Breiten- und Längengrad nur gemeinsam zuordnen.');
   }

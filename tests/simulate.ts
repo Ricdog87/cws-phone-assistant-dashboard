@@ -22,16 +22,10 @@ export function simulate(n: number, seed = 42): CallOutcome[] {
   return Array.from({ length: n }, (_, i) => {
     const d: Dimensions = {
       fit: random() * 100,
-      proximity: random() * 100,
       potential: random() * 100,
       reachability: random() * 100,
     };
-    const logit =
-      -4 +
-      3 * (d.fit / 100) +
-      2 * (d.proximity / 100) +
-      0 * (d.potential / 100) +
-      1 * (d.reachability / 100);
+    const logit = -3 + 3 * (d.fit / 100) + 0 * (d.potential / 100) + 1 * (d.reachability / 100);
     return outcomeFor(i, d, random() < 1 / (1 + Math.exp(-logit)));
   });
 }

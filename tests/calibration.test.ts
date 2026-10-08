@@ -83,9 +83,9 @@ describe('fitLogistic', () => {
 describe('ratesByBin', () => {
   it('ordnet Grenzwerte eindeutig zu, 100 fällt in die letzte Klasse', () => {
     const outcomes = [
-      outcomeFor(1, { fit: 25, proximity: 0, potential: 0, reachability: 0 }, true),
-      outcomeFor(2, { fit: 100, proximity: 0, potential: 0, reachability: 0 }, false),
-      outcomeFor(3, { fit: 24.9, proximity: 0, potential: 0, reachability: 0 }, false),
+      outcomeFor(1, { fit: 25, potential: 0, reachability: 0 }, true),
+      outcomeFor(2, { fit: 100, potential: 0, reachability: 0 }, false),
+      outcomeFor(3, { fit: 24.9, potential: 0, reachability: 0 }, false),
     ];
     expect(ratesByBin(outcomes, 'fit')).toEqual([
       { from: 0, to: 25, calls: 1, appointments: 0, rate: 0 },
@@ -98,13 +98,10 @@ describe('ratesByBin', () => {
 
 describe('toRawWeights', () => {
   it('skaliert das größte Gewicht auf 50', () => {
-    expect(
-      toRawWeights({ fit: 50, proximity: 100 / 3, potential: 0, reachability: 50 / 3 }),
-    ).toEqual({
+    expect(toRawWeights({ fit: 60, potential: 0, reachability: 40 })).toEqual({
       fit: 50,
-      proximity: 33,
       potential: 0,
-      reachability: 17,
+      reachability: 33,
     });
   });
 });
@@ -133,14 +130,12 @@ describe('calibrate', () => {
     expect(report.status).toBe('ok');
     expect(s).not.toBeNull();
     if (!s) return;
-    // Wahre Verhältnisse 3 : 2 : 0 : 1, also 50 : 33 : 0 : 17
-    expect(s.normalizedWeights.fit).toBeGreaterThan(42);
-    expect(s.normalizedWeights.fit).toBeLessThan(58);
-    expect(s.normalizedWeights.proximity).toBeGreaterThan(25);
-    expect(s.normalizedWeights.proximity).toBeLessThan(41);
+    // Wahre Verhältnisse 3 : 0 : 1, also 75 : 0 : 25
+    expect(s.normalizedWeights.fit).toBeGreaterThan(65);
+    expect(s.normalizedWeights.fit).toBeLessThan(85);
     expect(s.normalizedWeights.potential).toBeLessThan(8);
-    expect(s.normalizedWeights.reachability).toBeGreaterThan(9);
-    expect(s.normalizedWeights.reachability).toBeLessThan(25);
+    expect(s.normalizedWeights.reachability).toBeGreaterThan(15);
+    expect(s.normalizedWeights.reachability).toBeLessThan(35);
     const total = Object.values(s.normalizedWeights).reduce((a, b) => a + b, 0);
     expect(total).toBeCloseTo(100, 10);
     expect(s.coefficients.fit.significant).toBe(true);
@@ -167,7 +162,7 @@ describe('calibrate', () => {
     const random = createRandom(7);
     const data = Array.from({ length: 1000 }, (_, i) => {
       const v = random() * 100;
-      const d = { fit: v, proximity: v, potential: v, reachability: v };
+      const d = { fit: v, potential: v, reachability: v };
       return outcomeFor(i, d, random() < 1 / (1 + Math.exp(-(1 - 3 * (v / 100)))));
     });
     const report = calibrate(data, DEFAULT_WEIGHTS);

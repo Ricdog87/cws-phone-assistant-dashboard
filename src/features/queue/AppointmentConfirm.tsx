@@ -3,7 +3,7 @@ import { newId } from '@/app/ids';
 import { useAppStore } from '@/app/store';
 import { Button } from '@/components/Button';
 import { downloadText } from '@/components/download';
-import { tourById } from '@/data/tours';
+import { hunterByName } from '@/data/hunters';
 import {
   APPOINTMENT_ERROR_LABELS,
   APPOINTMENT_MINUTE_OPTIONS,
@@ -14,7 +14,7 @@ import {
   formatSlot,
   latestAppointmentByLead,
   mailtoHref,
-  nextTourDate,
+  nextWorkday,
   toAppointment,
   validateAppointmentDraft,
   type AppointmentDraft,
@@ -48,7 +48,6 @@ const FIELD_CLASS = 'w-full rounded border border-border bg-panel px-2 py-1';
 
 /** Termin festhalten und dem Kunden bestätigen: E-Mail im Mailprogramm und Kalendereintrag */
 export function AppointmentConfirm({ lead, callerName }: AppointmentConfirmProps) {
-  const route = useAppStore((s) => s.route);
   const contacts = useAppStore((s) => s.contacts);
   const appointments = useAppStore((s) => s.appointments);
   const addAppointment = useAppStore((s) => s.addAppointment);
@@ -57,15 +56,16 @@ export function AppointmentConfirm({ lead, callerName }: AppointmentConfirmProps
     [appointments, lead.id],
   );
   const contact = useMemo(() => latestContactByLead(contacts).get(lead.id), [contacts, lead.id]);
-  const tour = tourById(route.id);
+  // Termin geht an den Accountinhaber; E-Mail nur, wenn der Hunter im Verzeichnis steht
+  const hunter = hunterByName(lead.owner);
 
   const [editing, setEditing] = useState(!saved);
   const [draft, setDraft] = useState<AppointmentDraft>(() => ({
-    date: nextTourDate(tour.weekday, localStamp().slice(0, 10)),
+    date: nextWorkday(localStamp().slice(0, 10)),
     time: DEFAULT_APPOINTMENT_TIME,
     durationMinutes: DEFAULT_APPOINTMENT_MINUTES,
-    hunterName: tour.hunter.name,
-    hunterEmail: tour.hunter.email,
+    hunterName: lead.owner ?? '',
+    hunterEmail: hunter?.email ?? '',
     contactName: contact?.name ?? lead.contactName ?? '',
     contactEmail: contact?.email ?? '',
   }));
@@ -114,6 +114,11 @@ export function AppointmentConfirm({ lead, callerName }: AppointmentConfirmProps
 
       {saved && slot && mail && !editing && (
         <div className="mt-2 space-y-3">
+          {saved.confirmationOpenedAt && (
+            <p className="text-xs font-bold text-muted">
+              Bestätigung erstellt am {new Date(saved.confirmationOpenedAt).toLocaleString('de-DE')}
+            </p>
+          )}
           <p className="text-sm">
             <strong>{formatSlot(slot)}</strong> · {saved.durationMinutes} Min. · {saved.hunterName}
             {saved.contactEmail ? (
@@ -125,6 +130,9 @@ export function AppointmentConfirm({ lead, callerName }: AppointmentConfirmProps
           <div className="flex flex-wrap gap-2">
             <a
               href={mailtoHref(saved.contactEmail, saved.hunterEmail, mail)}
+              onClick={() =>
+                void addAppointment({ ...saved, confirmationOpenedAt: new Date().toISOString() })
+              }
               className="rounded border border-brand-primary bg-brand-primary px-3 py-2 text-sm font-bold text-on-primary"
             >
               Bestätigung in Outlook öffnen

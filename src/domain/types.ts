@@ -16,8 +16,9 @@ export interface Lead {
   street: string;
   postalCode: string;
   city: string;
-  lat: number;
-  lng: number;
+  /** Nur für die Karte. Fehlt, wenn die Adresse nicht nachgeschlagen wurde. */
+  lat: number | null;
+  lng: number | null;
   /** Gewerbliche Mitarbeitende */
   commercialEmployees: number;
   /** Geschätzte Anzahl Träger von Berufskleidung */
@@ -32,18 +33,15 @@ export interface Lead {
   managementChange: boolean;
   /** Bestandskunden erscheinen nur auf der Karte, nie in der Warteschlange */
   isCustomer: boolean;
+  /** Accountinhaber in Salesforce, also der zuständige Hunter */
+  owner?: string | null;
+  /** Datum der letzten Aktivität in Salesforce, YYYY-MM-DD */
+  lastActivity?: string | null;
 }
 
-export interface Route {
-  id: string;
-  name: string;
-  points: LatLng[];
-}
-
-/** Die vier Score-Dimensionen, je 0 bis 100 */
+/** Die drei Score-Dimensionen, je 0 bis 100 */
 export interface Dimensions {
   fit: number;
-  proximity: number;
   potential: number;
   reachability: number;
 }
@@ -55,9 +53,6 @@ export type Weights = Record<DimensionKey, number>;
 
 export interface ScoredLead {
   lead: Lead;
-  distanceKm: number;
-  detourMinutes: number;
-  inCorridor: boolean;
   dimensions: Dimensions;
   score: number;
   band: Band;
@@ -129,6 +124,8 @@ export interface Appointment {
   /** Adresse des Termins, einzeilig */
   location: string;
   createdAt: string;
+  /** Zeitpunkt, an dem die Bestätigungs-E-Mail geöffnet wurde */
+  confirmationOpenedAt?: string | null;
 }
 
 export interface HunterFeedback {
@@ -155,8 +152,8 @@ export interface CallOutcome {
   score: number;
   dimensions: Dimensions;
   normalizedWeights: Weights;
-  distanceKm: number;
-  detourMinutes: number;
+  /** Accountinhaber des Leads zum Zeitpunkt des Anrufs */
+  owner?: string | null;
   isControl: boolean;
   queuePosition: number;
   sourceId: string;

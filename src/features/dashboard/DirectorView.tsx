@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { DEMO_PERSONAS } from '@/app/demoUser';
+import type { MemberStanding } from '@/domain/standings';
 import { StatTile } from '@/components/StatTile';
 import { formatInt, formatOne } from '@/components/format';
 import { AssistantBrick } from './AssistantBrick';
 import { AttentionPanel } from './AttentionPanel';
+import { ConfirmationPanel } from './ConfirmationPanel';
+import { HunterTable } from './HunterTable';
 import { BoardHeader } from './BoardHeader';
 import { withRanks } from './boardRows';
 import { LeaderboardTable } from './LeaderboardTable';
@@ -13,8 +16,11 @@ import { RegionTable } from './RegionTable';
 import { SectionTitle } from './SectionTitle';
 import { matchesFocus, useBoardFocus } from './useBoardFocus';
 import { useCardSelection } from './useCardSelection';
+import { useRegionBoard } from './useRegionBoard';
 import { useDirectorStanding } from './useTeamStanding';
 import { ViewModeSwitch, type ViewMode } from './ViewModeSwitch';
+
+const NO_MEMBERS: readonly MemberStanding[] = [];
 
 export function DirectorView() {
   const { regions, standing } = useDirectorStanding();
@@ -26,6 +32,7 @@ export function DirectorView() {
   const [regionId, setRegionId] = useState<string>(regions[0]?.id ?? '');
 
   const region = regions.find((item) => item.id === regionId) ?? regions[0];
+  const board = useRegionBoard(region?.id ?? '', region?.standing.members ?? NO_MEMBERS);
   // Schlüssel aus Region und Person, damit die Auswahl in ihrer Region bleibt
   const keyOf = (memberId: string) => `${region?.id ?? ''}:${memberId}`;
   const ranked = region ? withRanks(region.standing.members) : [];
@@ -102,6 +109,25 @@ export function DirectorView() {
             onSelect={setRegionId}
           />
         </section>
+
+        {region && (
+          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+            <section
+              className="min-w-0 space-y-3"
+              aria-label={`Potenzialliste je Hunter Region ${region.name}`}
+            >
+              <SectionTitle
+                title={`Potenzialliste je Hunter · Region ${region.name}`}
+                aside={<span className="text-xs text-muted">Wenigste Termine oben</span>}
+              />
+              <HunterTable rows={board.hunters} />
+            </section>
+            <section className="min-w-0 space-y-3" aria-label="Terminbestätigungen">
+              <SectionTitle title={`Terminbestätigungen · Region ${region.name}`} />
+              <ConfirmationPanel appointments={board.appointments} />
+            </section>
+          </div>
+        )}
 
         {region && (
           <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">

@@ -44,7 +44,7 @@ describe('outcomesToCsv', () => {
     expect(lines[0]?.split(';')[0]).toBe('Zeitpunkt');
     expect(lines[1]).toContain('"Muster; Söhne ""Nord"""');
     expect(lines[1]).toContain(
-      ';Termin vereinbart;A;81;95,0;100,0;50,0;67,0;30,0;30,0;25,0;15,0;0,50;3,3;nein;1;mock',
+      ';Termin vereinbart;A;81;95,0;50,0;67,0;42,9;35,7;21,4;Jonas Tiedemann;nein;1;mock',
     );
   });
 

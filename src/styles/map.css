@@ -1,21 +1,5 @@
 /* Kartenelemente werden über Klassen eingefärbt, damit keine Farbwerte im Quelltext stehen.
    !important nötig, weil Leaflet Standardfarben (u. a. Blau) als Inline-Styles setzt. */
-.map-route {
-  stroke: var(--route) !important;
-  stroke-opacity: 0.95 !important;
-  fill: none !important;
-}
-
-/* Servicekorridor als Fläche, nicht als dicke Linie */
-.map-corridor {
-  fill: var(--corridor) !important;
-  fill-opacity: 0.28 !important;
-  stroke: var(--brand-ink) !important;
-  stroke-opacity: 0.25 !important;
-  stroke-width: 1 !important;
-  stroke-dasharray: 6 4;
-}
-
 .lead-marker {
   stroke: var(--brand-ink);
   stroke-width: 1;
@@ -66,10 +50,6 @@
   background: var(--customer);
 }
 
-.legend-swatch--corridor {
-  background: var(--corridor);
-}
-
 /* Vertriebsgebiet Nordwest */
 .map-territory-mask {
   fill: var(--brand-ink) !important;
@@ -83,22 +63,7 @@
   fill: none !important;
 }
 
-.map-tour {
-  stroke: var(--muted) !important;
-  stroke-opacity: 0.9 !important;
-  fill: none !important;
-  cursor: pointer;
-}
-
-.map-tour:hover {
-  stroke: var(--brand-ink) !important;
-}
-
 .legend-swatch--territory {
   border: 1.5px solid var(--brand-ink);
   background: transparent;
-}
-
-.legend-swatch--tour {
-  border-top: 3px dashed var(--muted);
 }

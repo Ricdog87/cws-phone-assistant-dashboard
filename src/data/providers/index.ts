@@ -16,7 +16,7 @@ export const PROVIDER_OPTIONS: ProviderOption[] = [
     id: 'mock',
     label: 'Demo-Daten',
     available: true,
-    description: 'Fiktive Betriebe entlang der Beispielroute',
+    description: 'Fiktive Betriebe im Vertriebsgebiet Nordwest, je Hunter',
   },
   {
     id: 'csv',

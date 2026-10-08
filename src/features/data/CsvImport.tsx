@@ -180,22 +180,23 @@ export function CsvImport() {
               <div className="rounded bg-surface p-3 text-sm" aria-label="Vorprüfung">
                 <strong>Vorprüfung:</strong> {formatInt(preview.valid.length - toGeocode)} mit
                 Koordinaten, {formatInt(toGeocode)} nachzuschlagen, {formatInt(preview.invalidRows)}{' '}
-                fehlerhaft, {formatInt(preview.missingCoordinateRows)} ohne Koordinaten und Adresse.
+                fehlerhaft, {formatInt(preview.missingCoordinateRows)} ohne Adresse (nur ohne
+                Karte).
               </div>
             )
           )}
 
           <Toggle
-            label="Fehlende Koordinaten nachschlagen"
+            label="Adressen für die Karte nachschlagen"
             checked={useGeocoder}
             onChange={setUseGeocoder}
-            hint={`Über ${geocoder.label}. Übermittelt werden nur Straße, PLZ und Ort, keine Firmennamen. Höchstens eine Anfrage pro Sekunde, bereits bekannte Adressen kommen aus dem lokalen Zwischenspeicher${cacheSize === null ? '' : ` (${formatInt(cacheSize)} Adressen)`}.`}
+            hint={`Nur für die Karte nötig, die Anrufliste funktioniert auch ohne. Über ${geocoder.label}. Übermittelt werden nur Straße, PLZ und Ort, keine Firmennamen. Höchstens eine Anfrage pro Sekunde, bereits bekannte Adressen kommen aus dem lokalen Zwischenspeicher${cacheSize === null ? '' : ` (${formatInt(cacheSize)} Adressen)`}.`}
           />
           {useGeocoder && toGeocode > 0 && (
             <p className="text-xs text-muted">
               Dauer höchstens {formatDuration(toGeocode * NOMINATIM_MIN_INTERVAL_MS)}.
               {toGeocode > 500 &&
-                ' Für so große Mengen besser Koordinaten im Quellsystem pflegen oder einen eigenen Geocoder anbinden.'}
+                ' Für so große Mengen besser ohne Nachschlagen importieren, Koordinaten im Quellsystem pflegen oder einen eigenen Geocoder anbinden.'}
             </p>
           )}
 

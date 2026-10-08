@@ -13,7 +13,6 @@ import {
   type LoadReport,
   type ProviderId,
 } from '@/data/providers/types';
-import { DEFAULT_TOUR_ID, tourById } from '@/data/tours';
 import {
   InMemoryAppointmentRepository,
   type AppointmentRepository,
@@ -22,20 +21,13 @@ import { InMemoryContactRepository, type ContactRepository } from '@/data/contac
 import type { OutcomeRepository } from '@/data/repository';
 import type { AgentGoals } from '@/domain/agentGoals';
 import { DAILY_CALL_GOAL, WEEKLY_APPOINTMENT_GOAL } from '@/domain/goals';
-import {
-  CORRIDOR_MAX_KM,
-  CORRIDOR_MIN_KM,
-  DEFAULT_CORRIDOR_KM,
-  DEFAULT_WEIGHTS,
-  clampWeight,
-} from '@/domain/scoring';
+import { DEFAULT_WEIGHTS, DIMENSION_KEYS, clampWeight } from '@/domain/scoring';
 import type {
   Appointment,
   CallOutcome,
   ContactUpdate,
   DimensionKey,
   Lead,
-  Route,
   Weights,
 } from '@/domain/types';
 import { DEMO_USER, type ViewLevel } from './demoUser';
@@ -51,9 +43,9 @@ export interface AppState {
   loadReport: LoadReport | null;
   loadError: string | null;
   loading: boolean;
-  route: Route;
+  /** Accountinhaber, dessen Potenzialliste angerufen wird; null zeigt alle Hunter */
+  ownerFilter: string | null;
   weights: Weights;
-  corridorKm: number;
   controlEnabled: boolean;
   briefingMode: BriefingMode;
   /** Anzeigename der angemeldeten Telefonassistenz */
@@ -71,8 +63,7 @@ export interface AppState {
   signedIn: boolean;
 
   setTab(tab: TabId): void;
-  /** Aktive Servicetour, Warteschlange und Korridor folgen ihr */
-  setTour(tourId: string): void;
+  setOwnerFilter(owner: string | null): void;
   setViewLevel(level: ViewLevel): void;
   signIn(level: ViewLevel): void;
   signOut(): void;
@@ -80,7 +71,6 @@ export interface AppState {
   resetWeights(): void;
   /** Setzt alle Gewichte auf einmal, etwa nach bestätigtem Kalibrierungsvorschlag */
   setWeights(weights: Weights): void;
-  setCorridorKm(km: number): void;
   setControlEnabled(enabled: boolean): void;
   setBriefingMode(mode: BriefingMode): void;
   setAgentName(name: string): void;
@@ -112,9 +102,8 @@ export function createAppStore(
     loadReport: null,
     loadError: null,
     loading: false,
-    route: tourById(DEFAULT_TOUR_ID),
+    ownerFilter: null,
     weights: { ...DEFAULT_WEIGHTS },
-    corridorKm: DEFAULT_CORRIDOR_KM,
     controlEnabled: true,
     briefingMode: DEFAULT_BRIEFING_MODE,
     // Eine Persona und eine Zielquelle für Live-Maske, Teamleitung und Vertriebsleitung
@@ -128,7 +117,7 @@ export function createAppStore(
     signedIn: restoredLevel !== null,
 
     setTab: (activeTab) => set({ activeTab }),
-    setTour: (tourId) => set({ route: tourById(tourId), selectedLeadId: null }),
+    setOwnerFilter: (ownerFilter) => set({ ownerFilter, selectedLeadId: null }),
     setViewLevel: (viewLevel) =>
       set({
         viewLevel,
@@ -151,15 +140,10 @@ export function createAppStore(
     resetWeights: () => set({ weights: { ...DEFAULT_WEIGHTS } }),
     setWeights: (weights) =>
       set({
-        weights: {
-          fit: clampWeight(weights.fit),
-          proximity: clampWeight(weights.proximity),
-          potential: clampWeight(weights.potential),
-          reachability: clampWeight(weights.reachability),
-        },
+        weights: Object.fromEntries(
+          DIMENSION_KEYS.map((key) => [key, clampWeight(weights[key])]),
+        ) as Weights,
       }),
-    setCorridorKm: (km) =>
-      set({ corridorKm: Math.max(CORRIDOR_MIN_KM, Math.min(CORRIDOR_MAX_KM, km)) }),
     setControlEnabled: (controlEnabled) => set({ controlEnabled }),
     setBriefingMode: (briefingMode) => set({ briefingMode }),
     setAgentName: (agentName) => set({ agentName }),

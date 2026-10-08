@@ -96,6 +96,12 @@ function countPeriod(outcomes: readonly CallOutcome[], fromMs: number, toMs: num
   return { calls, appointments };
 }
 
+/** Aktuelle Woche, Montag 00:00 bis Montag 00:00 Ortszeit, als Zeitstempel in Millisekunden */
+export function localWeekRange(now: Date = new Date()): { from: number; to: number } {
+  const start = startOfLocalWeek(now);
+  return { from: start.getTime(), to: addDays(start, 7).getTime() };
+}
+
 /** Tages- und Wochenstand aus den erfassten Anrufergebnissen. Jedes Ergebnis zählt als ein Anruf. */
 export function goalProgress(
   outcomes: readonly CallOutcome[],

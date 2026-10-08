@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DEMO_USER } from '@/app/demoUser';
-import { useLatestOutcomes, useQueue } from '@/app/selectors';
+import { todayLocal, useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { Button } from '@/components/Button';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
@@ -8,7 +8,7 @@ import type { OutcomeType } from '@/domain/types';
 import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
-import { TourSelect } from './TourSelect';
+import { HunterSelect } from './HunterSelect';
 import { useRecordOutcome } from './useRecordOutcome';
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -97,13 +97,14 @@ export function QueueView() {
                 {openCount} offen von {queue.length}
               </span>
             </div>
-            <TourSelect />
+            <HunterSelect />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <QueueList
               queue={queue}
               selectedId={selectedId}
               latest={latest}
+              today={todayLocal()}
               onSelect={selectLead}
             />
           </div>

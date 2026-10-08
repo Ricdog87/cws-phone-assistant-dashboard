@@ -22,7 +22,7 @@ export const SYSTEM_PROMPT = [
 ].join(' ');
 
 /** Merkmale für das Modell. Firmenname, Ansprechpartner und Telefon bleiben im Browser. */
-export function buildBriefingRequest(lead: Lead, detourMinutes: number): BriefingRequest {
+export function buildBriefingRequest(lead: Lead): BriefingRequest {
   return {
     branche: lead.industry,
     ort: lead.city,
@@ -35,7 +35,6 @@ export function buildBriefingRequest(lead: Lead, detourMinutes: number): Briefin
     ansprechpartnerBekannt: lead.contactName !== null,
     funktionAnsprechpartner: lead.contactRole,
     durchwahlBekannt: lead.hasDirectDial,
-    umwegMinuten: detourMinutes,
   };
 }
 

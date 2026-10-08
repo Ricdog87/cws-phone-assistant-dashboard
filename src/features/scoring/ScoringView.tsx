@@ -7,13 +7,11 @@ import { ControlTag } from '@/components/ControlTag';
 import { Panel } from '@/components/Panel';
 import { RangeField } from '@/components/RangeField';
 import { Toggle } from '@/components/Toggle';
-import { formatKm, formatMin, formatOne } from '@/components/format';
+import { formatOne } from '@/components/format';
 import { CONTROL_SHARE } from '@/domain/sampling';
 import {
   BAND_A_MIN,
   BAND_B_MIN,
-  CORRIDOR_MAX_KM,
-  CORRIDOR_MIN_KM,
   DIMENSION_KEYS,
   DIMENSION_LABELS,
   WEIGHT_MAX,
@@ -35,11 +33,9 @@ const BRIEFING_OPTIONS: { mode: BriefingMode; label: string; hint: string }[] = 
 
 export function ScoringView() {
   const weights = useAppStore((s) => s.weights);
-  const corridorKm = useAppStore((s) => s.corridorKm);
   const controlEnabled = useAppStore((s) => s.controlEnabled);
   const setWeight = useAppStore((s) => s.setWeight);
   const resetWeights = useAppStore((s) => s.resetWeights);
-  const setCorridorKm = useAppStore((s) => s.setCorridorKm);
   const setControlEnabled = useAppStore((s) => s.setControlEnabled);
   const briefingMode = useAppStore((s) => s.briefingMode);
   const setBriefingMode = useAppStore((s) => s.setBriefingMode);
@@ -71,18 +67,8 @@ export function ScoringView() {
             </p>
           </Panel>
 
-          <Panel title="Korridor und Stichprobe">
+          <Panel title="Stichprobe">
             <div className="space-y-4">
-              <RangeField
-                label="Korridorbreite"
-                value={corridorKm}
-                min={CORRIDOR_MIN_KM}
-                max={CORRIDOR_MAX_KM}
-                step={0.5}
-                valueLabel={`±${formatKm(corridorKm)}`}
-                hint="Luftlinie zur Route. Leads außerhalb erscheinen nicht in der Warteschlange."
-                onChange={setCorridorKm}
-              />
               <Toggle
                 label="Kontrollstichprobe"
                 checked={controlEnabled}
@@ -127,7 +113,7 @@ export function ScoringView() {
                       {DIMENSION_LABELS[key]}
                     </th>
                   ))}
-                  <th className="py-1 pl-3 text-right font-normal">Umweg</th>
+                  <th className="py-1 pl-3 font-normal">Hunter</th>
                   <th className="py-1 pl-3 text-right font-normal">Score</th>
                 </tr>
               </thead>
@@ -149,8 +135,8 @@ export function ScoringView() {
                         {Math.round(entry.dimensions[key])}
                       </td>
                     ))}
-                    <td className="whitespace-nowrap py-1.5 pl-3 text-right tabular-nums">
-                      {formatMin(entry.detourMinutes)}
+                    <td className="whitespace-nowrap py-1.5 pl-3 text-muted">
+                      {entry.lead.owner ?? '–'}
                     </td>
                     <td className="py-1.5 pl-3 text-right font-bold tabular-nums">{entry.score}</td>
                   </tr>

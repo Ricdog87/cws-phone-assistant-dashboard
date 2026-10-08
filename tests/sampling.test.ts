@@ -35,10 +35,7 @@ function makeLead(index: number, score: number): ScoredLead {
   };
   return {
     lead,
-    distanceKm: 0,
-    detourMinutes: 2,
-    inCorridor: true,
-    dimensions: { fit: 0, proximity: 0, potential: 0, reachability: 0 },
+    dimensions: { fit: 0, potential: 0, reachability: 0 },
     score,
     band: bandFor(score),
   };

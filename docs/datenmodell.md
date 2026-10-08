@@ -31,17 +31,17 @@ Jede Zeile wird mit einem Zod-Schema geprüft (`src/data/csvImport.ts`). Eine Ze
 mehrere Fehler haben, alle erscheinen in der Fehlerliste mit Zeilennummer (Kopfzeile = 1),
 Feld, Wert und Grund.
 
-| Regel                                                                   | Folge                       |
-| ----------------------------------------------------------------------- | --------------------------- |
-| Firmenname leer                                                         | Zeile fehlerhaft            |
-| Zahl nicht lesbar                                                       | Zeile fehlerhaft            |
-| Mitarbeitende, Träger, offene Stellen negativ oder mit Nachkommastellen | Zeile fehlerhaft            |
-| Breitengrad außerhalb ±90, Längengrad außerhalb ±180                    | Zeile fehlerhaft            |
-| Ja/Nein-Feld mit unbekanntem Wert                                       | Zeile fehlerhaft            |
-| ID doppelt                                                              | spätere Zeile fehlerhaft    |
-| Keine Koordinaten, aber Ort oder PLZ                                    | wird nachgeschlagen         |
-| Keine Koordinaten und keine Adresse                                     | verworfen, ohne Koordinaten |
-| Adresse nicht gefunden                                                  | verworfen, ohne Koordinaten |
+| Regel                                                                   | Folge                        |
+| ----------------------------------------------------------------------- | ---------------------------- |
+| Firmenname leer                                                         | Zeile fehlerhaft             |
+| Zahl nicht lesbar                                                       | Zeile fehlerhaft             |
+| Mitarbeitende, Träger, offene Stellen negativ oder mit Nachkommastellen | Zeile fehlerhaft             |
+| Breitengrad außerhalb ±90, Längengrad außerhalb ±180                    | Zeile fehlerhaft             |
+| Ja/Nein-Feld mit unbekanntem Wert                                       | Zeile fehlerhaft             |
+| ID doppelt                                                              | spätere Zeile fehlerhaft     |
+| Keine Koordinaten, aber Ort oder PLZ                                    | wird nachgeschlagen          |
+| Keine Koordinaten und keine Adresse                                     | geladen, ohne Kartenposition |
+| Adresse nicht gefunden                                                  | geladen, ohne Kartenposition |
 
 Leere Zahlenfelder zählen als 0, leere Ja/Nein-Felder als nein. Koordinaten 0/0 gelten
 als fehlend. Ja-Werte: ja, j, x, 1, true, wahr, yes, y. Nein-Werte: nein, n, 0, false,
@@ -52,19 +52,19 @@ falsch, no, -.
 Jedes erfasste Anrufergebnis speichert den Zustand zum Zeitpunkt des Anrufs. Damit bleiben
 die Trainingsdaten gültig, auch wenn sich Gewichte oder Stammdaten später ändern.
 
-| Feld                          | Bedeutung                                                  |
-| ----------------------------- | ---------------------------------------------------------- |
-| `id`                          | Zufällige ID                                               |
-| `leadId`, `leadName`          | Bezug zum Lead                                             |
-| `outcome`                     | `appointment`, `callback`, `not_reached`, `not_interested` |
-| `recordedAt`                  | Zeitpunkt, ISO 8601                                        |
-| `band`, `score`               | Band und Score beim Anruf                                  |
-| `dimensions`                  | Die vier Dimensionswerte                                   |
-| `normalizedWeights`           | Normierte Gewichte beim Anruf                              |
-| `distanceKm`, `detourMinutes` | Abstand und Umweg                                          |
-| `isControl`                   | Teil der Kontrollstichprobe                                |
-| `queuePosition`               | Position in der Warteschlange                              |
-| `sourceId`                    | Datenquelle                                                |
+| Feld                 | Bedeutung                                                  |
+| -------------------- | ---------------------------------------------------------- |
+| `id`                 | Zufällige ID                                               |
+| `leadId`, `leadName` | Bezug zum Lead                                             |
+| `outcome`            | `appointment`, `callback`, `not_reached`, `not_interested` |
+| `recordedAt`         | Zeitpunkt, ISO 8601                                        |
+| `band`, `score`      | Band und Score beim Anruf                                  |
+| `dimensions`         | Die drei Dimensionswerte (ältere Ergebnisse auch Nähe)     |
+| `normalizedWeights`  | Normierte Gewichte beim Anruf                              |
+| `owner`              | Hunter (Accountinhaber) des Leads beim Anruf               |
+| `isControl`          | Teil der Kontrollstichprobe                                |
+| `queuePosition`      | Position in der Warteschlange                              |
+| `sourceId`           | Datenquelle                                                |
 
 Ablage in IndexedDB (Datenbank `cws-lead-cockpit`, Tabelle `outcomes`). Export im
 Dashboard als CSV mit Semikolon, Dezimalkomma und BOM.
@@ -94,6 +94,8 @@ kommentiert. Übersicht:
 | `siteExpansion`       | Standorterweiterung       | Signal Expansion         | nicht vorhanden                       | `Standorterweiterung__c`       |
 | `managementChange`    | Wechsel Geschäftsführung  | Signal Leadership Change | offen                                 | `GF_Wechsel__c`                |
 | `isCustomer`          | Bestandskunde             | aus CRM                  | aus CRM                               | offen, über Account            |
+| `owner`               | Accountinhaber            | aus CRM                  | aus CRM                               | `Owner.Name`                   |
+| `lastActivity`        | Letzte Aktivität          | aus CRM                  | aus CRM                               | `LastActivityDate`             |
 
 Felder mit Endung `__c` sind benutzerdefinierte Salesforce-Felder und müssen angelegt werden.
 

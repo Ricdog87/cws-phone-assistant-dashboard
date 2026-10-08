@@ -47,8 +47,9 @@ describe('suggestMapping ohne Mehrfachbelegung', () => {
 });
 
 describe('mappingProblems', () => {
-  it('verlangt Firmenname und Koordinaten oder Adresse', () => {
-    expect(mappingProblems({})).toHaveLength(2);
+  it('verlangt nur den Firmennamen, Adresse und Koordinaten sind für die Karte optional', () => {
+    expect(mappingProblems({})).toEqual(['Firmenname ist nicht zugeordnet.']);
+    expect(mappingProblems({ name: 'Firma' })).toEqual([]);
     expect(mappingProblems({ name: 'Firma', city: 'Ort' })).toEqual([]);
     expect(mappingProblems({ name: 'Firma', lat: 'Lat', lng: 'Lng' })).toEqual([]);
     expect(mappingProblems({ name: 'Firma', city: 'Ort', lat: 'Lat' })).toEqual([
@@ -82,6 +83,8 @@ describe('suggestMapping für Salesforce-Berichte', () => {
       city: 'Stadt (Rechnungsanschrift)',
       commercialEmployees: 'Mitarbeiter',
       phone: 'Telefon',
+      owner: 'Accountinhaber',
+      lastActivity: 'Letzte Aktivität',
     });
   });
 

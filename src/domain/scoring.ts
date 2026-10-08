@@ -1,31 +1,21 @@
 import branchen from './branchen.json';
-import { detourMinutes, distanceToPolylineKm } from './geo';
-import type { Band, DimensionKey, Dimensions, Lead, Route, ScoredLead, Weights } from './types';
+import type { Band, DimensionKey, Dimensions, Lead, ScoredLead, Weights } from './types';
 
-export const DIMENSION_KEYS: readonly DimensionKey[] = [
-  'fit',
-  'proximity',
-  'potential',
-  'reachability',
-];
+export const DIMENSION_KEYS: readonly DimensionKey[] = ['fit', 'potential', 'reachability'];
 
 export const DIMENSION_LABELS: Record<DimensionKey, string> = {
   fit: 'Fit',
-  proximity: 'Nähe',
   potential: 'Potenzial',
   reachability: 'Erreichbarkeit',
 };
 
-export const DEFAULT_WEIGHTS: Weights = { fit: 30, proximity: 30, potential: 25, reachability: 15 };
+/** Ohne Routenplanung entfällt die Nähe. Die übrigen Gewichte behalten ihr Verhältnis. */
+export const DEFAULT_WEIGHTS: Weights = { fit: 30, potential: 25, reachability: 15 };
 export const WEIGHT_MIN = 0;
 export const WEIGHT_MAX = 50;
 
 export const BAND_A_MIN = 78;
 export const BAND_B_MIN = 58;
-
-export const DEFAULT_CORRIDOR_KM = 2;
-export const CORRIDOR_MIN_KM = 1;
-export const CORRIDOR_MAX_KM = 10;
 
 /** Grundwerte aus branchen.json. Begründung und Status stehen dort. */
 export const INDUSTRY_BASE_SCORES: Record<string, number> = Object.entries(branchen).reduce<
@@ -56,10 +46,6 @@ export function sizeFactor(commercialEmployees: number): number {
 
 export function fitScore(lead: Pick<Lead, 'industry' | 'commercialEmployees'>): number {
   return Math.min(100, industryBaseScore(lead.industry) * sizeFactor(lead.commercialEmployees));
-}
-
-export function proximityScore(detour: number): number {
-  return Math.max(0, 100 - (detour - 2) * 9);
 }
 
 export function potentialScore(wearerCount: number): number {
@@ -93,23 +79,17 @@ export function clampWeight(value: number): number {
 
 /**
  * Normiert die Gewichte auf Summe 100. Sind alle Gewichte null,
- * werden die Dimensionen gleich gewichtet (je 25).
+ * werden die Dimensionen gleich gewichtet.
  */
 export function normalizeWeights(weights: Weights): Weights {
-  const clamped = {
-    fit: clampWeight(weights.fit),
-    proximity: clampWeight(weights.proximity),
-    potential: clampWeight(weights.potential),
-    reachability: clampWeight(weights.reachability),
-  };
-  const total = clamped.fit + clamped.proximity + clamped.potential + clamped.reachability;
-  if (total === 0) return { fit: 25, proximity: 25, potential: 25, reachability: 25 };
-  return {
-    fit: (clamped.fit / total) * 100,
-    proximity: (clamped.proximity / total) * 100,
-    potential: (clamped.potential / total) * 100,
-    reachability: (clamped.reachability / total) * 100,
-  };
+  const clamped = DIMENSION_KEYS.map((key) => [key, clampWeight(weights[key])] as const);
+  const total = clamped.reduce((sum, [, value]) => sum + value, 0);
+  return Object.fromEntries(
+    clamped.map(([key, value]) => [
+      key,
+      total === 0 ? 100 / DIMENSION_KEYS.length : (value / total) * 100,
+    ]),
+  ) as Weights;
 }
 
 export function weightedScore(dimensions: Dimensions, weights: Weights): number {
@@ -124,41 +104,20 @@ export function bandFor(score: number): Band {
   return 'C';
 }
 
-export function computeDimensions(lead: Lead, detour: number): Dimensions {
+export function computeDimensions(lead: Lead): Dimensions {
   return {
     fit: fitScore(lead),
-    proximity: proximityScore(detour),
     potential: potentialScore(lead.wearerCount),
     reachability: reachabilityScore(lead),
   };
 }
 
-export function scoreLead(
-  lead: Lead,
-  route: Route,
-  weights: Weights,
-  corridorKm: number,
-): ScoredLead {
-  const distanceKm = distanceToPolylineKm(lead, route.points);
-  const detour = detourMinutes(distanceKm);
-  const dimensions = computeDimensions(lead, detour);
+export function scoreLead(lead: Lead, weights: Weights): ScoredLead {
+  const dimensions = computeDimensions(lead);
   const score = weightedScore(dimensions, weights);
-  return {
-    lead,
-    distanceKm,
-    detourMinutes: detour,
-    inCorridor: distanceKm <= corridorKm,
-    dimensions,
-    score,
-    band: bandFor(score),
-  };
+  return { lead, dimensions, score, band: bandFor(score) };
 }
 
-export function scoreLeads(
-  leads: readonly Lead[],
-  route: Route,
-  weights: Weights,
-  corridorKm: number,
-): ScoredLead[] {
-  return leads.map((lead) => scoreLead(lead, route, weights, corridorKm));
+export function scoreLeads(leads: readonly Lead[], weights: Weights): ScoredLead[] {
+  return leads.map((lead) => scoreLead(lead, weights));
 }

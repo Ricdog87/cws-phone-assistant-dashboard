@@ -1,8 +1,6 @@
 import { useMemo } from 'react';
-import { Polygon, Polyline, Tooltip } from 'react-leaflet';
-import { useAppStore } from '@/app/store';
+import { Polygon, Polyline } from 'react-leaflet';
 import { NORDWEST_MASK_HOLES, NORDWEST_STATES } from '@/data/territory/nordwestStates';
-import { SERVICE_TOURS } from '@/data/tours';
 
 /** Außenring über die ganze Welt, das Gebiet wird als Loch ausgespart */
 const WORLD: [number, number][] = [
@@ -29,30 +27,6 @@ export function TerritoryLayer() {
           pathOptions={{ className: 'map-territory-border', weight: 1.5 }}
           interactive={false}
         />
-      ))}
-    </>
-  );
-}
-
-/** Weitere Servicetouren, ein Klick macht sie zur aktiven Tour */
-export function OtherToursLayer() {
-  const activeId = useAppStore((s) => s.route.id);
-  const setTour = useAppStore((s) => s.setTour);
-  return (
-    <>
-      {SERVICE_TOURS.filter((tour) => tour.id !== activeId).map((tour) => (
-        <Polyline
-          key={tour.id}
-          positions={tour.points.map((p) => [p.lat, p.lng] as [number, number])}
-          pathOptions={{ className: 'map-tour', weight: 3, dashArray: '6 6' }}
-          eventHandlers={{ click: () => setTour(tour.id) }}
-        >
-          <Tooltip sticky>
-            {tour.weekday} · {tour.name}
-            <br />
-            Klick wählt diese Tour
-          </Tooltip>
-        </Polyline>
       ))}
     </>
   );

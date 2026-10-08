@@ -1,4 +1,4 @@
-// Fiktive Demo-Betriebe entlang der Touren im Vertriebsgebiet Nordwest.
+// Fiktive Demo-Betriebe im Vertriebsgebiet Nordwest.
 // Orte und Postleitzahlen real, Firmen, Ansprechpartner und Telefonnummern erfunden.
 import type { Lead } from '@/domain/types';
 

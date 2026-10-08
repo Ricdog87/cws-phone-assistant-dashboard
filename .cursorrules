@@ -15,12 +15,11 @@
 - Keine neuen fachlichen Regeln ohne Abstimmung. Offene Punkte in docs/scoring.md festhalten.
 
 ## Fachlogik (nicht ändern ohne Abstimmung)
-- Umweg-Minuten = round((2 * km / 45 * 60 + 2) * 10) / 10.
 - fit = min(100, Branchengrundwert * Größenfaktor), Faktor 1.0 bei 40–250, 0.85 bei 20–39 oder 251–399, sonst 0.6.
-- naehe = max(0, 100 - (umweg - 2) * 9); potenzial = min(100, traeger / 2.2).
+- Keine Routenplanung: keine Nähe, kein Korridor. potenzial = min(100, traeger / 2.2).
 - erreichbarkeit = Durchwahl 34 + Ansprechpartner 26 + min(22, Stellen * 3.5) + Zertifizierung 6 + Erweiterung 7 + GF-Wechsel 5, max 100.
-- Gewichte 0–50, Standard 30/30/25/15, normiert auf 100. Band A ab 78, B ab 58.
-- Korridor Standard 2 km, 1–10 km. Bestandskunden nie in der Warteschlange.
+- Gewichte 0–50, Standard Fit 30, Potenzial 25, Erreichbarkeit 15, normiert auf 100. Band A ab 78, B ab 58.
+- Warteschlange = Potenzialliste eines Hunters (Accountinhaber) oder aller Hunter. Bestandskunden nie in der Warteschlange.
 - Kontrollstichprobe 8 % aus Band B und C, fester Seed, gleichmäßig eingestreut.
 
 ## Daten, Briefing, Kalibrierung

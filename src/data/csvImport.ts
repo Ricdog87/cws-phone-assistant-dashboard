@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CSV_BOM, CSV_SEPARATOR, escapeCsvCell } from '@/domain/export';
+import { parseActivityDate } from '@/domain/activity';
 import type { Lead } from '@/domain/types';
 import {
   CSV_FIELDS,
@@ -79,6 +80,16 @@ export const csvRowSchema = z.object({
   siteExpansion: flag,
   managementChange: flag,
   isCustomer: flag,
+  owner: optionalText,
+  lastActivity: z.string().transform((raw, ctx) => {
+    if (raw.trim() === '') return null;
+    const date = parseActivityDate(raw);
+    if (!date) {
+      ctx.addIssue({ code: 'custom', message: 'ist kein Datum (TT.MM.JJJJ)' });
+      return z.NEVER;
+    }
+    return date;
+  }),
 });
 
 export type CsvRow = z.output<typeof csvRowSchema>;
@@ -95,6 +106,7 @@ export interface RowValidation {
   valid: ValidRow[];
   errors: RowError[];
   invalidRows: number;
+  /** Gültige Zeilen ohne Koordinaten und ohne Adresse, sie fehlen nur auf der Karte */
   missingCoordinateRows: number;
 }
 
@@ -172,12 +184,14 @@ export function validateCsvRows(
     } else if (hasAddress(addressOf(row))) {
       valid.push({ line, row, id, needsGeocoding: true });
     } else {
+      // Ohne Routenplanung reicht der Lead ohne Kartenposition für die Anrufliste
       missingCoordinateRows++;
+      valid.push({ line, row, id, needsGeocoding: false });
       errors.push({
         line,
         field: 'Koordinaten',
         value: '',
-        message: 'fehlen, und es gibt keine Adresse zum Nachschlagen',
+        message: 'fehlen, ohne Adresse erscheint der Lead nicht auf der Karte',
         reason: 'missing_coordinates',
       });
     }
@@ -186,7 +200,7 @@ export function validateCsvRows(
   return { valid, errors, invalidRows, missingCoordinateRows };
 }
 
-function toLead(entry: ValidRow, lat: number, lng: number): Lead {
+function toLead(entry: ValidRow, lat: number | null, lng: number | null): Lead {
   const { row } = entry;
   return {
     id: entry.id,
@@ -208,6 +222,8 @@ function toLead(entry: ValidRow, lat: number, lng: number): Lead {
     siteExpansion: row.siteExpansion,
     managementChange: row.managementChange,
     isCustomer: row.isCustomer,
+    owner: row.owner,
+    lastActivity: row.lastActivity,
   };
 }
 
@@ -250,15 +266,18 @@ export async function importCsvRows(
   const errors = [...validation.errors];
   const leads: Lead[] = [];
   let geocoded = 0;
-  let missing = validation.missingCoordinateRows;
+  let withoutCoordinates = validation.missingCoordinateRows;
   let consecutiveServiceErrors = 0;
 
   const total = validation.valid.filter((v) => v.needsGeocoding).length;
   let done = 0;
   onProgress?.({ done, total });
 
-  const reject = (entry: ValidRow, reason: RowError['reason'], message: string) => {
-    missing++;
+  // Der Lead bleibt in der Anrufliste, nur die Kartenposition fehlt
+  const keepWithoutMap = (entry: ValidRow, reason: RowError['reason'] | null, message: string) => {
+    withoutCoordinates++;
+    leads.push(toLead(entry, null, null));
+    if (!reason) return;
     errors.push({
       line: entry.line,
       field: 'Adresse',
@@ -270,16 +289,16 @@ export async function importCsvRows(
 
   for (const entry of validation.valid) {
     const { row } = entry;
-    if (!entry.needsGeocoding && row.lat !== null && row.lng !== null) {
-      leads.push(toLead(entry, row.lat, row.lng));
+    if (!entry.needsGeocoding) {
+      leads.push(hasCoordinates(row) ? toLead(entry, row.lat, row.lng) : toLead(entry, null, null));
       continue;
     }
     if (signal?.aborted) throw new ImportAbortedError();
 
     if (!geocoder) {
-      reject(entry, 'missing_coordinates', 'keine Koordinaten, Nachschlagen ist ausgeschaltet');
+      keepWithoutMap(entry, null, '');
     } else if (consecutiveServiceErrors >= MAX_CONSECUTIVE_SERVICE_ERRORS) {
-      reject(entry, 'geocode_failed', 'nicht nachgeschlagen, Dienst nicht erreichbar');
+      keepWithoutMap(entry, 'geocode_failed', 'nicht nachgeschlagen, Dienst nicht erreichbar');
     } else {
       try {
         const result = await geocoder.geocode(addressOf(row), signal);
@@ -288,12 +307,12 @@ export async function importCsvRows(
           geocoded++;
           leads.push(toLead(entry, result.lat, result.lng));
         } else {
-          reject(entry, 'geocode_failed', 'Adresse nicht gefunden');
+          keepWithoutMap(entry, 'geocode_failed', 'Adresse nicht gefunden');
         }
       } catch (error) {
         if (isAbort(error, signal)) throw new ImportAbortedError();
         consecutiveServiceErrors++;
-        reject(
+        keepWithoutMap(
           entry,
           'geocode_failed',
           `Nachschlagen fehlgeschlagen: ${error instanceof Error ? error.message : 'unbekannt'}`,
@@ -311,7 +330,7 @@ export async function importCsvRows(
       total: rows.length,
       loaded: leads.length,
       geocoded,
-      rejectedMissingCoordinates: missing,
+      withoutCoordinates,
       rejectedInvalid: validation.invalidRows,
       rowErrors: errors,
     },
@@ -325,8 +344,8 @@ function formatAddressOf(entry: ValidRow): string {
 
 const REASON_LABELS: Record<RowError['reason'], string> = {
   invalid: 'Ungültiger Wert',
-  missing_coordinates: 'Ohne Koordinaten',
-  geocode_failed: 'Nicht gefunden',
+  missing_coordinates: 'Ohne Kartenposition',
+  geocode_failed: 'Adresse nicht gefunden',
 };
 
 export function reasonLabel(reason: RowError['reason']): string {

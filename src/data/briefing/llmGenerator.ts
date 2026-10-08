@@ -41,7 +41,7 @@ export class LlmBriefingGenerator implements BriefingGenerator {
   }
 
   async generate(entry: QueueEntry, signal?: AbortSignal): Promise<GeneratedBriefing> {
-    const request = buildBriefingRequest(entry.lead, entry.detourMinutes);
+    const request = buildBriefingRequest(entry.lead);
     const key = JSON.stringify(request);
     let pending = this.cache.get(key);
     if (!pending) {

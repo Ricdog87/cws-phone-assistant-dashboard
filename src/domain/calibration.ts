@@ -221,12 +221,7 @@ function linearScore(dimensions: Dimensions, weights: Weights): number {
 export function toRawWeights(normalized: Weights): Weights {
   const max = Math.max(...DIMENSION_KEYS.map((k) => normalized[k]));
   const scale = (v: number) => (max <= 0 ? 0 : Math.round((v / max) * WEIGHT_MAX));
-  return {
-    fit: scale(normalized.fit),
-    proximity: scale(normalized.proximity),
-    potential: scale(normalized.potential),
-    reachability: scale(normalized.reachability),
-  };
+  return Object.fromEntries(DIMENSION_KEYS.map((key) => [key, scale(normalized[key])])) as Weights;
 }
 
 /**

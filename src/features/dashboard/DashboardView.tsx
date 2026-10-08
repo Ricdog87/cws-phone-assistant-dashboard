@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import { useCallDay, useGoalProgress } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { DirectorView } from './DirectorView';
+import { ConfirmationPanel } from './ConfirmationPanel';
 import { TeamLeadView } from './TeamLeadView';
+import { useLiveAppointments } from './useRegionBoard';
 import { Button } from '@/components/Button';
 import { GoalStrip } from '@/components/GoalStrip';
 import { downloadText } from '@/components/download';
@@ -36,6 +38,9 @@ function AssistantDashboard() {
   const contacts = useAppStore((s) => s.contacts);
   const appointments = useAppStore((s) => s.appointments);
   const clearOutcomes = useAppStore((s) => s.clearOutcomes);
+  const selectLead = useAppStore((s) => s.selectLead);
+  const setTab = useAppStore((s) => s.setTab);
+  const myAppointments = useLiveAppointments();
   const metrics = useMemo(() => computeMetrics(outcomes), [outcomes]);
   const goals = useGoalProgress();
   const today = useCallDay();
@@ -97,6 +102,17 @@ function AssistantDashboard() {
             hint="Alle erfassten Anrufe"
           />
         </div>
+
+        <Panel title="Meine Termine und Bestätigungen">
+          <ConfirmationPanel
+            appointments={myAppointments}
+            hideAssistant
+            onOpen={(leadId) => {
+              selectLead(leadId);
+              setTab('queue');
+            }}
+          />
+        </Panel>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Panel title="Terminquote nach Band">

@@ -50,6 +50,7 @@ describe('validateCsvRows', () => {
     expect(result.valid.map((v) => [v.line, v.needsGeocoding])).toEqual([
       [2, false],
       [3, true],
+      [7, false],
       [8, true],
     ]);
     expect(result.invalidRows).toBe(3);
@@ -82,7 +83,7 @@ describe('validateCsvRows', () => {
         line: 7,
         field: 'Koordinaten',
         value: '',
-        message: 'fehlen, und es gibt keine Adresse zum Nachschlagen',
+        message: 'fehlen, ohne Adresse erscheint der Lead nicht auf der Karte',
         reason: 'missing_coordinates',
       },
     ]);
@@ -90,7 +91,7 @@ describe('validateCsvRows', () => {
 });
 
 describe('importCsvRows', () => {
-  it('schlägt fehlende Koordinaten nach und zählt Verworfenes', async () => {
+  it('schlägt fehlende Koordinaten nach und behält Leads ohne Kartenposition', async () => {
     const geocoder = fakeGeocoder();
     const progress: number[] = [];
     const { leads, report } = await importCsvRows(rows, mapping, {
@@ -101,13 +102,15 @@ describe('importCsvRows', () => {
     expect(leads.map((l) => [l.id, l.lat, l.lng])).toEqual([
       ['A1', 53.23, 7.46],
       ['A2', 53.36, 7.2],
+      ['A6', null, null],
+      ['A7', null, null],
     ]);
     expect(leads[0]).toMatchObject({ wearerCount: 120, hasDirectDial: true });
     expect(report).toMatchObject({
       total: 7,
-      loaded: 2,
+      loaded: 4,
       geocoded: 1,
-      rejectedMissingCoordinates: 2,
+      withoutCoordinates: 2,
       rejectedInvalid: 3,
     });
     expect(report.rowErrors.at(-1)).toMatchObject({
@@ -124,10 +127,47 @@ describe('importCsvRows', () => {
     expect(progress).toEqual([0, 1, 2]);
   });
 
-  it('verwirft Zeilen ohne Koordinaten, wenn das Nachschlagen aus ist', async () => {
-    const { report } = await importCsvRows(rows, mapping, { geocoder: null });
-    expect(report.loaded).toBe(1);
-    expect(report.rejectedMissingCoordinates).toBe(3);
+  it('lädt ohne Nachschlagen alle gültigen Zeilen, nur ohne Kartenposition', async () => {
+    const { leads, report } = await importCsvRows(rows, mapping, { geocoder: null });
+    expect(report.loaded).toBe(4);
+    expect(report.withoutCoordinates).toBe(3);
+    expect(leads.find((lead) => lead.id === 'A2')).toMatchObject({ lat: null, lng: null });
+  });
+
+  it('übernimmt Accountinhaber und letzte Aktivität aus dem Salesforce-Bericht', async () => {
+    const report = parseCsvText(
+      [
+        'Accountname;Accountinhaber;Letzte Aktivität;Stadt (Rechnungsanschrift)',
+        'Beispiel GmbH;Erika Hunter;15.09.2026;Leer',
+        'Zweite GmbH;Erika Hunter;;Emden',
+      ].join('\n'),
+    );
+    const { leads } = await importCsvRows(
+      report.rows,
+      {
+        name: 'Accountname',
+        owner: 'Accountinhaber',
+        lastActivity: 'Letzte Aktivität',
+        city: 'Stadt (Rechnungsanschrift)',
+      },
+      { geocoder: null },
+    );
+    expect(leads.map((lead) => [lead.owner, lead.lastActivity])).toEqual([
+      ['Erika Hunter', '2026-09-15'],
+      ['Erika Hunter', null],
+    ]);
+  });
+
+  it('meldet ein ungültiges Datum der letzten Aktivität', () => {
+    const result = validateCsvRows([{ Firma: 'X', Aktiv: 'gestern', Ort: 'Leer' }], {
+      name: 'Firma',
+      lastActivity: 'Aktiv',
+      city: 'Ort',
+    });
+    expect(result.errors[0]).toMatchObject({
+      field: 'Letzte Aktivität',
+      message: 'ist kein Datum (TT.MM.JJJJ)',
+    });
   });
 
   it('bricht das Nachschlagen nach wiederholten Dienstfehlern ab', async () => {
@@ -141,7 +181,8 @@ describe('importCsvRows', () => {
     });
     const { report } = await importCsvRows(many, mapping, { geocoder });
     expect(geocoder.geocode).toHaveBeenCalledTimes(MAX_CONSECUTIVE_SERVICE_ERRORS);
-    expect(report.rejectedMissingCoordinates).toBe(6);
+    expect(report.withoutCoordinates).toBe(6);
+    expect(report.loaded).toBe(6);
     expect(report.rowErrors.at(-1)?.message).toBe('nicht nachgeschlagen, Dienst nicht erreichbar');
   });
 

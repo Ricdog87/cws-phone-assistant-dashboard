@@ -5,7 +5,9 @@ Arbeitsoberfläche für die Telefonassistenz im New Business der CWS Workwear.
 - sortiert Leads danach, wie wahrscheinlich ein Termin ist
 - liefert je Lead ein Gesprächsbriefing mit Aufhängern und Einstiegssatz
 - erfasst das Anrufergebnis per Klick oder Taste und speichert es lokal
-- zeigt die Leads auf einer Karte entlang der Serviceroute
+- arbeitet die Potenzialliste je Hunter (Accountinhaber) ab, mit letzter Aktivität
+- bestätigt Termine per E-Mail und Kalendereintrag
+- zeigt der Teamleitung Potenzial je Hunter, Terminbestätigungen und den Werdegang je Person
 - wertet die Terminquote nach Band und gegen eine Kontrollstichprobe aus
 
 Die erfassten Ergebnisse sind die Trainingsdaten für ein späteres Modell.
@@ -37,9 +39,9 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 | Reiter     | Inhalt                                                                             |
 | ---------- | ---------------------------------------------------------------------------------- |
 | Anrufliste | Warteschlange links, Briefing rechts, Kontakt erfassen, Ergebnis mit Taste 1 bis 4 |
-| Karte      | Route, Korridor, Leads nach Band, Bestandskunden separat                           |
+| Karte      | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat    |
 | Dashboard  | Anrufe, Termine, Quote nach Band, Kontrolle, Export Ergebnisse und Kontakte        |
-| Scoring    | Gewichte, Korridor, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung |
+| Scoring    | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung           |
 | Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           |
 
 Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin vereinbart,
@@ -47,7 +49,7 @@ Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin ve
 auf den nächsten offenen Lead.
 
 Nach „Termin vereinbart“ erinnert ein Hinweis an die Bestätigung. Im Briefing werden Datum,
-Uhrzeit, Dauer, Hunter der Tour und Ansprechpartner festgehalten. Daraus entstehen eine fertige
+Uhrzeit, Dauer, Hunter (Accountinhaber) und Ansprechpartner festgehalten. Daraus entstehen eine fertige
 Bestätigungs-E-Mail im Standard-Mailprogramm (Hunter in Kopie) und ein Kalendereintrag als
 `.ics`. Das Dashboard exportiert die Termine für Salesforce. Der automatische Versand über
 Microsoft Graph folgt in Stufe 2.
@@ -71,8 +73,8 @@ die Rolle bestimmt die Ansicht:
 
 | Konto            | Rolle                      | Ansicht                                         |
 | ---------------- | -------------------------- | ----------------------------------------------- |
-| Nele Faber       | Telefonassistenz           | Anrufliste je Tour, Briefing, Karte, Ziele      |
-| Martina Weidmann | Teamleitung                | Team Nord: Rangliste, größte Lücken             |
+| Nele Faber       | Telefonassistenz           | Potenzialliste je Hunter, Briefing, Termine     |
+| Martina Weidmann | Teamleitung                | Team Nord: Hunter, Bestätigungen, Rangliste     |
 | Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW |
 
 Rollenwechsel über „Abmelden“ oben rechts. Die Anmeldung gilt je Browser-Tab und bleibt
@@ -82,12 +84,13 @@ beim Neuladen bestehen.
    und Termine bei null starten. Abmelden.
 2. Als Steffen Sixthor anmelden: Vertriebsgebiet Nordwest gesamt, Regionen Nord und NRW im
    Vergleich, Klick auf eine Region zeigt ihre Rangliste, rechts die größten Lücken.
-3. Abmelden, als Nele Faber anmelden: Warteschlange der gewählten Tour nach Score und Umweg,
-   Briefing mit Aufhängern und persönlichem Einstiegssatz. Taste 1 bucht einen Termin. Im
-   Reiter Karte das ganze Vertriebsgebiet mit allen zehn Touren zeigen, ein Klick auf eine
-   gestrichelte Tour macht sie aktiv.
-4. Abmelden, als Steffen Sixthor oder Martina Weidmann anmelden: Region Nord und Nele
-   Faber zeigen den Termin sofort, markiert als „erfasst“.
+3. Abmelden, als Nele Faber anmelden: Potenzialliste eines Hunters wählen, Warteschlange
+   nach Score mit letzter Aktivität, Briefing mit Aufhängern und persönlichem
+   Einstiegssatz. Taste 1 bucht einen Termin, „Jetzt bestätigen“ öffnet die Bestätigung:
+   Termin speichern, „Bestätigung in Outlook öffnen“.
+4. Abmelden, als Martina Weidmann anmelden: Potenzialliste je Hunter, Terminbestätigungen
+   mit dem Termin von Nele Faber (markiert als „erfasst“), Klick auf eine Person zeigt den Werdegang.
+5. Als Steffen Sixthor: dieselben Bausteine je Region, dazu der Regionsvergleich.
 
 Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link
 öffnet, startet mit eigenem Stand.
@@ -100,7 +103,7 @@ src/
   components/     wiederverwendbare UI-Bausteine
   features/
     queue/        Anrufliste, Briefing, Ergebniserfassung
-    map/          Karte mit Korridor
+    map/          Karte der Potenzialliste
     dashboard/    Kennzahlen und Export
     scoring/      Gewichtung und Rangfolgevorschau
     data/         Datenquelle und CSV-Import

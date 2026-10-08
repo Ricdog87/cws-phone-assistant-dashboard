@@ -8,13 +8,12 @@ import {
   fitScore,
   normalizeWeights,
   potentialScore,
-  proximityScore,
   reachabilityScore,
   scoreLead,
   sizeFactor,
   weightedScore,
 } from '@/domain/scoring';
-import type { Dimensions, Lead, Route } from '@/domain/types';
+import type { Dimensions, Lead } from '@/domain/types';
 
 const baseLead: Lead = {
   id: 'L-1',
@@ -36,15 +35,6 @@ const baseLead: Lead = {
   siteExpansion: false,
   managementChange: false,
   isCustomer: false,
-};
-
-const route: Route = {
-  id: 'R',
-  name: 'Test',
-  points: [
-    { lat: 53.0, lng: 8.0 },
-    { lat: 53.2, lng: 8.0 },
-  ],
 };
 
 describe('Branchengrundwerte', () => {
@@ -86,20 +76,6 @@ describe('fitScore', () => {
       INDUSTRY_FALLBACK_SCORE * 0.6,
       10,
     );
-  });
-});
-
-describe('proximityScore', () => {
-  it('ergibt 100 bei 2 Minuten Umweg', () => {
-    expect(proximityScore(2)).toBe(100);
-  });
-
-  it('zieht 9 Punkte je Minute über 2 ab', () => {
-    expect(proximityScore(7.3)).toBeCloseTo(52.3, 10);
-  });
-
-  it('fällt nicht unter 0', () => {
-    expect(proximityScore(28.7)).toBe(0);
   });
 });
 
@@ -150,47 +126,45 @@ describe('reachabilityScore', () => {
 });
 
 describe('normalizeWeights', () => {
-  it('lässt die Standardgewichte mit Summe 100 unverändert', () => {
-    expect(normalizeWeights(DEFAULT_WEIGHTS)).toEqual({
-      fit: 30,
-      proximity: 30,
-      potential: 25,
-      reachability: 15,
-    });
+  it('normiert die Standardgewichte im Verhältnis 30 : 25 : 15 auf Summe 100', () => {
+    const w = normalizeWeights(DEFAULT_WEIGHTS);
+    expect(w.fit).toBeCloseTo(42.857, 3);
+    expect(w.potential).toBeCloseTo(35.714, 3);
+    expect(w.reachability).toBeCloseTo(21.429, 3);
   });
 
   it('normiert auf Summe 100', () => {
-    const w = normalizeWeights({ fit: 50, proximity: 50, potential: 0, reachability: 0 });
-    expect(w).toEqual({ fit: 50, proximity: 50, potential: 0, reachability: 0 });
-    const v = normalizeWeights({ fit: 10, proximity: 10, potential: 10, reachability: 10 });
-    expect(v).toEqual({ fit: 25, proximity: 25, potential: 25, reachability: 25 });
-  });
-
-  it('gewichtet gleich, wenn alle Gewichte null sind', () => {
-    expect(normalizeWeights({ fit: 0, proximity: 0, potential: 0, reachability: 0 })).toEqual({
-      fit: 25,
-      proximity: 25,
-      potential: 25,
-      reachability: 25,
+    expect(normalizeWeights({ fit: 50, potential: 50, reachability: 0 })).toEqual({
+      fit: 50,
+      potential: 50,
+      reachability: 0,
     });
   });
 
+  it('gewichtet gleich, wenn alle Gewichte null sind', () => {
+    const w = normalizeWeights({ fit: 0, potential: 0, reachability: 0 });
+    for (const value of Object.values(w)) expect(value).toBeCloseTo(100 / 3, 10);
+  });
+
   it('begrenzt Rohwerte auf 0 bis 50', () => {
-    const w = normalizeWeights({ fit: 80, proximity: -10, potential: 50, reachability: 0 });
-    expect(w).toEqual({ fit: 50, proximity: 0, potential: 50, reachability: 0 });
+    expect(normalizeWeights({ fit: 80, potential: -10, reachability: 50 })).toEqual({
+      fit: 50,
+      potential: 0,
+      reachability: 50,
+    });
   });
 });
 
 describe('weightedScore', () => {
   it('rundet die gewichtete Summe', () => {
-    const dims: Dimensions = { fit: 95, proximity: 100, potential: 50, reachability: 67 };
-    // 95*0,30 + 100*0,30 + 50*0,25 + 67*0,15 = 81,05
-    expect(weightedScore(dims, DEFAULT_WEIGHTS)).toBe(81);
+    const dims: Dimensions = { fit: 95, potential: 50, reachability: 67 };
+    // (95*30 + 50*25 + 67*15) / 70 = 72,93
+    expect(weightedScore(dims, DEFAULT_WEIGHTS)).toBe(73);
   });
 
   it('ergibt bei Gleichgewichtung den Mittelwert', () => {
-    const dims: Dimensions = { fit: 80, proximity: 60, potential: 40, reachability: 20 };
-    expect(weightedScore(dims, { fit: 0, proximity: 0, potential: 0, reachability: 0 })).toBe(50);
+    const dims: Dimensions = { fit: 90, potential: 60, reachability: 30 };
+    expect(weightedScore(dims, { fit: 0, potential: 0, reachability: 0 })).toBe(60);
   });
 });
 
@@ -207,7 +181,7 @@ describe('bandFor', () => {
   });
 
   it('trifft die Bandgrenzen auch über den gewichteten Score', () => {
-    const at = (v: number): Dimensions => ({ fit: v, proximity: v, potential: v, reachability: v });
+    const at = (v: number): Dimensions => ({ fit: v, potential: v, reachability: v });
     expect(bandFor(weightedScore(at(77), DEFAULT_WEIGHTS))).toBe('B');
     expect(bandFor(weightedScore(at(78), DEFAULT_WEIGHTS))).toBe('A');
     expect(bandFor(weightedScore(at(57), DEFAULT_WEIGHTS))).toBe('C');
@@ -216,27 +190,16 @@ describe('bandFor', () => {
 });
 
 describe('scoreLead', () => {
-  it('bewertet einen Lead auf der Route vollständig', () => {
-    const result = scoreLead(baseLead, route, DEFAULT_WEIGHTS, 2);
-    expect(result.distanceKm).toBeCloseTo(0, 9);
-    expect(result.detourMinutes).toBe(2);
-    expect(result.inCorridor).toBe(true);
+  it('bewertet einen Lead ohne Routenbezug vollständig', () => {
+    const result = scoreLead(baseLead, DEFAULT_WEIGHTS);
     expect(result.dimensions.fit).toBe(95);
-    expect(result.dimensions.proximity).toBe(100);
     expect(result.dimensions.potential).toBeCloseTo(50, 10);
     expect(result.dimensions.reachability).toBe(67);
-    expect(result.score).toBe(81);
-    expect(result.band).toBe('A');
+    expect(result.score).toBe(73);
+    expect(result.band).toBe('B');
   });
 
-  it('markiert Leads außerhalb des Korridors', () => {
-    const far = { ...baseLead, lng: 8.2 };
-    const result = scoreLead(far, route, DEFAULT_WEIGHTS, 2);
-    expect(result.inCorridor).toBe(false);
-    expect(result.dimensions.proximity).toBe(0);
-  });
-
-  it('berechnet Dimensionen aus dem Umweg', () => {
-    expect(computeDimensions(baseLead, 7.3).proximity).toBeCloseTo(52.3, 10);
+  it('berechnet die Dimensionen nur aus den Lead-Merkmalen', () => {
+    expect(computeDimensions(baseLead)).toEqual(scoreLead(baseLead, DEFAULT_WEIGHTS).dimensions);
   });
 });

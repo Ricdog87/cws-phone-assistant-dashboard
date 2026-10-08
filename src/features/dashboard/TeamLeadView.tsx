@@ -4,6 +4,8 @@ import { StatTile } from '@/components/StatTile';
 import { formatInt, formatOne } from '@/components/format';
 import { AssistantBrick } from './AssistantBrick';
 import { AttentionPanel } from './AttentionPanel';
+import { ConfirmationPanel } from './ConfirmationPanel';
+import { HunterTable } from './HunterTable';
 import { BoardHeader } from './BoardHeader';
 import { withRanks } from './boardRows';
 import { LeaderboardTable } from './LeaderboardTable';
@@ -12,6 +14,7 @@ import { progressPercent } from './memberFormat';
 import { SectionTitle } from './SectionTitle';
 import { matchesFocus, useBoardFocus } from './useBoardFocus';
 import { useCardSelection } from './useCardSelection';
+import { useRegionBoard } from './useRegionBoard';
 import { useTeamStanding } from './useTeamStanding';
 import { ViewModeSwitch, type ViewMode } from './ViewModeSwitch';
 
@@ -19,6 +22,7 @@ const keyOf = (memberId: string) => memberId;
 
 export function TeamLeadView() {
   const team = useTeamStanding();
+  const board = useRegionBoard(team.teamId, team.members);
   const lead = DEMO_PERSONAS.teamLead;
   const appointmentGap = Math.max(0, team.weeklyAppointmentGoal - team.weekAppointments);
   const { focus, select } = useBoardFocus();
@@ -83,6 +87,20 @@ export function TeamLeadView() {
             fillPercent={progressPercent(team.atWeeklyGoal, team.headcount)}
             fillReached={team.atWeeklyGoal === team.headcount}
           />
+        </div>
+
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <section className="min-w-0 space-y-3" aria-label="Potenzialliste je Hunter">
+            <SectionTitle
+              title="Potenzialliste je Hunter"
+              aside={<span className="text-xs text-muted">Wenigste Termine oben</span>}
+            />
+            <HunterTable rows={board.hunters} />
+          </section>
+          <section className="min-w-0 space-y-3" aria-label="Terminbestätigungen diese Woche">
+            <SectionTitle title="Terminbestätigungen" />
+            <ConfirmationPanel appointments={board.appointments} />
+          </section>
         </div>
 
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">

@@ -1,10 +1,11 @@
 import type { Band } from '@/domain/types';
 
-export function markerClass(band: Band, inCorridor: boolean, selected: boolean): string {
+/** inList: gehört zur gewählten Potenzialliste, sonst abgeblendet */
+export function markerClass(band: Band, inList: boolean, selected: boolean): string {
   return [
     'lead-marker',
     `lead-marker--${band.toLowerCase()}`,
-    inCorridor ? '' : 'lead-marker--outside',
+    inList ? '' : 'lead-marker--outside',
     selected ? 'lead-marker--selected' : '',
   ]
     .filter(Boolean)

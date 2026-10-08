@@ -50,13 +50,11 @@ function addDays(date: string, days: number): string {
   return new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, (d ?? 1) + days)).toISOString().slice(0, 10);
 }
 
-/** Nächster Tourtag ab morgen, damit der Hunter planen kann */
-export function nextTourDate(weekday: string, today: string): string {
-  const target = WEEKDAYS_DE.indexOf(weekday as (typeof WEEKDAYS_DE)[number]);
-  const tomorrow = addDays(today, 1);
-  if (target < 0) return tomorrow;
-  const offset = (target - weekdayIndex(tomorrow) + 7) % 7;
-  return addDays(tomorrow, offset);
+/** Nächster Werktag (Montag bis Freitag) ab morgen, damit der Hunter planen kann */
+export function nextWorkday(today: string): string {
+  let date = addDays(today, 1);
+  while ([0, 6].includes(weekdayIndex(date))) date = addDays(date, 1);
+  return date;
 }
 
 /** Erster Fehler der Eingabe; now ist der aktuelle Zeitpunkt als YYYY-MM-DDTHH:MM in Ortszeit */
@@ -222,4 +220,79 @@ export function buildIcs(appointment: Appointment, stamp: string): string {
     'END:VCALENDAR',
   ];
   return lines.map(fold).join('\r\n') + '\r\n';
+}
+
+/** Termin in der Übersicht der Teamleitung */
+export interface TeamAppointment {
+  id: string;
+  leadId: string | null;
+  leadName: string;
+  /** Beginn als ISO-Zeitpunkt, null, wenn nur das Ergebnis gebucht wurde */
+  start: string | null;
+  hunterName: string;
+  assistantName: string;
+  status: 'confirmed' | 'open' | 'details_missing';
+  /** True, wenn der Termin in diesem Browser erfasst wurde */
+  live: boolean;
+}
+
+export const TEAM_APPOINTMENT_STATUS_LABELS: Record<TeamAppointment['status'], string> = {
+  confirmed: 'Bestätigung erstellt',
+  open: 'Bestätigung offen',
+  details_missing: 'Termin ohne Details',
+};
+
+/**
+ * Live-Termine aus diesem Browser. Gebuchte Termine ohne erfasste Details erscheinen
+ * mit Status „ohne Details“, damit keine Bestätigung untergeht.
+ */
+export function liveTeamAppointments(
+  appointments: readonly Appointment[],
+  bookedWithoutDetails: readonly {
+    id: string;
+    leadId: string;
+    leadName: string;
+    owner: string | null;
+  }[],
+  assistantName: string,
+): TeamAppointment[] {
+  const latest = latestAppointmentByLead(appointments);
+  const withDetails: TeamAppointment[] = [...latest.values()].map((appointment) => ({
+    id: appointment.id,
+    leadId: appointment.leadId,
+    leadName: appointment.leadName,
+    start: appointment.start,
+    hunterName: appointment.hunterName,
+    assistantName,
+    status: appointment.confirmationOpenedAt ? 'confirmed' : 'open',
+    live: true,
+  }));
+  const missing: TeamAppointment[] = bookedWithoutDetails
+    .filter((booked) => !latest.has(booked.leadId))
+    .map((booked) => ({
+      id: booked.id,
+      leadId: booked.leadId,
+      leadName: booked.leadName,
+      start: null,
+      hunterName: booked.owner ?? 'nicht zugeordnet',
+      assistantName,
+      status: 'details_missing',
+      live: true,
+    }));
+  return [...missing, ...withDetails];
+}
+
+const STATUS_ORDER: Record<TeamAppointment['status'], number> = {
+  details_missing: 0,
+  open: 1,
+  confirmed: 2,
+};
+
+/** Offene zuerst, innerhalb des Status nach Terminbeginn */
+export function sortTeamAppointments(rows: readonly TeamAppointment[]): TeamAppointment[] {
+  return [...rows].sort(
+    (a, b) =>
+      STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
+      (a.start ?? '').localeCompare(b.start ?? ''),
+  );
 }
