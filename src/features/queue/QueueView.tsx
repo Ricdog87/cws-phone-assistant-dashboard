@@ -25,15 +25,15 @@ export function QueueView() {
   const recordOutcome = useRecordOutcome(queue);
   const outcomes = useAppStore((s) => s.outcomes);
   const appointments = useAppStore((s) => s.appointments);
-  // Jüngster gebuchter Termin ohne erfasste Bestätigung, damit keiner untergeht
+  // Jüngster gebuchter Termin, der noch nicht in Salesforce eingetragen ist
   const pendingConfirmation = useMemo(() => {
-    const confirmed = new Set(appointments.map((a) => a.leadId));
+    const entered = new Set(appointments.filter((a) => a.salesforceOpenedAt).map((a) => a.leadId));
     return [...outcomes]
       .reverse()
       .find(
         (o) =>
           o.outcome === 'appointment' &&
-          !confirmed.has(o.leadId) &&
+          !entered.has(o.leadId) &&
           latest.get(o.leadId)?.outcome === 'appointment',
       );
   }, [outcomes, appointments, latest]);
@@ -124,11 +124,11 @@ export function QueueView() {
               className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-brand-primary bg-panel px-4 py-2 text-sm"
             >
               <span>
-                Termin mit <strong>{pendingConfirmation.leadName}</strong> gebucht. Die Bestätigung
-                fehlt noch.
+                Termin mit <strong>{pendingConfirmation.leadName}</strong> gebucht, noch nicht in
+                Salesforce eingetragen.
               </span>
               <Button onClick={() => selectLead(pendingConfirmation.leadId)}>
-                Jetzt bestätigen
+                Jetzt eintragen
               </Button>
             </div>
           )}

@@ -34,7 +34,8 @@
 - Kalibrierungsvorschläge nie automatisch anwenden, nur nach Bestätigung im UI.
 
 ## Oberfläche
-- Reiter: Anrufliste, Karte, Dashboard, Scoring, Daten.
+- Reiter je Rolle (src/app/tabs.ts): Telefonassistenz Anrufliste, Dashboard, Karte; Teamleitung und Head of Sales Dashboard, Karte, Scoring, Daten. Einstellungen nie für die Telefonassistenz.
+- Terminvergabe nur in Salesforce: das Cockpit öffnet das Formular „Neuer Termin“ (src/domain/salesforce.ts), keine eigenen Termin-Mails oder Kalenderdateien.
 - Tastatur in der Anrufliste: Pfeil hoch/runter wechselt den Lead, 1–4 bucht das Ergebnis.
 - Nach dem Buchen zum nächsten offenen Lead springen. Bearbeitete Leads bleiben sichtbar, abgeblendet.
 - Karte: invalidateSize vor fitBounds, erst wenn der Reiter sichtbar ist.

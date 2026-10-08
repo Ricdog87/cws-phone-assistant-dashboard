@@ -6,8 +6,8 @@ Arbeitsoberfläche für die Telefonassistenz im New Business der CWS Workwear.
 - liefert je Lead ein Gesprächsbriefing mit Aufhängern und Einstiegssatz
 - erfasst das Anrufergebnis per Klick oder Taste und speichert es lokal
 - arbeitet die Potenzialliste je Hunter (Accountinhaber) ab, mit letzter Aktivität
-- bestätigt Termine per E-Mail und Kalendereintrag
-- zeigt der Teamleitung Potenzial je Hunter, Terminbestätigungen und den Werdegang je Person
+- öffnet für den Termin per Klick das Salesforce-Formular, die Terminvergabe passiert in Salesforce
+- zeigt der Teamleitung Potenzial je Hunter, Termine in Salesforce und den Werdegang je Person
 - wertet die Terminquote nach Band und gegen eine Kontrollstichprobe aus
 
 Die erfassten Ergebnisse sind die Trainingsdaten für ein späteres Modell.
@@ -36,23 +36,30 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 
 ## Bedienung
 
-| Reiter     | Inhalt                                                                             |
-| ---------- | ---------------------------------------------------------------------------------- |
-| Anrufliste | Warteschlange links, Briefing rechts, Kontakt erfassen, Ergebnis mit Taste 1 bis 4 |
-| Karte      | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat    |
-| Dashboard  | Anrufe, Termine, Quote nach Band, Kontrolle, Export Ergebnisse und Kontakte        |
-| Scoring    | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung           |
-| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           |
+| Reiter     | Inhalt                                                                             | Rollen                     |
+| ---------- | ---------------------------------------------------------------------------------- | -------------------------- |
+| Anrufliste | Warteschlange links, Briefing rechts, Kontakt erfassen, Ergebnis mit Taste 1 bis 4 | Telefonassistenz           |
+| Dashboard  | Je Rolle: eigene Ziele und Termine, Team oder Vertriebsgebiet                      | alle                       |
+| Karte      | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat    | alle                       |
+| Scoring    | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung           | Teamleitung, Head of Sales |
+| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           | Teamleitung, Head of Sales |
+
+Einstellungen (Scoring, Daten) und die Zuordnung der Telefonassistenzen zu den Huntern
+sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sieht ihre
+Zuordnung, ändern kann sie sie nicht.
 
 Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin vereinbart,
 2 Wiedervorlage, 3 Nicht erreicht, 4 Kein Interesse. Nach dem Buchen springt die Auswahl
 auf den nächsten offenen Lead.
 
-Nach „Termin vereinbart“ erinnert ein Hinweis an die Bestätigung. Im Briefing werden Datum,
-Uhrzeit, Dauer, Hunter (Accountinhaber) und Ansprechpartner festgehalten. Daraus entstehen eine fertige
-Bestätigungs-E-Mail im Standard-Mailprogramm (Hunter in Kopie) und ein Kalendereintrag als
-`.ics`. Das Dashboard exportiert die Termine für Salesforce. Der automatische Versand über
-Microsoft Graph folgt in Stufe 2.
+Die Terminvergabe passiert direkt in Salesforce. Nach „Termin vereinbart“ erinnert ein
+Hinweis daran, den Termin einzutragen. „Termin in Salesforce anlegen“ öffnet in einem neuen
+Tab das Salesforce-Formular „Neuer Termin“ mit Betreff, Beschreibung und, bei echten
+Salesforce-IDs, dem Bezug zum Account oder Lead. Datum, Uhrzeit, Hunter und Einladung legt
+die Telefonassistenz dort im Kalender fest. Das Cockpit merkt sich nur, dass Salesforce
+geöffnet wurde; die Teamleitung sieht so, welche Termine noch nicht eingetragen sind. Die
+Adresse der Salesforce-Oberfläche steht in `VITE_SALESFORCE_URL` (siehe `.env.example`,
+in Vercel unter Environment Variables).
 
 Im Gespräch gewonnene Kontaktdaten (Name, Funktion, Durchwahl, E-Mail) werden im Briefing
 unter „Neu erfasster Kontakt“ gespeichert. Das Dashboard exportiert sie als eigene CSV mit
@@ -71,11 +78,11 @@ Die App startet mit einer simulierten Anmeldung per Single Sign-on. Es werden ke
 Zugangsdaten abgefragt. Nach „Mit Firmenkonto anmelden (SSO)“ wird ein Konto gewählt,
 die Rolle bestimmt die Ansicht:
 
-| Konto            | Rolle                      | Ansicht                                         |
-| ---------------- | -------------------------- | ----------------------------------------------- |
-| Nele Faber       | Telefonassistenz           | Potenzialliste je Hunter, Briefing, Termine     |
-| Martina Weidmann | Teamleitung                | Team Nord: Hunter, Bestätigungen, Rangliste     |
-| Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW |
+| Konto            | Rolle                      | Ansicht                                              |
+| ---------------- | -------------------------- | ---------------------------------------------------- |
+| Nele Faber       | Telefonassistenz           | Potenzialliste je Hunter, Briefing, Termine          |
+| Martina Weidmann | Teamleitung                | Team Nord: Hunter, Termine, Rangliste, Einstellungen |
+| Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW      |
 
 Rollenwechsel über „Abmelden“ oben rechts. Die Anmeldung gilt je Browser-Tab und bleibt
 beim Neuladen bestehen.
@@ -87,9 +94,9 @@ beim Neuladen bestehen.
 3. Abmelden, als Nele Faber anmelden: Die Anrufliste startet mit der Leadliste ihres
    Hunters (Auswahl „Hunter“), sortiert nach Score, mit letzter Aktivität; Accounts mit
    Aktivität in den letzten 14 Tagen sind gesperrt, Briefing mit Aufhängern und persönlichem
-   Einstiegssatz. Taste 1 bucht einen Termin, „Jetzt bestätigen“ öffnet die Bestätigung:
-   Termin speichern, „Bestätigung in Outlook öffnen“.
-4. Abmelden, als Martina Weidmann anmelden: Potenzialliste je Hunter, Terminbestätigungen
+   Einstiegssatz. Taste 1 bucht einen Termin, „Jetzt eintragen“ und „Termin in Salesforce
+   anlegen“ öffnen den neuen Termin in Salesforce.
+4. Abmelden, als Martina Weidmann anmelden: Potenzialliste je Hunter, Termine in Salesforce
    mit dem Termin von Nele Faber (markiert als „erfasst“). Klick auf eine Person zeigt den
    Werdegang und das Auswahlfeld „Arbeitet für Hunter“; nach einer Umstellung startet Nele
    Faber mit der Leadliste des neuen Hunters.

@@ -13,6 +13,7 @@ import {
   type ContactRepository,
 } from '@/data/contactRepository';
 import { AppDatabase } from '@/data/db';
+import { normalizeSalesforceUrl } from '@/domain/salesforce';
 import { createGeocoder } from '@/data/geocoding';
 import { DexieGeocodeCache, InMemoryGeocodeCache, type GeocodeCache } from '@/data/geocoding/cache';
 import type { Geocoder } from '@/data/geocoding/types';
@@ -68,3 +69,8 @@ export type BriefingMode = 'rules' | 'llm';
 
 export const DEFAULT_BRIEFING_MODE: BriefingMode =
   import.meta.env.VITE_BRIEFING_MODE === 'llm' ? 'llm' : 'rules';
+
+/** Salesforce-Oberfläche für die Terminvergabe, null, wenn nicht hinterlegt */
+export const salesforceUrl: string | null = normalizeSalesforceUrl(
+  import.meta.env.VITE_SALESFORCE_URL,
+);

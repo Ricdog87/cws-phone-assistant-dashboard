@@ -12,7 +12,7 @@ import { Meter } from '@/components/Meter';
 import { Panel } from '@/components/Panel';
 import { StatTile } from '@/components/StatTile';
 import { formatDateTime, formatInt, formatOne } from '@/components/format';
-import { appointmentsToCsv, contactsToCsv, outcomesToCsv } from '@/domain/export';
+import { contactsToCsv, outcomesToCsv } from '@/domain/export';
 import { OUTCOME_LABELS, computeMetrics, type RateStats } from '@/domain/outcomes';
 import type { Band } from '@/domain/types';
 
@@ -59,11 +59,6 @@ function AssistantDashboard() {
     downloadText(contactsToCsv(contacts), `kontakte-salesforce-${date}.csv`);
   }
 
-  function exportAppointments() {
-    const date = new Date().toISOString().slice(0, 10);
-    downloadText(appointmentsToCsv(appointments), `termine-salesforce-${date}.csv`);
-  }
-
   function reset() {
     if (window.confirm('Alle erfassten Anrufergebnisse, Kontakte und Termine endgültig löschen?')) {
       void clearOutcomes();
@@ -103,7 +98,7 @@ function AssistantDashboard() {
           />
         </div>
 
-        <Panel title="Meine Termine und Bestätigungen">
+        <Panel title="Meine Termine in Salesforce">
           <ConfirmationPanel
             appointments={myAppointments}
             hideAssistant
@@ -163,9 +158,6 @@ function AssistantDashboard() {
                 }
               >
                 Löschen
-              </Button>
-              <Button onClick={exportAppointments} disabled={appointments.length === 0}>
-                Termine exportieren ({appointments.length})
               </Button>
               <Button onClick={exportContacts} disabled={contacts.length === 0}>
                 Kontakte exportieren ({contacts.length})

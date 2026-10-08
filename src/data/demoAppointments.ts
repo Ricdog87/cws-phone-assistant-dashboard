@@ -15,22 +15,23 @@ function hash(text: string): number {
   return h >>> 0;
 }
 
-/** Werktag n Tage nach heute um eine volle oder halbe Stunde zwischen 8 und 15:30 Uhr */
-function demoStart(today: Date, seed: number): string {
+/** Buchungszeitpunkt in dieser Woche zwischen Montag und heute, Arbeitszeit 8 bis 16 Uhr */
+function demoBookedAt(today: Date, seed: number): string {
   const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  let workdays = 1 + (seed % 8);
-  while (workdays > 0) {
-    date.setDate(date.getDate() + 1);
-    if (date.getDay() !== 0 && date.getDay() !== 6) workdays--;
+  const weekday = date.getDay() === 0 ? 7 : date.getDay();
+  date.setDate(date.getDate() - (seed % weekday));
+  date.setHours(8 + (Math.floor(seed / 8) % 8), (seed >>> 4) % 60);
+  // Nie in der Zukunft: heute gebuchte Termine liegen vor dem aktuellen Zeitpunkt
+  if (date.getTime() > today.getTime()) {
+    return new Date(today.getTime() - ((seed >>> 8) % 120) * 60_000).toISOString();
   }
-  const slot = Math.floor(seed / 8) % 16;
-  date.setHours(8 + Math.floor(slot / 2), slot % 2 === 0 ? 0 : 30);
   return date.toISOString();
 }
 
 /**
  * Fiktive Termine der Demo-Personen einer Region: so viele, wie sie diese Woche
- * vereinbart haben, bei Firmen ihres Hunters. Etwa jeder vierte ist noch unbestätigt.
+ * vereinbart haben, bei Firmen ihres Hunters. Etwa jeder vierte ist noch nicht in
+ * Salesforce eingetragen.
  */
 export function demoTeamAppointments(
   regionId: string,
@@ -58,10 +59,10 @@ export function demoTeamAppointments(
         id: `demo-${member.id}-${i}`,
         leadId: null,
         leadName: lead.name,
-        start: demoStart(today, seed),
+        bookedAt: demoBookedAt(today, seed),
         hunterName: hunter,
         assistantName: `${member.givenName} ${member.familyName}`,
-        status: seed % 4 === 0 ? 'open' : 'confirmed',
+        status: seed % 4 === 0 ? 'open' : 'entered',
         live: false,
       });
     }

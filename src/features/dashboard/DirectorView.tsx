@@ -126,8 +126,8 @@ export function DirectorView() {
               />
               <HunterTable rows={board.hunters} />
             </section>
-            <section className="min-w-0 space-y-3" aria-label="Terminbestätigungen">
-              <SectionTitle title={`Terminbestätigungen · Region ${region.name}`} />
+            <section className="min-w-0 space-y-3" aria-label="Termine in Salesforce je Region">
+              <SectionTitle title={`Termine in Salesforce · Region ${region.name}`} />
               <ConfirmationPanel appointments={board.appointments} />
             </section>
           </div>

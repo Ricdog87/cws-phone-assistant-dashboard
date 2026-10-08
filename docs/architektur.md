@@ -35,6 +35,10 @@ appointments
 
 Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 
+Rechte je Rolle stehen in `src/app/tabs.ts`: Die Telefonassistenz sieht Anrufliste,
+Dashboard und Karte, Teamleitung und Head of Sales zusätzlich die Einstellungen (Scoring,
+Daten). `setTab` im Store und `allowedTab()` lassen andere Reiter nicht zu.
+
 ## Datenfluss
 
 1. Beim Start lädt `bootstrap()` die Demo-Daten und die gespeicherten Anrufergebnisse.
@@ -48,9 +52,10 @@ Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen. Im
    Gespräch erfasste Kontakte liegen als `ContactUpdate` über das `ContactRepository`
    ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce. Termine
-   (`Appointment`) liegen im `AppointmentRepository`; `src/domain/appointments.ts` baut
-   daraus Bestätigungs-E-Mail, `mailto`-Link und iCalendar-Datei, `appointmentsToCsv()` den
-   Export.
+   entstehen direkt in Salesforce: `src/domain/salesforce.ts` baut den Link auf das
+   Formular „Neuer Termin“ (Betreff, Beschreibung, WhatId für Accounts, WhoId für Leads),
+   den Kalender und den Datensatz. Das `AppointmentRepository` hält nur, wann für einen
+   gebuchten Termin Salesforce geöffnet wurde.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
    Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
    0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine
@@ -168,7 +173,7 @@ nur Ergebnisse, Termine und im Gespräch erfasste Kontakte zurück.
   importierten Daten zeigt das Dashboard nur echte Accountinhaber und die Termine aus
   diesem Browser.
 - Teamleitung und Head of Sales sehen je Region die Potenzialliste je Hunter
-  (`src/domain/hunterBoard.ts`), die Terminbestätigungen der Woche und je Person den
+  (`src/domain/hunterBoard.ts`), die Termine der Woche mit Status in Salesforce und je Person den
   Werdegang der letzten sechs Wochen.
 
 ### Briefing

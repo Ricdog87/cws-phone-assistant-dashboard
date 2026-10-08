@@ -18,7 +18,7 @@ export interface RegionBoard {
   appointments: TeamAppointment[];
 }
 
-/** Termine aus diesem Browser, einschließlich gebuchter Termine ohne Details */
+/** Gebuchte Termine aus diesem Browser mit Status in Salesforce */
 export function useLiveAppointments(): TeamAppointment[] {
   const appointments = useAppStore((s) => s.appointments);
   const agentName = useAppStore((s) => s.agentName);
@@ -31,13 +31,14 @@ export function useLiveAppointments(): TeamAppointment[] {
         leadId: outcome.leadId,
         leadName: outcome.leadName,
         owner: outcome.owner ?? null,
+        recordedAt: outcome.recordedAt,
       }));
     return sortTeamAppointments(liveTeamAppointments(appointments, booked, agentName));
   }, [appointments, latest, agentName]);
 }
 
 /**
- * Potenzialliste je Hunter und Terminbestätigungen einer Region. Mit Demo-Daten
+ * Potenzialliste je Hunter und Termine in Salesforce einer Region. Mit Demo-Daten
  * kommen fiktive Kolleginnen und Kollegen dazu, mit importierten Daten nur die
  * echten Accountinhaber und die Termine aus diesem Browser.
  */

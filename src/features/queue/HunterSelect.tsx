@@ -3,27 +3,39 @@ import { useOwnerCounts } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { formatInt } from '@/components/format';
 import { hunterByName } from '@/data/hunters';
-import { LIVE_ASSISTANT_ID } from '@/data/demoTeam';
 
 const ALL = '';
 
 /**
- * Auswahl des Hunters (Sales Rep), dessen Leadliste angerufen wird. Für die
- * Telefonassistenz ist das zugleich ihre Zuordnung, die Teamleitung sieht sie im Dashboard.
+ * Hunter (Sales Rep), dessen Leadliste angerufen wird. Die Telefonassistenz sieht ihre
+ * Zuordnung nur; ändern kann sie die Teamleitung. Die Führung kann frei wählen.
  */
 export function HunterSelect() {
   const ownerFilter = useAppStore((s) => s.ownerFilter);
   const viewLevel = useAppStore((s) => s.viewLevel);
   const setOwnerFilter = useAppStore((s) => s.setOwnerFilter);
-  const setAssignment = useAppStore((s) => s.setAssignment);
   const owners = useOwnerCounts();
   const total = owners.reduce((sum, item) => sum + item.count, 0);
   const id = useId();
 
-  function choose(value: string) {
-    const owner = value === ALL ? null : value;
-    if (viewLevel === 'assistant') setAssignment(LIVE_ASSISTANT_ID, owner);
-    else setOwnerFilter(owner);
+  if (viewLevel === 'assistant') {
+    const assigned = owners.find((item) => item.owner === ownerFilter);
+    const area = hunterByName(ownerFilter)?.area;
+    return (
+      <p className="text-xs" aria-label="Zugeordneter Hunter">
+        <span className="text-muted">Hunter </span>
+        {ownerFilter ? (
+          <>
+            <strong>{ownerFilter}</strong>
+            {area && <span className="text-muted"> · {area}</span>}
+            {assigned && <span className="text-muted"> ({formatInt(assigned.count)})</span>}
+          </>
+        ) : (
+          <strong>nicht zugeordnet, alle Leads</strong>
+        )}
+        <span className="block text-muted">Zuordnung durch die Teamleitung</span>
+      </p>
+    );
   }
 
   return (
@@ -34,7 +46,7 @@ export function HunterSelect() {
       <select
         id={id}
         value={ownerFilter ?? ALL}
-        onChange={(event) => choose(event.target.value)}
+        onChange={(event) => setOwnerFilter(event.target.value === ALL ? null : event.target.value)}
         className="min-w-0 max-w-[18rem] rounded border border-border bg-panel px-2 py-1 text-xs font-bold"
       >
         <option value={ALL}>Alle Hunter ({formatInt(total)})</option>

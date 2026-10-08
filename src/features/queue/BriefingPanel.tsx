@@ -10,7 +10,8 @@ import { buildBriefing, contactLabel } from '@/domain/briefing';
 import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
 import type { CallOutcome, OutcomeType, QueueEntry } from '@/domain/types';
-import { AppointmentConfirm } from './AppointmentConfirm';
+import { salesforceUrl } from '@/app/services';
+import { SalesforceBooking } from './SalesforceBooking';
 import { ContactCapture } from './ContactCapture';
 import { useBriefing } from './useBriefing';
 
@@ -51,7 +52,12 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
       </header>
 
       {latest?.outcome === 'appointment' && (
-        <AppointmentConfirm key={`termin-${lead.id}`} lead={lead} callerName={callerName} />
+        <SalesforceBooking
+          key={`termin-${lead.id}`}
+          lead={lead}
+          callerName={callerName}
+          salesforceUrl={salesforceUrl}
+        />
       )}
 
       <section

@@ -66,7 +66,8 @@ function LeadMarker({
   isControl: boolean;
   today: string;
   onSelect(): void;
-  onOpenQueue(): void;
+  /** Nur für die Telefonassistenz und nur für Leads ihrer Liste */
+  onOpenQueue: (() => void) | null;
 }) {
   const { lead } = entry;
   const ref = useRef<LeafletCircleMarker>(null);
@@ -114,13 +115,11 @@ function LeadMarker({
                 ` bis ${new Date(`${blockedUntil}T00:00:00`).toLocaleDateString('de-DE')}`}
               , nicht in der Anrufliste.
             </div>
-          ) : (
+          ) : onOpenQueue ? (
             <Button variant="primary" className="w-full" onClick={onOpenQueue}>
-              {inList
-                ? 'In Anrufliste öffnen'
-                : `Liste von ${lead.owner ?? 'allen Huntern'} öffnen`}
+              In Anrufliste öffnen
             </Button>
-          )}
+          ) : null}
         </div>
       </Popup>
     </CircleMarker>
@@ -131,7 +130,7 @@ export function MapView({ active }: { active: boolean }) {
   const scored = useScoredLeads();
   const queue = useQueue();
   const ownerFilter = useAppStore((s) => s.ownerFilter);
-  const setOwnerFilter = useAppStore((s) => s.setOwnerFilter);
+  const viewLevel = useAppStore((s) => s.viewLevel);
   const selectedId = useAppStore((s) => s.selectedLeadId);
   const selectLead = useAppStore((s) => s.selectLead);
   const setTab = useAppStore((s) => s.setTab);
@@ -176,11 +175,14 @@ export function MapView({ active }: { active: boolean }) {
               isControl={controlIds.has(entry.lead.id)}
               today={today}
               onSelect={() => selectLead(entry.lead.id)}
-              onOpenQueue={() => {
-                if (!inList(entry)) setOwnerFilter(entry.lead.owner ?? null);
-                selectLead(entry.lead.id);
-                setTab('queue');
-              }}
+              onOpenQueue={
+                viewLevel === 'assistant' && inList(entry)
+                  ? () => {
+                      selectLead(entry.lead.id);
+                      setTab('queue');
+                    }
+                  : null
+              }
             />
           ))}
         {customers.map((entry) => (

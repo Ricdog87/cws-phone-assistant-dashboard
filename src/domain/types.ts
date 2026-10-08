@@ -109,23 +109,16 @@ export interface ContactUpdate {
   capturedAt: string;
 }
 
-/** Vereinbarter Vor-Ort-Termin, Grundlage für Bestätigung und Rückweg nach Salesforce */
+/** Termin aus dem Cockpit; Datum, Uhrzeit und Einladung liegen in Salesforce */
 export interface Appointment {
   id: string;
   leadId: string;
   leadName: string;
-  /** Beginn als ISO-Zeitpunkt in UTC */
-  start: string;
-  durationMinutes: number;
-  hunterName: string;
-  hunterEmail: string | null;
-  contactName: string | null;
-  contactEmail: string | null;
-  /** Adresse des Termins, einzeilig */
-  location: string;
+  /** Accountinhaber beim Buchen */
+  hunterName: string | null;
   createdAt: string;
-  /** Zeitpunkt, an dem die Bestätigungs-E-Mail geöffnet wurde */
-  confirmationOpenedAt?: string | null;
+  /** Zeitpunkt, an dem das Salesforce-Formular über das Cockpit geöffnet wurde */
+  salesforceOpenedAt: string | null;
 }
 
 export interface HunterFeedback {

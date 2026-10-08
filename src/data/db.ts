@@ -43,5 +43,9 @@ export class AppDatabase extends Dexie {
     this.version(4).stores({
       appointments: 'id, leadId, start, createdAt',
     });
+    // Termine liegen jetzt in Salesforce, das Cockpit merkt sich nur die Buchung
+    this.version(5).stores({
+      appointments: 'id, leadId, createdAt',
+    });
   }
 }

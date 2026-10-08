@@ -34,6 +34,7 @@ import { defaultAssignments } from '@/data/demoAssignments';
 import { LIVE_ASSISTANT_ID } from '@/data/demoTeam';
 import { loadAssignments, saveAssignments, type Assignments } from './assignments';
 import { DEMO_USER, type ViewLevel } from './demoUser';
+import { allowedTab, homeTab } from './tabs';
 import { loadSession, saveSession } from './session';
 
 export type TabId = 'queue' | 'map' | 'dashboard' | 'scoring' | 'data';
@@ -103,7 +104,7 @@ export function createAppStore(
   const restoredLevel = loadSession();
   const initialAssignments = loadAssignments() ?? defaultAssignments();
   return create<AppState>()((set, get) => ({
-    activeTab: restoredLevel === 'assistant' ? 'queue' : 'dashboard',
+    activeTab: restoredLevel ? homeTab(restoredLevel) : 'dashboard',
     sourceId: 'mock',
     sourceLabel: 'Demo-Daten',
     leads: [],
@@ -127,7 +128,7 @@ export function createAppStore(
     viewLevel: restoredLevel ?? 'teamLead',
     signedIn: restoredLevel !== null,
 
-    setTab: (activeTab) => set({ activeTab }),
+    setTab: (tab) => set({ activeTab: allowedTab(get().viewLevel, tab) }),
     setOwnerFilter: (ownerFilter) => set({ ownerFilter, selectedLeadId: null }),
     setAssignment: (memberId, hunter) => {
       const others = Object.entries(get().assignments).filter(([id]) => id !== memberId);
@@ -145,7 +146,7 @@ export function createAppStore(
     setViewLevel: (viewLevel) =>
       set({
         viewLevel,
-        activeTab: viewLevel === 'assistant' ? 'queue' : 'dashboard',
+        activeTab: homeTab(viewLevel),
       }),
     signIn: (viewLevel) => {
       saveSession(viewLevel);
@@ -153,7 +154,7 @@ export function createAppStore(
         viewLevel,
         signedIn: true,
         selectedLeadId: null,
-        activeTab: viewLevel === 'assistant' ? 'queue' : 'dashboard',
+        activeTab: homeTab(viewLevel),
         ownerFilter:
           viewLevel === 'assistant' ? (get().assignments[LIVE_ASSISTANT_ID] ?? null) : null,
       });

@@ -6,18 +6,21 @@ import { MapView } from '@/features/map/MapView';
 import { QueueView } from '@/features/queue/QueueView';
 import { ScoringView } from '@/features/scoring/ScoringView';
 import { bootstrap, useAppStore } from './store';
-import { TABS } from './tabs';
+import { allowedTab, tabsFor } from './tabs';
 import { UserBadge } from './UserBadge';
 import { LoginScreen } from './login/LoginScreen';
 
 export function App() {
-  const activeTab = useAppStore((s) => s.activeTab);
+  const selectedTab = useAppStore((s) => s.activeTab);
   const setTab = useAppStore((s) => s.setTab);
   const sourceId = useAppStore((s) => s.sourceId);
   const sourceLabel = useAppStore((s) => s.sourceLabel);
   const viewLevel = useAppStore((s) => s.viewLevel);
   const signedIn = useAppStore((s) => s.signedIn);
   const workplace = viewLevel === 'assistant';
+  // Rechte je Rolle: Einstellungen (Scoring, Daten) nur für Teamleitung und Head of Sales
+  const tabs = tabsFor(viewLevel);
+  const activeTab = allowedTab(viewLevel, selectedTab);
   const scope =
     viewLevel === 'director'
       ? 'Vertriebsgebiet Nordwest'
@@ -49,14 +52,14 @@ export function App() {
           </div>
           <UserBadge />
         </div>
-        {workplace && (
+        {tabs.length > 1 && (
           <div className="flex items-center border-t border-border px-4 py-1.5">
             <nav
               role="tablist"
               aria-label="Bereiche"
               className="flex max-w-full gap-1 overflow-x-auto"
             >
-              {TABS.map((tab) => {
+              {tabs.map((tab) => {
                 const active = tab.id === activeTab;
                 return (
                   <button
@@ -85,28 +88,28 @@ export function App() {
       {workplace && sourceId === 'mock' && <DemoNotice />}
 
       <main className="min-h-0 flex-1">
-        {workplace && activeTab === 'queue' && (
+        {activeTab === 'queue' && (
           <TabPanel id="queue">
             <QueueView />
           </TabPanel>
         )}
         {/* Die Karte bleibt montiert, damit Ausschnitt und Zoom beim Reiterwechsel erhalten bleiben */}
-        {workplace && (
+        {tabs.some((tab) => tab.id === 'map') && (
           <TabPanel id="map" hidden={activeTab !== 'map'}>
             <MapView active={activeTab === 'map'} />
           </TabPanel>
         )}
-        {(!workplace || activeTab === 'dashboard') && (
+        {activeTab === 'dashboard' && (
           <TabPanel id="dashboard">
             <DashboardView />
           </TabPanel>
         )}
-        {workplace && activeTab === 'scoring' && (
+        {activeTab === 'scoring' && (
           <TabPanel id="scoring">
             <ScoringView />
           </TabPanel>
         )}
-        {workplace && activeTab === 'data' && (
+        {activeTab === 'data' && (
           <TabPanel id="data">
             <DataView />
           </TabPanel>

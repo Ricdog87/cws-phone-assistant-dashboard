@@ -101,8 +101,8 @@ export function TeamLeadView() {
             />
             <HunterTable rows={board.hunters} />
           </section>
-          <section className="min-w-0 space-y-3" aria-label="Terminbestätigungen diese Woche">
-            <SectionTitle title="Terminbestätigungen" />
+          <section className="min-w-0 space-y-3" aria-label="Termine dieser Woche in Salesforce">
+            <SectionTitle title="Termine in Salesforce" />
             <ConfirmationPanel appointments={board.appointments} />
           </section>
         </div>

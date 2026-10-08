@@ -97,3 +97,20 @@ describe('Zuordnung per Auswahl', () => {
     expect(moved?.baselineWeekCalls).toBe(target.baselineWeekCalls + jana.weekCalls);
   });
 });
+
+describe('demoTeamAppointments', () => {
+  it('bucht nur in dieser Woche und nie in der Zukunft', async () => {
+    const { demoTeamAppointments } = await import('@/data/demoAppointments');
+    const now = new Date('2026-10-08T09:30:00');
+    const region = DEMO_REGIONS[0];
+    if (!region) throw new Error('Region fehlt');
+    const rows = demoTeamAppointments(region.id, region.members, {}, now);
+    expect(rows.length).toBeGreaterThan(0);
+    const monday = new Date('2026-10-05T00:00:00').getTime();
+    for (const row of rows) {
+      const at = Date.parse(row.bookedAt);
+      expect(at).toBeLessThanOrEqual(now.getTime());
+      expect(at).toBeGreaterThanOrEqual(monday);
+    }
+  });
+});

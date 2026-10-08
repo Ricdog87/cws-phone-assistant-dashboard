@@ -7,13 +7,11 @@ import { LiveTag } from './AssistantBrick';
 const COLLAPSED_ROWS = 6;
 
 const STATUS_CLASS: Record<TeamAppointment['status'], string> = {
-  confirmed: 'border-border text-muted',
+  entered: 'border-border text-muted',
   open: 'border-brand-primary text-brand-primary',
-  details_missing: 'border-brand-primary bg-brand-primary text-on-primary',
 };
 
-function formatStart(iso: string | null): string {
-  if (!iso) return 'Datum fehlt';
+function formatBooked(iso: string): string {
   return new Date(iso).toLocaleString('de-DE', {
     weekday: 'short',
     day: '2-digit',
@@ -31,22 +29,26 @@ interface ConfirmationPanelProps {
   onOpen?(leadId: string): void;
 }
 
-/** Terminbestätigungen der Woche: offene zuerst, bestätigte danach */
+/** Gebuchte Termine der Woche: noch nicht in Salesforce eingetragene zuerst */
 export function ConfirmationPanel({ appointments, hideAssistant, onOpen }: ConfirmationPanelProps) {
   const [expanded, setExpanded] = useState(false);
-  const confirmed = appointments.filter((a) => a.status === 'confirmed').length;
-  const open = appointments.length - confirmed;
+  const entered = appointments.filter((a) => a.status === 'entered').length;
+  const open = appointments.length - entered;
   const visible = expanded ? appointments : appointments.slice(0, COLLAPSED_ROWS);
 
   return (
-    <section aria-label="Terminbestätigungen" className="rounded-lg border border-border bg-panel">
+    <section
+      aria-label="Termine in Salesforce"
+      className="rounded-lg border border-border bg-panel"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3">
         <p className="text-sm">
-          <strong className="tabular-nums">{formatInt(confirmed)}</strong> von{' '}
-          <span className="tabular-nums">{formatInt(appointments.length)}</span> Terminen bestätigt
+          <strong className="tabular-nums">{formatInt(entered)}</strong> von{' '}
+          <span className="tabular-nums">{formatInt(appointments.length)}</span> Terminen in
+          Salesforce eingetragen
         </p>
         <p className={`text-sm font-bold ${open > 0 ? 'text-brand-primary' : 'text-muted'}`}>
-          {open > 0 ? `${formatInt(open)} offen` : 'Alles bestätigt'}
+          {open > 0 ? `${formatInt(open)} offen` : 'Alles eingetragen'}
         </p>
       </div>
       {appointments.length === 0 ? (
@@ -57,7 +59,7 @@ export function ConfirmationPanel({ appointments, hideAssistant, onOpen }: Confi
             <li key={appointment.id} className="space-y-1 px-4 py-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs tabular-nums text-muted">
-                  {formatStart(appointment.start)}
+                  gebucht {formatBooked(appointment.bookedAt)}
                 </span>
                 <span
                   className={`shrink-0 rounded border px-2 py-0.5 text-xs font-bold ${STATUS_CLASS[appointment.status]}`}
@@ -79,8 +81,8 @@ export function ConfirmationPanel({ appointments, hideAssistant, onOpen }: Confi
                 {onOpen &&
                   appointment.live &&
                   appointment.leadId &&
-                  appointment.status !== 'confirmed' && (
-                    <Button onClick={() => onOpen(appointment.leadId ?? '')}>Bestätigen</Button>
+                  appointment.status !== 'entered' && (
+                    <Button onClick={() => onOpen(appointment.leadId ?? '')}>Eintragen</Button>
                   )}
               </div>
             </li>
