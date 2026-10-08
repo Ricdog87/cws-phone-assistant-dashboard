@@ -121,6 +121,27 @@ export interface Appointment {
   salesforceOpenedAt: string | null;
 }
 
+/** Wiedervorlage aus dem Cockpit; die Aufgabe selbst liegt in Salesforce */
+export interface Recall {
+  id: string;
+  leadId: string;
+  leadName: string;
+  /** Accountinhaber beim Anlegen */
+  hunterName: string | null;
+  reason: RecallReason;
+  /** Fällig am, YYYY-MM-DD */
+  dueDate: string;
+  /** Uhrzeit HH:MM, nur bei vereinbartem Rückruf */
+  dueTime: string | null;
+  /** Vertragsende YYYY-MM, nur beim Grund Vertragsende */
+  contractEnd: string | null;
+  note: string | null;
+  /** Gleich dem Zeitpunkt des Anrufergebnisses, das die Wiedervorlage angelegt hat */
+  createdAt: string;
+  /** Zeitpunkt, an dem die Aufgabe in Salesforce über das Cockpit geöffnet wurde */
+  salesforceOpenedAt: string | null;
+}
+
 export interface HunterFeedback {
   appointmentId: string;
   happened: 'yes' | 'noShow' | 'rescheduled' | 'cancelled';

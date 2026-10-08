@@ -1,6 +1,9 @@
 import type { MemberActivity } from '@/domain/standings';
 
-/** Zwei Teams im Vertriebsgebiet Nordwest. Namen und Zahlen sind erfunden, außer die Live-Zeile. */
+/**
+ * Zwei Teams im Vertriebsgebiet Nordwest: Nord mit 22, NRW mit 18 Telefonassistenzen.
+ * Namen und Zahlen sind erfunden, außer die Live-Zeile.
+ */
 export const LIVE_ASSISTANT_ID = 'nele-faber';
 
 export interface DemoRegion {
@@ -138,6 +141,69 @@ const NORD_MEMBERS: readonly MemberActivity[] = [
     dayCalls: 19,
     weekCalls: 80,
     weekAppointments: 0,
+    live: false,
+  },
+  {
+    id: 'anke-tammen',
+    givenName: 'Anke',
+    familyName: 'Tammen',
+    dayCalls: 47,
+    weekCalls: 185,
+    weekAppointments: 3,
+    live: false,
+  },
+  {
+    id: 'soenke-albers',
+    givenName: 'Sönke',
+    familyName: 'Albers',
+    dayCalls: 43,
+    weekCalls: 168,
+    weekAppointments: 2,
+    live: false,
+  },
+  {
+    id: 'wiebke-ohlsen',
+    givenName: 'Wiebke',
+    familyName: 'Ohlsen',
+    dayCalls: 53,
+    weekCalls: 212,
+    weekAppointments: 4,
+    live: false,
+  },
+  {
+    id: 'jannik-rademacher',
+    givenName: 'Jannik',
+    familyName: 'Rademacher',
+    dayCalls: 39,
+    weekCalls: 152,
+    weekAppointments: 2,
+    live: false,
+  },
+  {
+    id: 'insa-bohlen',
+    givenName: 'Insa',
+    familyName: 'Bohlen',
+    dayCalls: 50,
+    weekCalls: 196,
+    weekAppointments: 3,
+    live: false,
+  },
+  {
+    id: 'thorben-schoon',
+    givenName: 'Thorben',
+    familyName: 'Schoon',
+    dayCalls: 26,
+    weekCalls: 104,
+    weekAppointments: 1,
+    live: false,
+  },
+  {
+    id: 'marieke-ennen',
+    givenName: 'Marieke',
+    familyName: 'Ennen',
+    dayCalls: 45,
+    weekCalls: 178,
+    weekAppointments: 3,
     live: false,
   },
   {
@@ -285,6 +351,33 @@ const NRW_MEMBERS: readonly MemberActivity[] = [
     dayCalls: 38,
     weekCalls: 130,
     weekAppointments: 1,
+    live: false,
+  },
+  {
+    id: 'selin-aydin',
+    givenName: 'Selin',
+    familyName: 'Aydin',
+    dayCalls: 49,
+    weekCalls: 192,
+    weekAppointments: 3,
+    live: false,
+  },
+  {
+    id: 'lukas-hoevelmann',
+    givenName: 'Lukas',
+    familyName: 'Hövelmann',
+    dayCalls: 34,
+    weekCalls: 132,
+    weekAppointments: 1,
+    live: false,
+  },
+  {
+    id: 'merle-kortmann',
+    givenName: 'Merle',
+    familyName: 'Kortmann',
+    dayCalls: 52,
+    weekCalls: 204,
+    weekAppointments: 4,
     live: false,
   },
 ];

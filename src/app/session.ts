@@ -1,3 +1,4 @@
+import { DEMO_REGIONS } from '@/data/demoTeam';
 import { DEMO_PERSONAS, VIEW_LEVELS, type ViewLevel } from './demoUser';
 
 /**
@@ -19,7 +20,10 @@ export interface DemoAccount {
 
 const SCOPES: Record<ViewLevel, { scope: string; access: string }> = {
   assistant: { scope: 'Team Nord', access: 'Anrufliste, Briefing und eigene Ziele' },
-  teamLead: { scope: 'Region Nord', access: 'Team Nord, 15 Personen, Anrufe und Termine' },
+  teamLead: {
+    scope: 'Region Nord',
+    access: `Team Nord, ${DEMO_REGIONS[0]?.members.length ?? 0} Personen, Anrufe und Termine`,
+  },
   director: {
     scope: 'Vertriebsgebiet Nordwest',
     access: 'Regionen Nord und NRW, Vergleich und Ranglisten',

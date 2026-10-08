@@ -12,6 +12,8 @@ const LEADERSHIP: readonly ViewLevel[] = ['teamLead', 'director'];
 
 export const TABS: readonly TabDefinition[] = [
   { id: 'queue', label: 'Anrufliste', roles: ['assistant'] },
+  { id: 'appointments', label: 'Termine', roles: ['assistant'] },
+  { id: 'recalls', label: 'Wiedervorlagen', roles: ['assistant'] },
   { id: 'dashboard', label: 'Dashboard', roles: ['assistant', ...LEADERSHIP] },
   { id: 'map', label: 'Karte', roles: ['assistant', ...LEADERSHIP] },
   { id: 'scoring', label: 'Scoring', roles: LEADERSHIP },

@@ -13,6 +13,11 @@ import {
   type ContactRepository,
 } from '@/data/contactRepository';
 import { AppDatabase } from '@/data/db';
+import {
+  DexieRecallRepository,
+  InMemoryRecallRepository,
+  type RecallRepository,
+} from '@/data/recallRepository';
 import { normalizeSalesforceUrl } from '@/domain/salesforce';
 import { createGeocoder } from '@/data/geocoding';
 import { DexieGeocodeCache, InMemoryGeocodeCache, type GeocodeCache } from '@/data/geocoding/cache';
@@ -42,6 +47,10 @@ export const contactRepository: ContactRepository = db
 export const appointmentRepository: AppointmentRepository = db
   ? new DexieAppointmentRepository(db)
   : new InMemoryAppointmentRepository();
+
+export const recallRepository: RecallRepository = db
+  ? new DexieRecallRepository(db)
+  : new InMemoryRecallRepository();
 
 export const mappingRepository: ColumnMappingRepository = db
   ? new DexieColumnMappingRepository(db)

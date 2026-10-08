@@ -69,7 +69,9 @@ describe('demoHunterAssignments', () => {
       const nonLive = region.members.filter((member) => member.id !== 'nele-faber');
       const sum = (key: 'weekCalls' | 'weekAppointments') =>
         nonLive.reduce((total, member) => total + member[key], 0);
-      expect(assignments).toHaveLength(2);
+      expect(assignments).toHaveLength(region.id === 'nord' ? 6 : 5);
+      // Jeder Hunter hat mindestens drei Telefonassistenzen
+      for (const item of assignments) expect(item.assistants.length).toBeGreaterThanOrEqual(3);
       expect(assignments.reduce((t, a) => t + a.baselineWeekCalls, 0)).toBe(sum('weekCalls'));
       expect(assignments.reduce((t, a) => t + a.baselineWeekAppointments, 0)).toBe(
         sum('weekAppointments'),
@@ -111,6 +113,20 @@ describe('demoTeamAppointments', () => {
       const at = Date.parse(row.bookedAt);
       expect(at).toBeLessThanOrEqual(now.getTime());
       expect(at).toBeGreaterThanOrEqual(monday);
+    }
+  });
+
+  it('bucht je Firma höchstens einen Termin, auch mit vielen Personen je Hunter', async () => {
+    const { demoTeamAppointments } = await import('@/data/demoAppointments');
+    const now = new Date('2026-10-08T12:00:00');
+    for (const region of DEMO_REGIONS) {
+      const rows = demoTeamAppointments(region.id, region.members, {}, now);
+      const expected = region.members
+        .filter((member) => member.id !== 'nele-faber')
+        .reduce((sum, member) => sum + member.weekAppointments, 0);
+      expect(rows).toHaveLength(expected);
+      const names = rows.map((row) => row.leadName);
+      expect(new Set(names).size).toBe(names.length);
     }
   });
 });

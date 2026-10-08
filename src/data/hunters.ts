@@ -12,35 +12,87 @@ export interface Hunter {
   postalPrefixes: readonly string[];
 }
 
-/** Erfundene Hunter auf der reservierten Domain cws.example, Gebiete nach PLZ-Leitzonen */
+/**
+ * Erfundene Hunter auf der reservierten Domain cws.example, Gebiete nach PLZ-Leitzonen.
+ * Nord mit sechs, NRW mit fünf Gebieten; die erste Person je Region ist der Rückfall.
+ */
 export const DEMO_HUNTERS: readonly Hunter[] = [
   {
     name: 'Jonas Tiedemann',
     email: 'jonas.tiedemann@cws.example',
     regionId: 'nord',
-    area: 'Weser-Ems und Osnabrück',
-    postalPrefixes: ['26', '48', '49'],
+    area: 'Oldenburg und Ostfriesland',
+    postalPrefixes: ['26'],
+  },
+  {
+    name: 'Lars Kampmann',
+    email: 'lars.kampmann@cws.example',
+    regionId: 'nord',
+    area: 'Emsland und Osnabrück',
+    postalPrefixes: ['48', '49'],
+  },
+  {
+    name: 'Henning Rathjen',
+    email: 'henning.rathjen@cws.example',
+    regionId: 'nord',
+    area: 'Bremen und Elbe-Weser',
+    postalPrefixes: ['27', '28'],
   },
   {
     name: 'Malte Hartwig',
     email: 'malte.hartwig@cws.example',
     regionId: 'nord',
-    area: 'Bremen, Hamburg, Schleswig-Holstein, Hannover',
-    postalPrefixes: ['20', '21', '22', '23', '24', '25', '27', '28', '29', '30', '31', '37', '38'],
+    area: 'Hamburg',
+    postalPrefixes: ['20', '21', '22'],
+  },
+  {
+    name: 'Birte Carstens',
+    email: 'birte.carstens@cws.example',
+    regionId: 'nord',
+    area: 'Schleswig-Holstein',
+    postalPrefixes: ['23', '24', '25'],
+  },
+  {
+    name: 'Florian Wedekind',
+    email: 'florian.wedekind@cws.example',
+    regionId: 'nord',
+    area: 'Hannover, Braunschweig und Südniedersachsen',
+    postalPrefixes: ['29', '30', '31', '37', '38'],
   },
   {
     name: 'Kai Overbeck',
     email: 'kai.overbeck@cws.example',
     regionId: 'nrw',
-    area: 'Rheinland',
-    postalPrefixes: ['40', '41', '42', '47', '50', '51', '52', '53'],
+    area: 'Köln, Bonn und Aachen',
+    postalPrefixes: ['50', '51', '52', '53'],
+  },
+  {
+    name: 'Sandra Lenzen',
+    email: 'sandra.lenzen@cws.example',
+    regionId: 'nrw',
+    area: 'Düsseldorf und Niederrhein',
+    postalPrefixes: ['40', '41', '47'],
   },
   {
     name: 'Dennis Wolters',
     email: 'dennis.wolters@cws.example',
     regionId: 'nrw',
-    area: 'Ruhrgebiet und Westfalen',
-    postalPrefixes: ['32', '33', '44', '45', '46', '48', '57', '58', '59'],
+    area: 'Ruhrgebiet',
+    postalPrefixes: ['44', '45', '46'],
+  },
+  {
+    name: 'Philipp Strotmann',
+    email: 'philipp.strotmann@cws.example',
+    regionId: 'nrw',
+    area: 'Münsterland und Ostwestfalen',
+    postalPrefixes: ['32', '33', '48'],
+  },
+  {
+    name: 'Nadine Hesse',
+    email: 'nadine.hesse@cws.example',
+    regionId: 'nrw',
+    area: 'Bergisches Land und Südwestfalen',
+    postalPrefixes: ['42', '57', '58', '59'],
   },
 ];
 

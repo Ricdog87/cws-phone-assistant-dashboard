@@ -6,9 +6,11 @@ import { MockProvider } from '@/data/providers/mockProvider';
 import { HunterSelect } from '@/features/queue/HunterSelect';
 
 describe('Reiter je Rolle', () => {
-  it('zeigt der Telefonassistenz keine Einstellungen', () => {
+  it('gibt der Telefonassistenz Termine und Wiedervorlagen, aber keine Einstellungen', () => {
     expect(tabsFor('assistant').map((tab) => tab.label)).toEqual([
       'Anrufliste',
+      'Termine',
+      'Wiedervorlagen',
       'Dashboard',
       'Karte',
     ]);
@@ -30,6 +32,8 @@ describe('Reiter je Rolle', () => {
     expect(allowedTab('assistant', 'scoring')).toBe('queue');
     expect(allowedTab('assistant', 'data')).toBe('queue');
     expect(allowedTab('teamLead', 'queue')).toBe('dashboard');
+    expect(allowedTab('teamLead', 'recalls')).toBe('dashboard');
+    expect(allowedTab('assistant', 'recalls')).toBe('recalls');
     expect(allowedTab('teamLead', 'scoring')).toBe('scoring');
   });
 

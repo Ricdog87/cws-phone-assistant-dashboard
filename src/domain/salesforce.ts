@@ -1,6 +1,7 @@
 /**
  * Links in die Salesforce-Oberfläche (Lightning). Die Terminvergabe passiert direkt in
- * Salesforce; das Cockpit öffnet nur das passende Formular. Keine Zugangsdaten, keine API.
+ * Salesforce, ebenso die Aufgabe zur Wiedervorlage; das Cockpit öffnet nur das passende
+ * Formular. Keine Zugangsdaten, keine API.
  */
 
 export type SalesforceObject = 'Account' | 'Lead' | 'Contact';
@@ -43,20 +44,43 @@ export interface EventDefaults {
   description?: string;
 }
 
-/**
- * Formular „Neuer Termin“ mit vorausgefüllten Feldern. Accounts gehen in „Bezug zu“
- * (WhatId), Leads und Kontakte in „Name“ (WhoId).
- */
+/** Vorbelegung als defaultFieldValues; Accounts gehen in „Bezug zu“ (WhatId), Leads und Kontakte in „Name“ (WhoId) */
+function defaultFieldValues(fields: [string, string][], recordId: string | null): string {
+  const object = salesforceObjectOf(recordId);
+  const related: [string, string][] = [];
+  if (recordId && object === 'Account') related.push(['WhatId', recordId]);
+  if (recordId && (object === 'Lead' || object === 'Contact')) related.push(['WhoId', recordId]);
+  const [subject, ...rest] = fields;
+  return [...(subject ? [subject] : []), ...related, ...rest]
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join(',');
+}
+
+/** Formular „Neuer Termin“ mit vorausgefüllten Feldern */
 export function newEventUrl(baseUrl: string, defaults: EventDefaults): string {
   const fields: [string, string][] = [['Subject', defaults.subject]];
-  const object = salesforceObjectOf(defaults.recordId);
-  if (defaults.recordId && object === 'Account') fields.push(['WhatId', defaults.recordId]);
-  if (defaults.recordId && (object === 'Lead' || object === 'Contact')) {
-    fields.push(['WhoId', defaults.recordId]);
-  }
   if (defaults.description) fields.push(['Description', defaults.description]);
-  const values = fields.map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join(',');
-  return `${baseUrl}/lightning/o/Event/new?defaultFieldValues=${values}`;
+  return `${baseUrl}/lightning/o/Event/new?defaultFieldValues=${defaultFieldValues(fields, defaults.recordId)}`;
+}
+
+export interface TaskDefaults extends EventDefaults {
+  /** Fälligkeitsdatum YYYY-MM-DD */
+  dueDate: string;
+}
+
+/** Formular „Neue Aufgabe“ für die Wiedervorlage, mit Fälligkeitsdatum (ActivityDate) */
+export function newTaskUrl(baseUrl: string, defaults: TaskDefaults): string {
+  const fields: [string, string][] = [
+    ['Subject', defaults.subject],
+    ['ActivityDate', defaults.dueDate],
+  ];
+  if (defaults.description) fields.push(['Description', defaults.description]);
+  return `${baseUrl}/lightning/o/Task/new?defaultFieldValues=${defaultFieldValues(fields, defaults.recordId)}`;
+}
+
+/** Aufgabenliste in Salesforce */
+export function tasksUrl(baseUrl: string): string {
+  return `${baseUrl}/lightning/o/Task/home`;
 }
 
 /** Kalender in Salesforce */

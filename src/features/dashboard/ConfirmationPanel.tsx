@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/Button';
 import { formatInt } from '@/components/format';
 import { TEAM_APPOINTMENT_STATUS_LABELS, type TeamAppointment } from '@/domain/appointments';
 import { LiveTag } from './AssistantBrick';
@@ -23,14 +22,10 @@ function formatBooked(iso: string): string {
 
 interface ConfirmationPanelProps {
   appointments: readonly TeamAppointment[];
-  /** Ohne Spalte Telefonassistenz, etwa in der eigenen Ansicht */
-  hideAssistant?: boolean;
-  /** Öffnet einen Live-Termin in der Anrufliste */
-  onOpen?(leadId: string): void;
 }
 
 /** Gebuchte Termine der Woche: noch nicht in Salesforce eingetragene zuerst */
-export function ConfirmationPanel({ appointments, hideAssistant, onOpen }: ConfirmationPanelProps) {
+export function ConfirmationPanel({ appointments }: ConfirmationPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const entered = appointments.filter((a) => a.status === 'entered').length;
   const open = appointments.length - entered;
@@ -73,18 +68,9 @@ export function ConfirmationPanel({ appointments, hideAssistant, onOpen }: Confi
                 </span>
                 {appointment.live && <LiveTag />}
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs text-muted">
-                  Hunter {appointment.hunterName}
-                  {!hideAssistant && ` · gebucht von ${appointment.assistantName}`}
-                </span>
-                {onOpen &&
-                  appointment.live &&
-                  appointment.leadId &&
-                  appointment.status !== 'entered' && (
-                    <Button onClick={() => onOpen(appointment.leadId ?? '')}>Eintragen</Button>
-                  )}
-              </div>
+              <span className="block text-xs text-muted">
+                Hunter {appointment.hunterName} · gebucht von {appointment.assistantName}
+              </span>
             </li>
           ))}
         </ul>

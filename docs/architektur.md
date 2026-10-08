@@ -36,8 +36,27 @@ appointments
 Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 
 Rechte je Rolle stehen in `src/app/tabs.ts`: Die Telefonassistenz sieht Anrufliste,
-Dashboard und Karte, Teamleitung und Head of Sales zusätzlich die Einstellungen (Scoring,
-Daten). `setTab` im Store und `allowedTab()` lassen andere Reiter nicht zu.
+Termine, Wiedervorlagen, Dashboard und Karte, Teamleitung und Head of Sales Dashboard,
+Karte und die Einstellungen (Scoring, Daten). `setTab` im Store und `allowedTab()` lassen
+andere Reiter nicht zu.
+
+### Termine und Wiedervorlagen
+
+- Die Ergebnisleiste (`features/queue/OutcomeBar.tsx`) steht fest unter dem Briefing,
+  damit „Termin vereinbart“ und „Wiedervorlage“ ohne Scrollen erreichbar sind.
+- „Wiedervorlage“ öffnet `RecallForm`: Rückruf mit Datum, Uhrzeit und Notiz oder
+  Vertragsende; das Datum dazu liefert `suggestRecallDate()` aus `domain/recall.ts`
+  (`CONTRACT_RECALL_MONTHS_BEFORE`, `BOOKING_LEAD_DAYS_MIN`). Erst das Speichern bucht das
+  Ergebnis `callback` und legt eine `Recall` mit demselben Zeitpunkt an.
+- Offen ist eine Wiedervorlage, bis zum Account ein späteres Ergebnis erfasst ist
+  (`isRecallOpen`, `openRecalls`). Der Reiter Wiedervorlagen gruppiert nach Fälligkeit.
+- Wie beim Termin entsteht die Aufgabe in Salesforce über einen Link
+  (`newTaskUrl`, `/lightning/o/Task/new` mit `ActivityDate`); das Cockpit merkt sich nur,
+  dass das Formular geöffnet wurde.
+- Mit Demo-Daten zeigen die Reiter zusätzlich fiktive Termine der Vorwochen
+  (`demoEarlierAppointments`, Anzahl aus dem Werdegang) und Wiedervorlagen aus früheren
+  Anrufen (`demoRecalls`). Sie überschneiden sich nicht mit den Terminen der Kolleginnen
+  und Kollegen.
 
 ## Datenfluss
 
@@ -159,8 +178,9 @@ nur Ergebnisse, Termine und im Gespräch erfasste Kontakte zurück.
 - Keine Routenplanung: Im New Business arbeitet die Telefonassistenz die Potenzialliste
   eines Hunters ab. Der Hunter ist der Accountinhaber (`Lead.owner`), die Auswahl liegt im
   Store (`ownerFilter`), Warteschlange und Karte folgen ihr.
-- `src/data/hunters.ts`: fiktive Hunter mit Region, Gebiet (PLZ-Leitzonen) und E-Mail für
-  die Demo. `hunterForArea()` findet den Hunter zu Region und PLZ; damit erhalten die
+- `src/data/hunters.ts`: elf fiktive Hunter (sechs in Nord, fünf in NRW) mit Region,
+  Gebiet (PLZ-Leitzonen) und E-Mail für die Demo. `src/data/demoTeam.ts`: Team Nord mit 22,
+  Team NRW mit 18 Telefonassistenzen. `hunterForArea()` findet den Hunter zu Region und PLZ; damit erhalten die
   Demo-Leads ihren Accountinhaber. Für echte Daten kommt der Accountinhaber aus Salesforce,
   die E-Mail später aus Entra ID; bis dahin bleibt sie im Terminformular leer.
 - Zuordnung Telefonassistenz zu Hunter: Auswahlfeld in der Anrufliste (eigene Zuordnung)

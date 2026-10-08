@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
 import { BandBadge } from '@/components/BandBadge';
-import { Button } from '@/components/Button';
 import { ControlTag } from '@/components/ControlTag';
 import { Meter } from '@/components/Meter';
 import { todayLocal } from '@/app/selectors';
-import { formatDateTime, formatInt } from '@/components/format';
+import { formatInt } from '@/components/format';
 import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { buildBriefing, contactLabel } from '@/domain/briefing';
-import { OUTCOME_LABELS, OUTCOME_TYPES } from '@/domain/outcomes';
 import { DIMENSION_KEYS, DIMENSION_LABELS } from '@/domain/scoring';
-import type { CallOutcome, OutcomeType, QueueEntry } from '@/domain/types';
+import type { CallOutcome, QueueEntry } from '@/domain/types';
 import { salesforceUrl } from '@/app/services';
+import { RecallTask } from '@/features/recalls/RecallTask';
+import { useOpenRecall } from '@/features/recalls/useRecalls';
 import { SalesforceBooking } from './SalesforceBooking';
 import { ContactCapture } from './ContactCapture';
 import { useBriefing } from './useBriefing';
@@ -18,14 +18,13 @@ import { useBriefing } from './useBriefing';
 interface BriefingPanelProps {
   entry: QueueEntry;
   latest: CallOutcome | undefined;
-  busy: boolean;
   /** Name der anrufenden Person für den Einstiegssatz */
   callerName: string;
-  onRecord(outcome: OutcomeType): void;
 }
 
-export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: BriefingPanelProps) {
+export function BriefingPanel({ entry, latest, callerName }: BriefingPanelProps) {
   const { lead } = entry;
+  const recall = useOpenRecall(lead.id);
   const { briefing, pending } = useBriefing(entry);
   // Regelbasiert mit dem Namen der Anruferin statt Platzhalter
   const named = buildBriefing(entry, callerName);
@@ -59,6 +58,7 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
           salesforceUrl={salesforceUrl}
         />
       )}
+      {recall && <RecallTask key={`wv-${recall.id}`} recall={recall} />}
 
       <section
         aria-label="Dimensionen"
@@ -145,33 +145,6 @@ export function BriefingPanel({ entry, latest, busy, callerName, onRecord }: Bri
           </ul>
         </section>
       )}
-
-      <section aria-label="Ergebnis erfassen">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Ergebnis</h3>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2">
-          {OUTCOME_TYPES.map((type, index) => (
-            <Button
-              key={type}
-              variant={type === 'appointment' ? 'primary' : 'secondary'}
-              disabled={busy}
-              onClick={() => onRecord(type)}
-              aria-keyshortcuts={String(index + 1)}
-            >
-              <span className="mr-2 rounded border border-current px-1 text-xs">{index + 1}</span>
-              {OUTCOME_LABELS[type]}
-            </Button>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-muted">
-          Tastatur: Pfeil hoch und runter wechselt den Lead, 1 bis 4 bucht das Ergebnis.
-        </p>
-        {latest && (
-          <p className="mt-2 text-sm">
-            Zuletzt erfasst: <strong>{OUTCOME_LABELS[latest.outcome]}</strong> am{' '}
-            {formatDateTime(latest.recordedAt)}
-          </p>
-        )}
-      </section>
     </article>
   );
 }

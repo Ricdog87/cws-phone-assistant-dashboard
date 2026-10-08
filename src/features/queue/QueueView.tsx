@@ -6,11 +6,13 @@ import { Button } from '@/components/Button';
 import { ACTIVITY_COOLDOWN_DAYS } from '@/domain/activity';
 import { OUTCOME_TYPES } from '@/domain/outcomes';
 import type { OutcomeType } from '@/domain/types';
+import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { HunterSelect } from './HunterSelect';
-import { useRecordOutcome } from './useRecordOutcome';
+import { OutcomeBar } from './OutcomeBar';
+import { useRecordOutcome, type RecallDraft } from './useRecordOutcome';
 
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -38,9 +40,18 @@ export function QueueView() {
       );
   }, [outcomes, appointments, latest]);
   const [busy, setBusy] = useState(false);
+  // Lead, für den gerade die Wiedervorlage geplant wird
+  const [planningFor, setPlanningFor] = useState<string | null>(null);
 
   const selectedIndex = queue.findIndex((e) => e.lead.id === selectedId);
   const selected = selectedIndex >= 0 ? queue[selectedIndex] : undefined;
+  const planning = selected !== undefined && planningFor === selected.lead.id;
+  const recalls = useOpenRecalls();
+  const recallByLead = useMemo(
+    () => new Map(recalls.map((recall) => [recall.leadId, recall])),
+    [recalls],
+  );
+  const openRecall = selected ? recallByLead.get(selected.lead.id) : undefined;
   const openCount = queue.filter((e) => !latest.has(e.lead.id)).length;
   const blocked = useCooldownCount();
 
@@ -52,11 +63,17 @@ export function QueueView() {
   }, [selected, queue, latest, selectLead]);
 
   const book = useCallback(
-    async (outcome: OutcomeType) => {
+    async (outcome: OutcomeType, recall?: RecallDraft) => {
       if (!selected || busy) return;
+      // Wiedervorlage erst nach Datum und Grund buchen
+      if (outcome === 'callback' && !recall) {
+        setPlanningFor(selected.lead.id);
+        return;
+      }
       setBusy(true);
       try {
-        await recordOutcome(selected, outcome);
+        await recordOutcome(selected, outcome, recall);
+        setPlanningFor(null);
       } finally {
         setBusy(false);
       }
@@ -67,6 +84,10 @@ export function QueueView() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.altKey || event.ctrlKey || event.metaKey || isTypingTarget(event.target)) return;
+      if (planning) {
+        if (event.key === 'Escape') setPlanningFor(null);
+        return;
+      }
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         if (queue.length === 0) return;
@@ -85,7 +106,7 @@ export function QueueView() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [queue, selectedIndex, selectLead, book]);
+  }, [queue, selectedIndex, selectLead, book, planning]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -112,36 +133,50 @@ export function QueueView() {
               queue={queue}
               selectedId={selectedId}
               latest={latest}
+              recalls={recallByLead}
               today={todayLocal()}
               onSelect={selectLead}
             />
           </div>
         </aside>
-        <div className="min-h-0 overflow-y-auto p-6">
-          {pendingConfirmation && pendingConfirmation.leadId !== selectedId && (
-            <div
-              role="status"
-              className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-brand-primary bg-panel px-4 py-2 text-sm"
-            >
-              <span>
-                Termin mit <strong>{pendingConfirmation.leadName}</strong> gebucht, noch nicht in
-                Salesforce eingetragen.
-              </span>
-              <Button onClick={() => selectLead(pendingConfirmation.leadId)}>
-                Jetzt eintragen
-              </Button>
-            </div>
-          )}
-          {selected ? (
-            <BriefingPanel
-              entry={selected}
+        <div className="flex min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {pendingConfirmation && pendingConfirmation.leadId !== selectedId && (
+              <div
+                role="status"
+                className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-brand-primary bg-panel px-4 py-2 text-sm"
+              >
+                <span>
+                  Termin mit <strong>{pendingConfirmation.leadName}</strong> gebucht, noch nicht in
+                  Salesforce eingetragen.
+                </span>
+                <Button onClick={() => selectLead(pendingConfirmation.leadId)}>
+                  Jetzt eintragen
+                </Button>
+              </div>
+            )}
+            {selected ? (
+              <BriefingPanel
+                entry={selected}
+                latest={latest.get(selected.lead.id)}
+                callerName={DEMO_USER.fullName}
+              />
+            ) : (
+              <p className="text-sm text-muted">Kein Lead ausgewählt.</p>
+            )}
+          </div>
+          {selected && (
+            <OutcomeBar
+              leadName={selected.lead.name}
               latest={latest.get(selected.lead.id)}
+              recall={openRecall}
               busy={busy}
-              callerName={DEMO_USER.fullName}
+              planning={planning}
+              today={new Date()}
               onRecord={(o) => void book(o)}
+              onRecallSave={(draft) => void book('callback', draft)}
+              onRecallCancel={() => setPlanningFor(null)}
             />
-          ) : (
-            <p className="text-sm text-muted">Kein Lead ausgewählt.</p>
           )}
         </div>
       </div>

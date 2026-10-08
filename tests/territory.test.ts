@@ -55,16 +55,25 @@ describe('Vertriebsgebiet Nordwest', () => {
     }
     // Jeder Hunter hat eine eigene Leadliste
     for (const hunter of DEMO_HUNTERS) {
-      expect(owned.filter((lead) => lead.owner === hunter.name).length).toBeGreaterThan(40);
+      expect(owned.filter((lead) => lead.owner === hunter.name).length).toBeGreaterThan(10);
     }
+    expect(DEMO_HUNTERS.filter((hunter) => hunter.regionId === 'nord')).toHaveLength(6);
+    expect(DEMO_HUNTERS.filter((hunter) => hunter.regionId === 'nrw')).toHaveLength(5);
   });
 
   it('findet den Hunter über Region und PLZ-Leitzone', () => {
     expect(hunterForArea('nord', '26122')?.name).toBe('Jonas Tiedemann');
     expect(hunterForArea('nord', '20095')?.name).toBe('Malte Hartwig');
-    expect(hunterForArea('nrw', '48143')?.name).toBe('Dennis Wolters');
-    expect(hunterForArea('nord', '48529')?.name).toBe('Jonas Tiedemann');
+    expect(hunterForArea('nord', '24103')?.name).toBe('Birte Carstens');
+    expect(hunterForArea('nord', '28195')?.name).toBe('Henning Rathjen');
+    expect(hunterForArea('nord', '30159')?.name).toBe('Florian Wedekind');
+    // Leitzone 48 liegt in beiden Regionen: Grafschaft Bentheim in Nord, Münster in NRW
+    expect(hunterForArea('nrw', '48143')?.name).toBe('Philipp Strotmann');
+    expect(hunterForArea('nord', '48529')?.name).toBe('Lars Kampmann');
     expect(hunterForArea('nrw', '50667')?.name).toBe('Kai Overbeck');
+    expect(hunterForArea('nrw', '40210')?.name).toBe('Sandra Lenzen');
+    expect(hunterForArea('nrw', '44135')?.name).toBe('Dennis Wolters');
+    expect(hunterForArea('nrw', '58095')?.name).toBe('Nadine Hesse');
     // Unbekannte Leitzone fällt auf den ersten Hunter der Region
     expect(hunterForArea('nord', '99999')?.name).toBe('Jonas Tiedemann');
   });

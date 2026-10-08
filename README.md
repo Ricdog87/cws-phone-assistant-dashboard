@@ -36,21 +36,35 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 
 ## Bedienung
 
-| Reiter     | Inhalt                                                                             | Rollen                     |
-| ---------- | ---------------------------------------------------------------------------------- | -------------------------- |
-| Anrufliste | Warteschlange links, Briefing rechts, Kontakt erfassen, Ergebnis mit Taste 1 bis 4 | Telefonassistenz           |
-| Dashboard  | Je Rolle: eigene Ziele und Termine, Team oder Vertriebsgebiet                      | alle                       |
-| Karte      | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat    | alle                       |
-| Scoring    | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung           | Teamleitung, Head of Sales |
-| Daten      | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                           | Teamleitung, Head of Sales |
+| Reiter         | Inhalt                                                                          | Rollen                     |
+| -------------- | ------------------------------------------------------------------------------- | -------------------------- |
+| Anrufliste     | Warteschlange links, Briefing rechts, Ergebnisleiste unten mit Taste 1 bis 4    | Telefonassistenz           |
+| Termine        | Eigene Termine der Woche mit Status in Salesforce, dazu die Vorwochen           | Telefonassistenz           |
+| Wiedervorlagen | Rückrufe und Vertragsenden nach Fälligkeit, Anrufen mit einem Klick             | Telefonassistenz           |
+| Dashboard      | Je Rolle: eigene Ziele, Team oder Vertriebsgebiet                               | alle                       |
+| Karte          | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat | alle                       |
+| Scoring        | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung        | Teamleitung, Head of Sales |
+| Daten          | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                        | Teamleitung, Head of Sales |
 
 Einstellungen (Scoring, Daten) und die Zuordnung der Telefonassistenzen zu den Huntern
 sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sieht ihre
 Zuordnung, ändern kann sie sie nicht.
 
-Tastatur in der Anrufliste: Pfeil hoch und runter wechselt den Lead, 1 Termin vereinbart,
-2 Wiedervorlage, 3 Nicht erreicht, 4 Kein Interesse. Nach dem Buchen springt die Auswahl
-auf den nächsten offenen Lead.
+Die Ergebnisleiste mit „Termin vereinbart“, „Wiedervorlage“, „Nicht erreicht“ und „Kein
+Interesse“ steht immer sichtbar unter dem Briefing. Tastatur in der Anrufliste: Pfeil hoch
+und runter wechselt den Lead, 1 Termin vereinbart, 2 Wiedervorlage, 3 Nicht erreicht,
+4 Kein Interesse. Nach dem Buchen springt die Auswahl auf den nächsten offenen Lead.
+
+Die Wiedervorlage fragt vor dem Buchen nach dem Grund: „Rückruf vereinbart“ mit Datum
+(Vorschlag nächster Werktag), optionaler Uhrzeit und Notiz, oder „Vertragsende bekannt“.
+Beim Vertragsende ergibt sich das Datum aus der bestehenden Regel (erster Werktag des
+Monats, neun Monate vorher); liegt das Ende zu nah, schlägt das Cockpit vor, jetzt einen
+Termin zu vereinbaren. Escape bricht ab. Der Reiter Wiedervorlagen zeigt alle offenen
+Wiedervorlagen nach Fälligkeit (überfällig, heute, nächste 7 Tage, später); die Zahl am
+Reiter nennt die heute fälligen. „Anrufen“ öffnet den Account im Briefing. Eine
+Wiedervorlage ist erledigt, sobald zum Account ein neues Ergebnis erfasst ist. „In
+Salesforce anlegen“ öffnet das Formular „Neue Aufgabe“ mit Betreff, Fälligkeitsdatum und
+Notiz.
 
 Die Terminvergabe passiert direkt in Salesforce. Nach „Termin vereinbart“ erinnert ein
 Hinweis daran, den Termin einzutragen. „Termin in Salesforce anlegen“ öffnet in einem neuen
@@ -80,7 +94,7 @@ die Rolle bestimmt die Ansicht:
 
 | Konto            | Rolle                      | Ansicht                                              |
 | ---------------- | -------------------------- | ---------------------------------------------------- |
-| Nele Faber       | Telefonassistenz           | Potenzialliste je Hunter, Briefing, Termine          |
+| Nele Faber       | Telefonassistenz           | Anrufliste, Termine, Wiedervorlagen                  |
 | Martina Weidmann | Teamleitung                | Team Nord: Hunter, Termine, Rangliste, Einstellungen |
 | Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW      |
 
@@ -95,7 +109,9 @@ beim Neuladen bestehen.
    Hunters (Auswahl „Hunter“), sortiert nach Score, mit letzter Aktivität; Accounts mit
    Aktivität in den letzten 14 Tagen sind gesperrt, Briefing mit Aufhängern und persönlichem
    Einstiegssatz. Taste 1 bucht einen Termin, „Jetzt eintragen“ und „Termin in Salesforce
-   anlegen“ öffnen den neuen Termin in Salesforce.
+   anlegen“ öffnen den neuen Termin in Salesforce. Taste 2 plant eine Wiedervorlage mit
+   Datum. Die Reiter Termine und Wiedervorlagen zeigen den Stand, mit Demo-Daten auch
+   Termine der Vorwochen und Wiedervorlagen aus früheren Anrufen.
 4. Abmelden, als Martina Weidmann anmelden: Potenzialliste je Hunter, Termine in Salesforce
    mit dem Termin von Nele Faber (markiert als „erfasst“). Klick auf eine Person zeigt den
    Werdegang und das Auswahlfeld „Arbeitet für Hunter“; nach einer Umstellung startet Nele

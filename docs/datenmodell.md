@@ -65,9 +65,34 @@ die Trainingsdaten gültig, auch wenn sich Gewichte oder Stammdaten später änd
 | `isControl`          | Teil der Kontrollstichprobe                                |
 | `queuePosition`      | Position in der Warteschlange                              |
 | `sourceId`           | Datenquelle                                                |
+| `recallReason`       | Bei Wiedervorlage: `callback` oder `contractEnd`           |
 
 Ablage in IndexedDB (Datenbank `cws-lead-cockpit`, Tabelle `outcomes`). Export im
 Dashboard als CSV mit Semikolon, Dezimalkomma und BOM.
+
+## Wiedervorlage
+
+Entsteht zusammen mit dem Ergebnis „Wiedervorlage“ und trägt denselben Zeitpunkt
+(`Recall` in `src/domain/types.ts`, Tabelle `recalls` ab Datenbankversion 6). Die Aufgabe
+selbst liegt in Salesforce.
+
+| Feld                 | Bedeutung                                                     |
+| -------------------- | ------------------------------------------------------------- |
+| `id`                 | Zufällige ID                                                  |
+| `leadId`, `leadName` | Bezug zum Lead                                                |
+| `hunterName`         | Accountinhaber beim Anlegen                                   |
+| `reason`             | `callback` (Rückruf vereinbart) oder `contractEnd`            |
+| `dueDate`            | Fällig am, YYYY-MM-DD                                         |
+| `dueTime`            | Uhrzeit HH:MM, nur beim Rückruf, sonst leer                   |
+| `contractEnd`        | Vertragsende YYYY-MM, nur beim Grund Vertragsende             |
+| `note`               | Kurznotiz, höchstens 200 Zeichen                              |
+| `createdAt`          | Zeitpunkt des Ergebnisses, das die Wiedervorlage anlegte      |
+| `salesforceOpenedAt` | Zeitpunkt, an dem „Neue Aufgabe“ in Salesforce geöffnet wurde |
+
+Offen ist eine Wiedervorlage, bis zum Lead ein späteres Ergebnis erfasst ist. In Salesforce
+wird sie zur Aufgabe (`Task`): Betreff „Wiedervorlage: Firma“, Fälligkeitsdatum
+(`ActivityDate`), Bezug zum Lead oder Account und Beschreibung mit Grund, Uhrzeit, Hunter
+und Notiz.
 
 ## Feldzuordnung je Quelle
 

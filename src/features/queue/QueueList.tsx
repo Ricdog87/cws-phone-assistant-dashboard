@@ -3,18 +3,20 @@ import { BandBadge } from '@/components/BandBadge';
 import { ControlTag } from '@/components/ControlTag';
 import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { OUTCOME_LABELS } from '@/domain/outcomes';
-import type { CallOutcome, QueueEntry } from '@/domain/types';
+import type { CallOutcome, QueueEntry, Recall } from '@/domain/types';
 
 interface QueueListProps {
   queue: readonly QueueEntry[];
   selectedId: string | null;
   latest: ReadonlyMap<string, CallOutcome>;
+  /** Offene Wiedervorlagen je Lead */
+  recalls?: ReadonlyMap<string, Recall>;
   /** Heute als YYYY-MM-DD für die Anzeige der letzten Aktivität */
   today: string;
   onSelect(id: string): void;
 }
 
-export function QueueList({ queue, selectedId, latest, today, onSelect }: QueueListProps) {
+export function QueueList({ queue, selectedId, latest, recalls, today, onSelect }: QueueListProps) {
   const selectedRef = useRef<HTMLLIElement>(null);
 
   // Ausgewählten Lead bei Tastaturnavigation im sichtbaren Bereich halten
@@ -33,6 +35,7 @@ export function QueueList({ queue, selectedId, latest, today, onSelect }: QueueL
       {queue.map((entry) => {
         const selected = entry.lead.id === selectedId;
         const outcome = latest.get(entry.lead.id);
+        const recall = recalls?.get(entry.lead.id);
         return (
           <li
             key={entry.lead.id}
@@ -53,7 +56,15 @@ export function QueueList({ queue, selectedId, latest, today, onSelect }: QueueL
               </div>
               <div className="truncate text-xs text-muted">
                 {entry.lead.industry || 'Branche unbekannt'} · {entry.lead.city}
-                {outcome && ` · ${OUTCOME_LABELS[outcome.outcome]}`}
+                {outcome && !recall && ` · ${OUTCOME_LABELS[outcome.outcome]}`}
+                {recall && (
+                  <span
+                    className={recall.dueDate <= today ? 'font-bold text-brand-primary' : undefined}
+                  >
+                    {' '}
+                    · Wiedervorlage {shortDate(recall.dueDate)}
+                  </span>
+                )}
               </div>
             </div>
             <div
@@ -70,4 +81,10 @@ export function QueueList({ queue, selectedId, latest, today, onSelect }: QueueL
       })}
     </ul>
   );
+}
+
+/** YYYY-MM-DD als TT.MM. */
+function shortDate(isoDate: string): string {
+  const [, month, day] = isoDate.split('-');
+  return `${day}.${month}.`;
 }

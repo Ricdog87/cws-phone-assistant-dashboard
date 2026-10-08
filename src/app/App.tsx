@@ -1,11 +1,17 @@
 import { useEffect, type ReactNode } from 'react';
 import { DemoNotice } from '@/components/DemoNotice';
+import { dueRecallCount } from '@/domain/recall';
+import { AppointmentsView } from '@/features/appointments/AppointmentsView';
 import { DashboardView } from '@/features/dashboard/DashboardView';
+import { useLiveAppointments } from '@/features/dashboard/useRegionBoard';
 import { DataView } from '@/features/data/DataView';
 import { MapView } from '@/features/map/MapView';
 import { QueueView } from '@/features/queue/QueueView';
+import { RecallsView } from '@/features/recalls/RecallsView';
+import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { ScoringView } from '@/features/scoring/ScoringView';
-import { bootstrap, useAppStore } from './store';
+import { todayLocal } from './selectors';
+import { bootstrap, useAppStore, type TabId } from './store';
 import { allowedTab, tabsFor } from './tabs';
 import { UserBadge } from './UserBadge';
 import { LoginScreen } from './login/LoginScreen';
@@ -21,6 +27,7 @@ export function App() {
   // Rechte je Rolle: Einstellungen (Scoring, Daten) nur für Teamleitung und Head of Sales
   const tabs = tabsFor(viewLevel);
   const activeTab = allowedTab(viewLevel, selectedTab);
+  const badges = useTabBadges();
   const scope =
     viewLevel === 'director'
       ? 'Vertriebsgebiet Nordwest'
@@ -77,6 +84,7 @@ export function App() {
                     }`}
                   >
                     {tab.label}
+                    <TabBadge count={badges[tab.id]} hint={BADGE_HINTS[tab.id]} />
                   </button>
                 );
               })}
@@ -91,6 +99,16 @@ export function App() {
         {activeTab === 'queue' && (
           <TabPanel id="queue">
             <QueueView />
+          </TabPanel>
+        )}
+        {activeTab === 'appointments' && (
+          <TabPanel id="appointments">
+            <AppointmentsView />
+          </TabPanel>
+        )}
+        {activeTab === 'recalls' && (
+          <TabPanel id="recalls">
+            <RecallsView />
           </TabPanel>
         )}
         {/* Die Karte bleibt montiert, damit Ausschnitt und Zoom beim Reiterwechsel erhalten bleiben */}
@@ -116,6 +134,39 @@ export function App() {
         )}
       </main>
     </div>
+  );
+}
+
+const BADGE_HINTS: Partial<Record<TabId, string>> = {
+  appointments: 'noch nicht in Salesforce',
+  recalls: 'fällig',
+};
+
+/** Zähler an den Reitern: Termine ohne Salesforce-Eintrag, heute fällige Wiedervorlagen */
+function useTabBadges(): Partial<Record<TabId, number>> {
+  const recalls = useOpenRecalls();
+  const appointments = useLiveAppointments();
+  const today = todayLocal();
+  return {
+    appointments: appointments.filter((row) => row.status === 'open').length,
+    recalls: dueRecallCount(recalls, today),
+  };
+}
+
+function TabBadge({ count, hint }: { count: number | undefined; hint: string | undefined }) {
+  if (!count) return null;
+  return (
+    <>
+      <span
+        aria-hidden
+        className="ml-1.5 inline-block min-w-[1.25rem] rounded-full bg-brand-primary px-1.5 text-center text-xs font-bold tabular-nums text-on-primary"
+      >
+        {count}
+      </span>
+      <span className="sr-only">
+        , {count} {hint}
+      </span>
+    </>
   );
 }
 

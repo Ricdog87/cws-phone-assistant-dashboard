@@ -4,6 +4,7 @@ import {
   appointmentRepository,
   contactRepository,
   outcomeRepository,
+  recallRepository,
   type BriefingMode,
 } from './services';
 import { MockProvider } from '@/data/providers/mockProvider';
@@ -18,6 +19,7 @@ import {
   type AppointmentRepository,
 } from '@/data/appointmentRepository';
 import { InMemoryContactRepository, type ContactRepository } from '@/data/contactRepository';
+import { InMemoryRecallRepository, type RecallRepository } from '@/data/recallRepository';
 import type { OutcomeRepository } from '@/data/repository';
 import type { AgentGoals } from '@/domain/agentGoals';
 import { DAILY_CALL_GOAL, WEEKLY_APPOINTMENT_GOAL } from '@/domain/goals';
@@ -28,6 +30,7 @@ import type {
   ContactUpdate,
   DimensionKey,
   Lead,
+  Recall,
   Weights,
 } from '@/domain/types';
 import { defaultAssignments } from '@/data/demoAssignments';
@@ -37,7 +40,7 @@ import { DEMO_USER, type ViewLevel } from './demoUser';
 import { allowedTab, homeTab } from './tabs';
 import { loadSession, saveSession } from './session';
 
-export type TabId = 'queue' | 'map' | 'dashboard' | 'scoring' | 'data';
+export type TabId = 'queue' | 'appointments' | 'recalls' | 'map' | 'dashboard' | 'scoring' | 'data';
 
 export interface AppState {
   activeTab: TabId;
@@ -62,8 +65,10 @@ export interface AppState {
   outcomes: CallOutcome[];
   /** Im Gespräch erfasste Kontakte, Rückweg nach Salesforce per CSV */
   contacts: ContactUpdate[];
-  /** Vereinbarte Termine mit Datum, Hunter und Ansprechpartner */
+  /** Vereinbarte Termine und ob sie in Salesforce eingetragen sind */
   appointments: Appointment[];
+  /** Wiedervorlagen mit Fälligkeit und ob die Aufgabe in Salesforce angelegt ist */
+  recalls: Recall[];
   viewLevel: ViewLevel;
   /** Simulierte Anmeldung per Single Sign-on */
   signedIn: boolean;
@@ -87,18 +92,22 @@ export interface AppState {
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
   addOutcome(outcome: CallOutcome): Promise<void>;
-  /** Löscht Anrufergebnisse, erfasste Kontakte und Termine */
+  /** Löscht Anrufergebnisse, erfasste Kontakte, Termine und Wiedervorlagen */
   clearOutcomes(): Promise<void>;
   loadContacts(): Promise<void>;
   addContact(contact: ContactUpdate): Promise<void>;
   loadAppointments(): Promise<void>;
   addAppointment(appointment: Appointment): Promise<void>;
+  loadRecalls(): Promise<void>;
+  /** Legt eine Wiedervorlage an oder ersetzt sie mit derselben ID */
+  addRecall(recall: Recall): Promise<void>;
 }
 
 export function createAppStore(
   repository: OutcomeRepository,
   contactStore: ContactRepository = new InMemoryContactRepository(),
   appointmentStore: AppointmentRepository = new InMemoryAppointmentRepository(),
+  recallStore: RecallRepository = new InMemoryRecallRepository(),
 ) {
   // Anmeldung dieses Browser-Tabs wiederherstellen, etwa nach dem Neuladen
   const restoredLevel = loadSession();
@@ -125,6 +134,7 @@ export function createAppStore(
     outcomes: [],
     contacts: [],
     appointments: [],
+    recalls: [],
     viewLevel: restoredLevel ?? 'teamLead',
     signedIn: restoredLevel !== null,
 
@@ -213,8 +223,13 @@ export function createAppStore(
     },
 
     async clearOutcomes() {
-      await Promise.all([repository.clear(), contactStore.clear(), appointmentStore.clear()]);
-      set({ outcomes: [], contacts: [], appointments: [] });
+      await Promise.all([
+        repository.clear(),
+        contactStore.clear(),
+        appointmentStore.clear(),
+        recallStore.clear(),
+      ]);
+      set({ outcomes: [], contacts: [], appointments: [], recalls: [] });
     },
 
     async loadContacts() {
@@ -236,6 +251,15 @@ export function createAppStore(
         appointments: [...get().appointments.filter((a) => a.id !== appointment.id), appointment],
       });
     },
+
+    async loadRecalls() {
+      set({ recalls: await recallStore.list() });
+    },
+
+    async addRecall(recall) {
+      await recallStore.add(recall);
+      set({ recalls: [...get().recalls.filter((r) => r.id !== recall.id), recall] });
+    },
   }));
 }
 
@@ -243,15 +267,18 @@ export const useAppStore = createAppStore(
   outcomeRepository,
   contactRepository,
   appointmentRepository,
+  recallRepository,
 );
 
-/** Startdaten laden: Demo-Leads, gespeicherte Anrufergebnisse, Kontakte und Termine */
+/** Startdaten laden: Demo-Leads, Anrufergebnisse, Kontakte, Termine und Wiedervorlagen */
 export async function bootstrap(): Promise<void> {
-  const { loadFromProvider, loadOutcomes, loadContacts, loadAppointments } = useAppStore.getState();
+  const { loadFromProvider, loadOutcomes, loadContacts, loadAppointments, loadRecalls } =
+    useAppStore.getState();
   await Promise.all([
     loadFromProvider(new MockProvider()),
     loadOutcomes(),
     loadContacts(),
     loadAppointments(),
+    loadRecalls(),
   ]);
 }

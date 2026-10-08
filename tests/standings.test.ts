@@ -11,16 +11,16 @@ import { applyLiveActivity, directorStanding, teamStanding } from '@/domain/stan
 describe('teamStanding', () => {
   const team = teamStanding(DEMO_MEMBERS, DEMO_TEAM_ID, DEMO_TEAM_NAME);
 
-  it('verdichtet 15 Personen auf die bestehenden Ziele', () => {
-    expect(team.headcount).toBe(15);
-    expect(team.dayCalls).toBe(575);
-    expect(team.weekCalls).toBe(2298);
-    expect(team.weekAppointments).toBe(33);
-    expect(team.dailyCallGoal).toBe(750);
-    expect(team.weeklyAppointmentGoal).toBe(60);
-    expect(team.atWeeklyGoal).toBe(4);
-    expect(team.underDailyGoal).toBe(11);
-    expect(team.appointmentsPer100).toBeCloseTo((33 / 2298) * 100);
+  it('verdichtet 22 Personen auf die bestehenden Ziele', () => {
+    expect(team.headcount).toBe(22);
+    expect(team.dayCalls).toBe(878);
+    expect(team.weekCalls).toBe(3493);
+    expect(team.weekAppointments).toBe(51);
+    expect(team.dailyCallGoal).toBe(1100);
+    expect(team.weeklyAppointmentGoal).toBe(88);
+    expect(team.atWeeklyGoal).toBe(5);
+    expect(team.underDailyGoal).toBe(16);
+    expect(team.appointmentsPer100).toBeCloseTo((51 / 3493) * 100);
     expect(team.members[0]?.fullName).toBe('Pia Janssen');
   });
 
@@ -36,9 +36,9 @@ describe('teamStanding', () => {
     expect(replaced.find((member) => member.id === 'pia-janssen')?.dayCalls).toBe(55);
 
     const next = teamStanding(replaced, DEMO_TEAM_ID, DEMO_TEAM_NAME);
-    expect(next.dayCalls).toBe(577);
-    expect(next.weekAppointments).toBe(34);
-    expect(next.atWeeklyGoal).toBe(4);
+    expect(next.dayCalls).toBe(880);
+    expect(next.weekAppointments).toBe(52);
+    expect(next.atWeeklyGoal).toBe(5);
   });
 
   it('lässt unbekannte Live-Zeilen unverändert', () => {
@@ -67,7 +67,7 @@ describe('teamStanding', () => {
 });
 
 describe('DEMO_REGIONS', () => {
-  it('teilt das Vertriebsgebiet Nordwest in zwei Regionen mit je 15 Personen', () => {
+  it('teilt das Vertriebsgebiet Nordwest in Nord mit 22 und NRW mit 18 Personen', () => {
     expect(DEMO_REGIONS.map((region) => region.name)).toEqual(['Nord', 'NRW']);
     expect(DEMO_REGIONS.map((region) => region.states)).toEqual([
       'Niedersachsen, Bremen, Hamburg, Schleswig-Holstein',
@@ -79,23 +79,24 @@ describe('DEMO_REGIONS', () => {
     const teams = DEMO_REGIONS.map((region) =>
       teamStanding(region.members, region.id, region.name),
     );
+    expect(teams[0]?.headcount).toBe(22);
     expect(teams[1]).toMatchObject({
-      headcount: 15,
-      dayCalls: 604,
-      weekCalls: 2315,
-      weekAppointments: 33,
-      atWeeklyGoal: 3,
-      underDailyGoal: 11,
+      headcount: 18,
+      dayCalls: 739,
+      weekCalls: 2843,
+      weekAppointments: 41,
+      atWeeklyGoal: 4,
+      underDailyGoal: 13,
     });
     const director = directorStanding(teams);
     expect(director.teamCount).toBe(2);
-    expect(director.headcount).toBe(30);
-    expect(director.dayCalls).toBe(1179);
-    expect(director.weekAppointments).toBe(66);
-    expect(director.dailyCallGoal).toBe(1500);
-    expect(director.weeklyAppointmentGoal).toBe(120);
-    expect(director.atWeeklyGoal).toBe(7);
-    expect(director.underDailyGoal).toBe(22);
+    expect(director.headcount).toBe(40);
+    expect(director.dayCalls).toBe(1617);
+    expect(director.weekAppointments).toBe(92);
+    expect(director.dailyCallGoal).toBe(2000);
+    expect(director.weeklyAppointmentGoal).toBe(160);
+    expect(director.atWeeklyGoal).toBe(9);
+    expect(director.underDailyGoal).toBe(29);
   });
 });
 
@@ -120,11 +121,11 @@ describe('directorStanding', () => {
     const director = directorStanding([nordwest, second]);
     expect(director.teamCount).toBe(2);
     expect(director.teams.map((team) => team.teamName)).toEqual(['Nord', 'Süd']);
-    expect(director.headcount).toBe(16);
-    expect(director.dayCalls).toBe(585);
-    expect(director.weekAppointments).toBe(34);
-    expect(director.dailyCallGoal).toBe(800);
-    expect(director.weeklyAppointmentGoal).toBe(64);
-    expect(director.atWeeklyGoal).toBe(4);
+    expect(director.headcount).toBe(23);
+    expect(director.dayCalls).toBe(888);
+    expect(director.weekAppointments).toBe(52);
+    expect(director.dailyCallGoal).toBe(1150);
+    expect(director.weeklyAppointmentGoal).toBe(92);
+    expect(director.atWeeklyGoal).toBe(5);
   });
 });
