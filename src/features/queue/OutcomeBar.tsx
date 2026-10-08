@@ -19,9 +19,12 @@ interface OutcomeBarProps {
   onRecallCancel(): void;
 }
 
+const CALENDAR_HINT = 'Öffnet den Salesforce-Kalender in der Wochenansicht';
+
 /**
  * Ergebnisleiste unter dem Briefing, immer sichtbar: Termin, Wiedervorlage, nicht
- * erreicht, kein Interesse. Die Wiedervorlage fragt vor dem Buchen das Datum ab.
+ * erreicht, kein Interesse. „Termin vereinbaren“ öffnet den Salesforce-Kalender, die
+ * Wiedervorlage fragt vor dem Buchen das Datum ab.
  */
 export function OutcomeBar({
   leadName,
@@ -58,16 +61,18 @@ export function OutcomeBar({
                 disabled={busy}
                 onClick={() => onRecord(type)}
                 aria-keyshortcuts={String(index + 1)}
+                title={type === 'appointment' ? CALENDAR_HINT : undefined}
                 className="py-2.5"
               >
                 <span className="mr-2 rounded border border-current px-1 text-xs">{index + 1}</span>
-                {OUTCOME_LABELS[type]}
+                {type === 'appointment' ? 'Termin vereinbaren' : OUTCOME_LABELS[type]}
               </Button>
             ))}
           </div>
           <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-muted">
             <span>
-              Pfeil hoch und runter wechselt den Lead, 1 bis 4 bucht, 2 plant die Wiedervorlage.
+              1 öffnet den Salesforce-Kalender, 2 plant die Wiedervorlage. Pfeil hoch und runter
+              wechselt den Lead.
             </span>
             {latest && (
               <span>

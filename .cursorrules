@@ -36,7 +36,8 @@
 ## Oberfläche
 - Reiter je Rolle (src/app/tabs.ts): Telefonassistenz Anrufliste, Termine, Wiedervorlagen, Dashboard, Karte; Teamleitung und Head of Sales Dashboard, Karte, Scoring, Daten. Einstellungen nie für die Telefonassistenz.
 - Ergebnisleiste immer sichtbar unter dem Briefing. Wiedervorlage bucht erst nach Grund und Datum; Datum beim Vertragsende nur über suggestRecallDate (domain/recall.ts). Aufgabe entsteht in Salesforce per Link (newTaskUrl).
-- Terminvergabe nur in Salesforce: das Cockpit öffnet das Formular „Neuer Termin“ (src/domain/salesforce.ts), keine eigenen Termin-Mails oder Kalenderdateien.
+- Terminvergabe nur in Salesforce: „Termin vereinbaren“ öffnet den Salesforce-Kalender in der Wochenansicht ab heute (calendarUrl in src/domain/salesforce.ts), keine eigenen Termin-Mails oder Kalenderdateien.
+- Führungsansichten: Kacheln oben, ein Bereich mit Team, Hunter, Termine (BoardSections). Keine weiteren Blöcke untereinander.
 - Tastatur in der Anrufliste: Pfeil hoch/runter wechselt den Lead, 1–4 bucht das Ergebnis.
 - Nach dem Buchen zum nächsten offenen Lead springen. Bearbeitete Leads bleiben sichtbar, abgeblendet.
 - Karte: invalidateSize vor fitBounds, erst wenn der Reiter sichtbar ist.

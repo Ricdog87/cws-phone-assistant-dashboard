@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { todayLocal } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { SalesforceBooking } from '@/features/queue/SalesforceBooking';
 import { makeLead } from './fixtures';
@@ -15,24 +16,21 @@ describe('SalesforceBooking', () => {
     });
   });
 
-  it('öffnet den neuen Termin in Salesforce und merkt sich das', async () => {
+  it('öffnet den Salesforce-Kalender in der Wochenansicht und merkt sich das', async () => {
     const user = userEvent.setup();
     const lead = makeLead({
       id: ACCOUNT,
       name: 'Metallbau Beispiel GmbH',
       owner: 'Jonas Tiedemann',
     });
-    render(<SalesforceBooking lead={lead} callerName="Nele Faber" salesforceUrl={BASE} />);
+    render(<SalesforceBooking lead={lead} salesforceUrl={BASE} />);
 
-    const link = screen.getByRole('link', { name: 'Termin in Salesforce anlegen' });
-    const href = link.getAttribute('href') ?? '';
-    expect(href.startsWith(`${BASE}/lightning/o/Event/new?defaultFieldValues=Subject=`)).toBe(true);
-    expect(href).toContain(`WhatId=${ACCOUNT}`);
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(screen.getByRole('link', { name: 'Salesforce-Kalender öffnen' })).toHaveAttribute(
+    const link = screen.getByRole('link', { name: 'Salesforce-Kalender öffnen' });
+    expect(link).toHaveAttribute(
       'href',
-      `${BASE}/lightning/o/Event/home`,
+      `${BASE}/lightning/o/Event/home?startDate=${todayLocal()}&view=week`,
     );
+    expect(link).toHaveAttribute('target', '_blank');
     expect(screen.getByRole('link', { name: 'Account in Salesforce öffnen' })).toBeInTheDocument();
     expect(screen.getByText('Noch nicht in Salesforce')).toBeInTheDocument();
 
@@ -47,7 +45,7 @@ describe('SalesforceBooking', () => {
   });
 
   it('weist ohne hinterlegte Salesforce-Adresse darauf hin', () => {
-    render(<SalesforceBooking lead={makeLead()} callerName="X" salesforceUrl={null} />);
+    render(<SalesforceBooking lead={makeLead()} salesforceUrl={null} />);
     expect(screen.getByRole('note')).toHaveTextContent('Salesforce-Adresse ist nicht hinterlegt');
     expect(screen.queryByRole('link')).toBeNull();
   });

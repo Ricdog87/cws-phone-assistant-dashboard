@@ -8,7 +8,7 @@ interface StatTileProps {
   onSelect?: () => void;
   fillPercent?: number;
   fillReached?: boolean;
-  /** Text für den Filterhinweis, nur bei anklickbaren Kacheln */
+  /** Was ein Klick zeigt, als Tooltip der anklickbaren Kachel */
   filterLabel?: string;
 }
 
@@ -32,7 +32,7 @@ export function StatTile({
   const body = (
     <>
       <span className="block text-xs font-bold uppercase tracking-wide text-muted">{label}</span>
-      <span className="mt-2 block text-3xl font-bold tabular-nums leading-none">
+      <span className="mt-2 block text-3xl font-bold leading-none">
         {value}
         {suffix && <span className="text-base font-normal text-muted"> {suffix}</span>}
       </span>
@@ -45,11 +45,9 @@ export function StatTile({
         </span>
       )}
       {hint && <span className="mt-2 block text-xs text-muted">{hint}</span>}
-      {onSelect && filterLabel && (
-        <span
-          className={`mt-3 block text-xs ${pressed ? 'font-bold text-brand-ink' : 'text-muted'}`}
-        >
-          {pressed ? 'Filter aktiv · erneut tippen für alle' : filterLabel}
+      {onSelect && pressed && (
+        <span className="mt-3 block text-xs font-bold text-brand-ink">
+          Filter aktiv · erneut tippen für alle
         </span>
       )}
     </>
@@ -58,7 +56,13 @@ export function StatTile({
   if (!onSelect) return <div className={className}>{body}</div>;
 
   return (
-    <button type="button" aria-pressed={pressed} onClick={onSelect} className={className}>
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onSelect}
+      title={filterLabel}
+      className={className}
+    >
       {body}
     </button>
   );

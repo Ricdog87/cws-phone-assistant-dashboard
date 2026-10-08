@@ -5,8 +5,6 @@ import {
 } from '@/data/appointmentRepository';
 import { AppDatabase } from '@/data/db';
 import {
-  eventDescription,
-  eventSubject,
   latestAppointmentByLead,
   liveTeamAppointments,
   sortTeamAppointments,
@@ -24,21 +22,6 @@ function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
     ...overrides,
   };
 }
-
-describe('Termin in Salesforce', () => {
-  it('baut Betreff und Beschreibung ohne leere Zeilen', () => {
-    expect(eventSubject('Metallbau Beispiel GmbH')).toBe(
-      'Neukundentermin: Metallbau Beispiel GmbH',
-    );
-    expect(
-      eventDescription({
-        assistantName: 'Nele Faber',
-        hunterName: 'Jonas Tiedemann',
-        contactName: null,
-      }),
-    ).toBe('Vereinbart von Nele Faber über das Lead-Cockpit.\nHunter: Jonas Tiedemann');
-  });
-});
 
 describe('latestAppointmentByLead', () => {
   it('nimmt je Lead den zuletzt erfassten Eintrag', () => {

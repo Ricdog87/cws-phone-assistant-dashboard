@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarUrl,
-  newEventUrl,
   newTaskUrl,
   normalizeSalesforceUrl,
   recordUrl,
@@ -40,33 +39,11 @@ describe('normalizeSalesforceUrl', () => {
   });
 });
 
-describe('newEventUrl', () => {
-  it('füllt Betreff und Bezug zum Account vor und kodiert Sonderzeichen', () => {
-    const url = newEventUrl(BASE, {
-      subject: 'Neukundentermin: Bau, Fehn & Co.',
-      recordId: ACCOUNT,
-      description: 'Zeile 1\nZeile 2',
-    });
-    expect(url).toBe(
-      `${BASE}/lightning/o/Event/new?defaultFieldValues=` +
-        `Subject=Neukundentermin%3A%20Bau%2C%20Fehn%20%26%20Co.,WhatId=${ACCOUNT},` +
-        'Description=Zeile%201%0AZeile%202',
-    );
-  });
-
-  it('setzt Leads als Name (WhoId) und lässt Demo-IDs weg', () => {
-    expect(newEventUrl(BASE, { subject: 'T', recordId: LEAD })).toBe(
-      `${BASE}/lightning/o/Event/new?defaultFieldValues=Subject=T,WhoId=${LEAD}`,
-    );
-    expect(newEventUrl(BASE, { subject: 'T', recordId: 'DEMO-1' })).toBe(
-      `${BASE}/lightning/o/Event/new?defaultFieldValues=Subject=T`,
-    );
-  });
-});
-
 describe('Kalender und Datensatz', () => {
   it('verlinkt Kalender und Datensatz', () => {
-    expect(calendarUrl(BASE)).toBe(`${BASE}/lightning/o/Event/home`);
+    expect(calendarUrl(BASE, '2026-10-08')).toBe(
+      `${BASE}/lightning/o/Event/home?startDate=2026-10-08&view=week`,
+    );
     expect(recordUrl(BASE, ACCOUNT)).toBe(`${BASE}/lightning/r/Account/${ACCOUNT}/view`);
     expect(recordUrl(BASE, 'DEMO-1')).toBeNull();
   });

@@ -12,6 +12,7 @@ import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { HunterSelect } from './HunterSelect';
 import { OutcomeBar } from './OutcomeBar';
+import { openSalesforceCalendar } from './useEventBooking';
 import { useRecordOutcome, type RecallDraft } from './useRecordOutcome';
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -70,9 +71,11 @@ export function QueueView() {
         setPlanningFor(selected.lead.id);
         return;
       }
+      // Termin vereinbaren öffnet den Salesforce-Kalender, noch in der Bedienhandlung
+      const salesforceOpened = outcome === 'appointment' && openSalesforceCalendar();
       setBusy(true);
       try {
-        await recordOutcome(selected, outcome, recall);
+        await recordOutcome(selected, outcome, { recall, salesforceOpened });
         setPlanningFor(null);
       } finally {
         setBusy(false);

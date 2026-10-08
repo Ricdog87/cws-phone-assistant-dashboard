@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { todayLocal } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { MockProvider } from '@/data/providers/mockProvider';
 import { nextBusinessDay } from '@/domain/recall';
@@ -17,6 +18,10 @@ function selectedName(): string {
 }
 
 describe('QueueView', () => {
+  const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+  afterEach(() => open.mockClear());
+
   beforeEach(async () => {
     await act(async () => {
       await useAppStore.getState().clearOutcomes();
@@ -46,6 +51,7 @@ describe('QueueView', () => {
     const first = selectedName();
 
     await user.keyboard('1');
+    await waitFor(() => expect(selectedName()).not.toBe(first));
 
     const outcomes = useAppStore.getState().outcomes;
     expect(outcomes).toHaveLength(1);
@@ -68,19 +74,29 @@ describe('QueueView', () => {
     expect(live).toHaveTextContent('noch 3');
   });
 
-  it('erinnert daran, einen gebuchten Termin in Salesforce einzutragen', async () => {
+  it('öffnet mit Termin vereinbaren den Salesforce-Kalender in der Wochenansicht', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
     const first = selectedName();
 
-    await user.keyboard('1');
-    expect(screen.getByRole('status')).toHaveTextContent(`Termin mit ${first} gebucht`);
+    await user.click(screen.getByRole('button', { name: /Termin vereinbaren/ }));
 
-    await user.click(screen.getByRole('button', { name: 'Jetzt eintragen' }));
-    expect(selectedName()).toBe(first);
-    expect(
-      screen.getByRole('region', { name: 'Termin in Salesforce eintragen' }),
-    ).toBeInTheDocument();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open.mock.calls[0]?.[0]).toBe(
+      `https://cws-workwear.lightning.force.com/lightning/o/Event/home?startDate=${todayLocal()}&view=week`,
+    );
+    await waitFor(() => expect(useAppStore.getState().appointments).toHaveLength(1));
+    expect(useAppStore.getState().appointments[0]).toMatchObject({ leadName: first });
+    expect(useAppStore.getState().appointments[0]?.salesforceOpenedAt).toBeTruthy();
+    // Kalender ist schon offen, keine Erinnerung nötig
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('öffnet den Kalender auch über Taste 1', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    await user.keyboard('1');
+    expect(open).toHaveBeenCalledTimes(1);
   });
 
   it('bucht über die Schaltfläche', async () => {
@@ -93,7 +109,7 @@ describe('QueueView', () => {
   it('zeigt die Ergebnisleiste mit Termin und Wiedervorlage immer an', () => {
     render(<QueueView />);
     const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
-    expect(within(bar).getByRole('button', { name: /Termin vereinbart/ })).toBeInTheDocument();
+    expect(within(bar).getByRole('button', { name: /Termin vereinbaren/ })).toBeInTheDocument();
     expect(within(bar).getByRole('button', { name: /Wiedervorlage/ })).toBeInTheDocument();
   });
 

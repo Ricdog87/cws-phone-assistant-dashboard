@@ -1,25 +1,5 @@
 import type { Appointment } from './types';
 
-/** Betreff des Termins in Salesforce */
-export function eventSubject(leadName: string): string {
-  return `Neukundentermin: ${leadName}`;
-}
-
-/** Beschreibung des Termins in Salesforce, ohne Telefonnummern */
-export function eventDescription(input: {
-  assistantName: string;
-  hunterName: string | null;
-  contactName: string | null;
-}): string {
-  return [
-    `Vereinbart von ${input.assistantName} über das Lead-Cockpit.`,
-    input.hunterName ? `Hunter: ${input.hunterName}` : null,
-    input.contactName ? `Ansprechpartner: ${input.contactName}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
 /** Jüngster Eintrag je Lead */
 export function latestAppointmentByLead(
   appointments: readonly Appointment[],

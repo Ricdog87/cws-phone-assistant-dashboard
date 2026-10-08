@@ -1,19 +1,13 @@
 import { formatInt, formatOne } from '@/components/format';
+import { hunterByName } from '@/data/hunters';
 import type { HunterRow } from '@/domain/hunterBoard';
-
-const NAMED_ASSISTANTS = 3;
-
-function assistantsLabel(assistants: readonly string[]): string {
-  if (assistants.length === 0) return 'Telefonassistenz nicht zugeordnet';
-  const named = assistants.slice(0, NAMED_ASSISTANTS).join(', ');
-  const rest = assistants.length - NAMED_ASSISTANTS;
-  const count = `${assistants.length} ${assistants.length === 1 ? 'Telefonassistenz' : 'Telefonassistenzen'}`;
-  return rest > 0 ? `${count}: ${named} und ${rest} weitere` : `${count}: ${named}`;
-}
 
 interface HunterTableProps {
   rows: readonly HunterRow[];
 }
+
+const HEAD = 'px-4 py-2.5 text-right font-normal';
+const CELL = 'px-4 py-2.5 text-right tabular-nums';
 
 /**
  * Potenzialliste je Hunter, wie der Accountbericht in Salesforce, ergänzt um
@@ -22,68 +16,65 @@ interface HunterTableProps {
 export function HunterTable({ rows }: HunterTableProps) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-lg border border-border bg-panel p-4 text-sm text-muted">
-        Keine Accounts mit Accountinhaber geladen.
-      </p>
+      <p className="px-4 py-6 text-sm text-muted">Keine Accounts mit Accountinhaber geladen.</p>
     );
   }
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-panel">
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[860px] text-left text-sm">
         <thead className="border-b border-border text-xs text-muted">
           <tr>
-            <th scope="col" className="px-4 py-3 font-normal">
-              Hunter
+            <th scope="col" className="px-4 py-2.5 font-normal">
+              Hunter und Gebiet
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
+            <th scope="col" className={HEAD}>
+              Telefon&shy;assistenzen
+            </th>
+            <th scope="col" className={HEAD}>
               Accounts
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
+            <th scope="col" className={HEAD}>
               Band A
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
-              Noch nie kontaktiert
+            <th scope="col" className={HEAD}>
+              Nie kontaktiert
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
+            <th scope="col" className={HEAD}>
               In Sperrfrist
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
-              Anrufe diese Woche
+            <th scope="col" className={HEAD}>
+              Anrufe Woche
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
-              Termine diese Woche
+            <th scope="col" className={HEAD}>
+              Termine Woche
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-normal">
-              Termine je 100 Anrufe
+            <th scope="col" className={HEAD}>
+              Je 100 Anrufe
             </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {rows.map((row) => (
-            <tr key={row.hunter}>
-              <th scope="row" className="px-4 py-3 text-left font-normal">
-                <span className="block font-bold">{row.hunter}</span>
-                <span className="block text-xs text-muted" title={row.assistants.join(', ')}>
-                  {assistantsLabel(row.assistants)}
-                </span>
-              </th>
-              <td className="px-4 py-3 text-right tabular-nums">{formatInt(row.accounts)}</td>
-              <td className="px-4 py-3 text-right font-bold tabular-nums">
-                {formatInt(row.aAccounts)}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums">{formatInt(row.neverContacted)}</td>
-              <td className="px-4 py-3 text-right tabular-nums text-muted">
-                {formatInt(row.inCooldown)}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums">{formatInt(row.weekCalls)}</td>
-              <td className="px-4 py-3 text-right font-bold tabular-nums">
-                {formatInt(row.weekAppointments)}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums">
-                {formatOne(row.appointmentsPer100)}
-              </td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const area = hunterByName(row.hunter)?.area;
+            return (
+              <tr key={row.hunter} className="hover:bg-surface">
+                <th scope="row" className="px-4 py-2.5 text-left font-normal">
+                  <span className="block font-bold">{row.hunter}</span>
+                  {area && <span className="block text-xs text-muted">{area}</span>}
+                </th>
+                <td className={CELL} title={row.assistants.join(', ') || undefined}>
+                  {formatInt(row.assistants.length)}
+                </td>
+                <td className={CELL}>{formatInt(row.accounts)}</td>
+                <td className={CELL}>{formatInt(row.aAccounts)}</td>
+                <td className={CELL}>{formatInt(row.neverContacted)}</td>
+                <td className={`${CELL} text-muted`}>{formatInt(row.inCooldown)}</td>
+                <td className={CELL}>{formatInt(row.weekCalls)}</td>
+                <td className={`${CELL} font-bold`}>{formatInt(row.weekAppointments)}</td>
+                <td className={CELL}>{formatOne(row.appointmentsPer100)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

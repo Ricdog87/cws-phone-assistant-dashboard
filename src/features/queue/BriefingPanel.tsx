@@ -51,12 +51,7 @@ export function BriefingPanel({ entry, latest, callerName }: BriefingPanelProps)
       </header>
 
       {latest?.outcome === 'appointment' && (
-        <SalesforceBooking
-          key={`termin-${lead.id}`}
-          lead={lead}
-          callerName={callerName}
-          salesforceUrl={salesforceUrl}
-        />
+        <SalesforceBooking key={`termin-${lead.id}`} lead={lead} salesforceUrl={salesforceUrl} />
       )}
       {recall && <RecallTask key={`wv-${recall.id}`} recall={recall} />}
 

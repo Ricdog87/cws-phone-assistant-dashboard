@@ -1,32 +1,19 @@
-import { LINK_PRIMARY as PRIMARY, LINK_SECONDARY as SECONDARY } from '@/components/linkStyles';
-import { salesforceObjectOf } from '@/domain/salesforce';
+import { LINK_PRIMARY, LINK_SECONDARY } from '@/components/linkStyles';
 import type { Lead } from '@/domain/types';
 import { useEventBooking } from './useEventBooking';
 
 interface SalesforceBookingProps {
   lead: Lead;
-  /** Name der Telefonassistenz für die Beschreibung des Termins */
-  callerName: string;
   /** Salesforce-Oberfläche, null, wenn nicht hinterlegt */
   salesforceUrl: string | null;
 }
 
 /**
- * Terminvergabe direkt in Salesforce: ein Klick öffnet das Formular „Neuer Termin“ mit
- * Betreff und Bezug zum Account. Datum, Uhrzeit und Einladung entstehen in Salesforce.
+ * Termin im Salesforce-Kalender: „Termin vereinbaren“ öffnet die Wochenansicht, dort
+ * entstehen Datum, Uhrzeit, Hunter und Einladung. Hier lässt sich der Kalender erneut öffnen.
  */
-export function SalesforceBooking({ lead, callerName, salesforceUrl }: SalesforceBookingProps) {
-  const { eventHref, calendarHref, recordHref, saved, markOpened } = useEventBooking(
-    lead,
-    callerName,
-    salesforceUrl,
-  );
-  const linked = salesforceObjectOf(lead.id) !== null;
-  const links =
-    eventHref && calendarHref
-      ? { event: eventHref, calendar: calendarHref, record: recordHref }
-      : null;
-
+export function SalesforceBooking({ lead, salesforceUrl }: SalesforceBookingProps) {
+  const { calendarHref, recordHref, saved, markOpened } = useEventBooking(lead, salesforceUrl);
   const opened = saved?.salesforceOpenedAt;
 
   return (
@@ -36,7 +23,7 @@ export function SalesforceBooking({ lead, callerName, salesforceUrl }: Salesforc
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-xs font-bold uppercase tracking-wide text-muted">
-          Termin in Salesforce eintragen
+          Termin im Salesforce-Kalender
         </h3>
         <span
           className={`rounded border px-2 py-0.5 text-xs font-bold ${
@@ -48,27 +35,28 @@ export function SalesforceBooking({ lead, callerName, salesforceUrl }: Salesforc
       </div>
 
       <p className="mt-2 text-sm">
-        Datum, Uhrzeit und Einladung legst du direkt im Salesforce-Kalender an. Betreff
-        {linked ? ' und Account sind' : ' ist'} vorausgefüllt
+        Datum, Uhrzeit und Einladung trägst du im Salesforce-Kalender ein
         {lead.owner ? `, Hunter: ${lead.owner}` : ''}.
       </p>
 
-      {links ? (
+      {calendarHref ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <a
-            href={links.event}
+            href={calendarHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={markOpened}
-            className={PRIMARY}
+            className={opened ? LINK_SECONDARY : LINK_PRIMARY}
           >
-            Termin in Salesforce anlegen
-          </a>
-          <a href={links.calendar} target="_blank" rel="noopener noreferrer" className={SECONDARY}>
             Salesforce-Kalender öffnen
           </a>
-          {links.record && (
-            <a href={links.record} target="_blank" rel="noopener noreferrer" className={SECONDARY}>
+          {recordHref && (
+            <a
+              href={recordHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={LINK_SECONDARY}
+            >
               Account in Salesforce öffnen
             </a>
           )}
@@ -81,12 +69,7 @@ export function SalesforceBooking({ lead, callerName, salesforceUrl }: Salesforc
 
       {opened && (
         <p className="mt-2 text-xs text-muted">
-          Salesforce geöffnet am {new Date(opened).toLocaleString('de-DE')}
-        </p>
-      )}
-      {links && !linked && (
-        <p className="mt-2 text-xs text-muted">
-          Demo-Daten haben keine Salesforce-ID. Den Account im Formular unter „Bezug zu“ wählen.
+          Salesforce-Kalender geöffnet am {new Date(opened).toLocaleString('de-DE')}
         </p>
       )}
     </section>

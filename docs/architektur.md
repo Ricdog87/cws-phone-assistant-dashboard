@@ -40,6 +40,16 @@ Termine, Wiedervorlagen, Dashboard und Karte, Teamleitung und Head of Sales Dash
 Karte und die Einstellungen (Scoring, Daten). `setTab` im Store und `allowedTab()` lassen
 andere Reiter nicht zu.
 
+### Führungsansichten
+
+Teamleitung und Head of Sales bauen auf `features/dashboard/BoardSections.tsx` auf: oben
+die Kennzahl-Kacheln, darunter ein Bereich mit drei Ansichten statt vieler Blöcke
+untereinander. Team (Rang, Person, Hunter, Termine mit Balken, Anrufe, Status; Klick
+öffnet rechts `MemberDetail` mit Werdegang und Hunter-Zuordnung, sonst die größten
+Lücken), Hunter (`HunterTable`, Gebiet und Zahl der Telefonassistenzen) und Termine
+(`TeamAppointmentsTable` mit Filter nach Status in Salesforce). Die Kacheln filtern die
+Team-Ansicht, „Noch nicht in Salesforce“ springt zu den offenen Terminen.
+
 ### Termine und Wiedervorlagen
 
 - Die Ergebnisleiste (`features/queue/OutcomeBar.tsx`) steht fest unter dem Briefing,
@@ -71,10 +81,10 @@ andere Reiter nicht zu.
 5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen. Im
    Gespräch erfasste Kontakte liegen als `ContactUpdate` über das `ContactRepository`
    ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce. Termine
-   entstehen direkt in Salesforce: `src/domain/salesforce.ts` baut den Link auf das
-   Formular „Neuer Termin“ (Betreff, Beschreibung, WhatId für Accounts, WhoId für Leads),
-   den Kalender und den Datensatz. Das `AppointmentRepository` hält nur, wann für einen
-   gebuchten Termin Salesforce geöffnet wurde.
+   entstehen direkt in Salesforce: „Termin vereinbaren“ öffnet den Kalender in der
+   Wochenansicht ab heute (`calendarUrl()` in `src/domain/salesforce.ts`), dazu gibt es
+   Links auf den Datensatz und die Aufgabe zur Wiedervorlage. Das `AppointmentRepository`
+   hält nur, wann für einen gebuchten Termin Salesforce geöffnet wurde.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
    Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
    0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine

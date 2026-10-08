@@ -1,4 +1,5 @@
 import type { MouseEvent } from 'react';
+import type { MemberStanding } from '@/domain/standings';
 import { userInitials } from '@/app/demoUser';
 import { formatInt } from '@/components/format';
 import { LiveTag, ThinBar } from './AssistantBrick';
@@ -13,20 +14,23 @@ interface LeaderboardTableProps {
   detailId: string;
   cardRef(key: string): (element: HTMLButtonElement | null) => void;
   onToggle(key: string): void;
+  /** Hunter, für den die Person arbeitet; ohne Angabe keine Spalte */
+  hunterOf?(member: MemberStanding): string | null;
   compact?: boolean;
 }
 
-function GoalCell({ value, goal }: { value: number; goal: number }) {
+/** Wert gegen Ziel; mit Balken nur für die Hauptkennzahl, damit die Tabelle ruhig bleibt */
+function GoalCell({ value, goal, bar = false }: { value: number; goal: number; bar?: boolean }) {
   const reached = value >= goal;
   return (
-    <div className="w-28">
-      <p className="tabular-nums leading-none">
+    <div className={bar ? 'w-28' : undefined}>
+      <p className="whitespace-nowrap tabular-nums leading-none">
         <span className={`font-bold ${reached ? 'text-brand-ink' : 'text-brand-primary'}`}>
           {formatInt(value)}
         </span>
         <span className="text-xs text-muted"> / {formatInt(goal)}</span>
       </p>
-      <ThinBar value={value} goal={goal} reached={reached} track="bg-border" />
+      {bar && <ThinBar value={value} goal={goal} reached={reached} track="bg-border" />}
     </div>
   );
 }
@@ -39,13 +43,14 @@ export function LeaderboardTable({
   detailId,
   cardRef,
   onToggle,
+  hunterOf,
   compact = false,
 }: LeaderboardTableProps) {
-  const cell = compact ? 'px-3 py-2' : 'px-4 py-3';
+  const cell = compact ? 'px-3 py-2' : 'px-4 py-2.5';
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-panel">
-      <table className="w-full min-w-[640px] text-left text-sm">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-border text-xs text-muted">
           <tr>
             <th scope="col" className={`${cell} w-12 font-normal`}>
@@ -54,6 +59,11 @@ export function LeaderboardTable({
             <th scope="col" className={`${cell} font-normal`}>
               Person
             </th>
+            {hunterOf && (
+              <th scope="col" className={`${cell} font-normal`}>
+                Hunter
+              </th>
+            )}
             <th scope="col" className={`${cell} font-normal`}>
               Termine diese Woche
             </th>
@@ -113,8 +123,17 @@ export function LeaderboardTable({
                     {member.live && <LiveTag />}
                   </button>
                 </td>
+                {hunterOf && (
+                  <td className={`${cell} whitespace-nowrap text-muted`}>
+                    {hunterOf(member) ?? 'nicht zugeordnet'}
+                  </td>
+                )}
                 <td className={cell}>
-                  <GoalCell value={member.weekAppointments} goal={member.weeklyAppointmentGoal} />
+                  <GoalCell
+                    value={member.weekAppointments}
+                    goal={member.weeklyAppointmentGoal}
+                    bar
+                  />
                 </td>
                 <td className={cell}>
                   <GoalCell value={member.dayCalls} goal={member.dailyCallGoal} />

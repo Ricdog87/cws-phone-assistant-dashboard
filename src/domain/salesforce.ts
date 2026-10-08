@@ -1,7 +1,7 @@
 /**
- * Links in die Salesforce-Oberfläche (Lightning). Die Terminvergabe passiert direkt in
- * Salesforce, ebenso die Aufgabe zur Wiedervorlage; das Cockpit öffnet nur das passende
- * Formular. Keine Zugangsdaten, keine API.
+ * Links in die Salesforce-Oberfläche (Lightning). Die Terminvergabe passiert direkt im
+ * Salesforce-Kalender, die Wiedervorlage als Aufgabe; das Cockpit öffnet nur die passende
+ * Seite. Keine Zugangsdaten, keine API.
  */
 
 export type SalesforceObject = 'Account' | 'Lead' | 'Contact';
@@ -37,10 +37,12 @@ export function normalizeSalesforceUrl(raw: string | null | undefined): string |
   }
 }
 
-export interface EventDefaults {
+export interface TaskDefaults {
   subject: string;
   /** Salesforce-ID des Accounts oder Leads, bei Demo-Daten null */
   recordId: string | null;
+  /** Fälligkeitsdatum YYYY-MM-DD */
+  dueDate: string;
   description?: string;
 }
 
@@ -54,18 +56,6 @@ function defaultFieldValues(fields: [string, string][], recordId: string | null)
   return [...(subject ? [subject] : []), ...related, ...rest]
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join(',');
-}
-
-/** Formular „Neuer Termin“ mit vorausgefüllten Feldern */
-export function newEventUrl(baseUrl: string, defaults: EventDefaults): string {
-  const fields: [string, string][] = [['Subject', defaults.subject]];
-  if (defaults.description) fields.push(['Description', defaults.description]);
-  return `${baseUrl}/lightning/o/Event/new?defaultFieldValues=${defaultFieldValues(fields, defaults.recordId)}`;
-}
-
-export interface TaskDefaults extends EventDefaults {
-  /** Fälligkeitsdatum YYYY-MM-DD */
-  dueDate: string;
 }
 
 /** Formular „Neue Aufgabe“ für die Wiedervorlage, mit Fälligkeitsdatum (ActivityDate) */
@@ -83,9 +73,12 @@ export function tasksUrl(baseUrl: string): string {
   return `${baseUrl}/lightning/o/Task/home`;
 }
 
-/** Kalender in Salesforce */
-export function calendarUrl(baseUrl: string): string {
-  return `${baseUrl}/lightning/o/Event/home`;
+/**
+ * Salesforce-Kalender in der Wochenansicht ab startDate (YYYY-MM-DD). Dort trägt die
+ * Telefonassistenz den vereinbarten Termin mit Datum, Uhrzeit und Hunter ein.
+ */
+export function calendarUrl(baseUrl: string, startDate: string): string {
+  return `${baseUrl}/lightning/o/Event/home?startDate=${startDate}&view=week`;
 }
 
 /** Datensatz in Salesforce oder null, wenn die ID keine Salesforce-ID ist */

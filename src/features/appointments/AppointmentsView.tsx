@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useGoalProgress, useQueue } from '@/app/selectors';
-import { salesforceUrl } from '@/app/services';
 import { useAppStore } from '@/app/store';
 import { Button } from '@/components/Button';
 import { formatInt } from '@/components/format';
@@ -10,10 +9,9 @@ import { StatTile } from '@/components/StatTile';
 import { demoEarlierAppointments } from '@/data/demoAppointments';
 import { TEAM_APPOINTMENT_STATUS_LABELS, type TeamAppointment } from '@/domain/appointments';
 import { localWeekRange } from '@/domain/goals';
-import { calendarUrl } from '@/domain/salesforce';
 import type { Lead } from '@/domain/types';
 import { useLiveAppointments } from '@/features/dashboard/useRegionBoard';
-import { useEventBooking } from '@/features/queue/useEventBooking';
+import { salesforceCalendarHref, useEventBooking } from '@/features/queue/useEventBooking';
 
 function formatBooked(iso: string): string {
   return new Date(iso).toLocaleString('de-DE', {
@@ -52,6 +50,7 @@ export function AppointmentsView() {
   }, [live, from, sourceId, owner, agentName, leads]);
   const open = live.filter((row) => row.status === 'open').length;
   const goal = goals.weeklyAppointmentGoal;
+  const calendarHref = salesforceCalendarHref();
 
   function openInQueue(leadId: string) {
     selectLead(leadId);
@@ -65,7 +64,6 @@ export function AppointmentsView() {
           key={row.id}
           row={row}
           lead={row.leadId ? leadById.get(row.leadId) : undefined}
-          callerName={agentName}
           canOpen={row.leadId !== null && inQueue.has(row.leadId)}
           onOpen={() => row.leadId && openInQueue(row.leadId)}
         />
@@ -84,9 +82,9 @@ export function AppointmentsView() {
               Salesforce-Kalender an.
             </p>
           </div>
-          {salesforceUrl && (
+          {calendarHref && (
             <a
-              href={calendarUrl(salesforceUrl)}
+              href={calendarHref}
               target="_blank"
               rel="noopener noreferrer"
               className={LINK_SECONDARY}
@@ -133,12 +131,11 @@ export function AppointmentsView() {
 interface AppointmentRowProps {
   row: TeamAppointment;
   lead: Lead | undefined;
-  callerName: string;
   canOpen: boolean;
   onOpen(): void;
 }
 
-function AppointmentRow({ row, lead, callerName, canOpen, onOpen }: AppointmentRowProps) {
+function AppointmentRow({ row, lead, canOpen, onOpen }: AppointmentRowProps) {
   return (
     <li className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-[9rem_1fr_auto] sm:items-center">
       <div className="text-xs tabular-nums text-muted">gebucht {formatBooked(row.bookedAt)}</div>
@@ -156,7 +153,7 @@ function AppointmentRow({ row, lead, callerName, canOpen, onOpen }: AppointmentR
         >
           {TEAM_APPOINTMENT_STATUS_LABELS[row.status]}
         </span>
-        {lead && row.status === 'open' && <EventLink lead={lead} callerName={callerName} />}
+        {lead && row.status === 'open' && <EventLink lead={lead} />}
         {row.live && (
           <Button onClick={onOpen} disabled={!canOpen}>
             Im Briefing öffnen
@@ -167,18 +164,18 @@ function AppointmentRow({ row, lead, callerName, canOpen, onOpen }: AppointmentR
   );
 }
 
-function EventLink({ lead, callerName }: { lead: Lead; callerName: string }) {
-  const { eventHref, markOpened } = useEventBooking(lead, callerName);
-  if (!eventHref) return null;
+function EventLink({ lead }: { lead: Lead }) {
+  const { calendarHref, markOpened } = useEventBooking(lead);
+  if (!calendarHref) return null;
   return (
     <a
-      href={eventHref}
+      href={calendarHref}
       target="_blank"
       rel="noopener noreferrer"
       onClick={markOpened}
       className={LINK_PRIMARY}
     >
-      Termin in Salesforce anlegen
+      Im Kalender eintragen
     </a>
   );
 }

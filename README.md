@@ -7,7 +7,8 @@ Arbeitsoberfläche für die Telefonassistenz im New Business der CWS Workwear.
 - erfasst das Anrufergebnis per Klick oder Taste und speichert es lokal
 - arbeitet die Potenzialliste je Hunter (Accountinhaber) ab, mit letzter Aktivität
 - öffnet für den Termin per Klick das Salesforce-Formular, die Terminvergabe passiert in Salesforce
-- zeigt der Teamleitung Potenzial je Hunter, Termine in Salesforce und den Werdegang je Person
+- zeigt der Teamleitung Team, Hunter und Termine in Salesforce übersichtlich in einem Bereich,
+  mit Werdegang je Person
 - wertet die Terminquote nach Band und gegen eine Kontrollstichprobe aus
 
 Die erfassten Ergebnisse sind die Trainingsdaten für ein späteres Modell.
@@ -66,14 +67,14 @@ Wiedervorlage ist erledigt, sobald zum Account ein neues Ergebnis erfasst ist. �
 Salesforce anlegen“ öffnet das Formular „Neue Aufgabe“ mit Betreff, Fälligkeitsdatum und
 Notiz.
 
-Die Terminvergabe passiert direkt in Salesforce. Nach „Termin vereinbart“ erinnert ein
-Hinweis daran, den Termin einzutragen. „Termin in Salesforce anlegen“ öffnet in einem neuen
-Tab das Salesforce-Formular „Neuer Termin“ mit Betreff, Beschreibung und, bei echten
-Salesforce-IDs, dem Bezug zum Account oder Lead. Datum, Uhrzeit, Hunter und Einladung legt
-die Telefonassistenz dort im Kalender fest. Das Cockpit merkt sich nur, dass Salesforce
-geöffnet wurde; die Teamleitung sieht so, welche Termine noch nicht eingetragen sind. Die
-Adresse der Salesforce-Oberfläche steht in `VITE_SALESFORCE_URL` (siehe `.env.example`,
-in Vercel unter Environment Variables).
+Die Terminvergabe passiert direkt in Salesforce. „Termin vereinbaren“ (Taste 1) öffnet in
+einem neuen Tab den Salesforce-Kalender in der Wochenansicht ab heute
+(`/lightning/o/Event/home?startDate=…&view=week`). Dort trägt die Telefonassistenz Datum,
+Uhrzeit, Hunter und Einladung ein. Das Cockpit erfasst das Ergebnis „Termin vereinbart“ und
+merkt sich, dass der Kalender geöffnet wurde; der Reiter Termine und die Teamleitung sehen
+den Status. Standard ist `https://cws-workwear.lightning.force.com`; eine andere Adresse,
+etwa eine Sandbox, steht in `VITE_SALESFORCE_URL` (siehe `.env.example`, in Vercel unter
+Environment Variables).
 
 Im Gespräch gewonnene Kontaktdaten (Name, Funktion, Durchwahl, E-Mail) werden im Briefing
 unter „Neu erfasster Kontakt“ gespeichert. Das Dashboard exportiert sie als eigene CSV mit
@@ -92,11 +93,11 @@ Die App startet mit einer simulierten Anmeldung per Single Sign-on. Es werden ke
 Zugangsdaten abgefragt. Nach „Mit Firmenkonto anmelden (SSO)“ wird ein Konto gewählt,
 die Rolle bestimmt die Ansicht:
 
-| Konto            | Rolle                      | Ansicht                                              |
-| ---------------- | -------------------------- | ---------------------------------------------------- |
-| Nele Faber       | Telefonassistenz           | Anrufliste, Termine, Wiedervorlagen                  |
-| Martina Weidmann | Teamleitung                | Team Nord: Hunter, Termine, Rangliste, Einstellungen |
-| Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW      |
+| Konto            | Rolle                      | Ansicht                                         |
+| ---------------- | -------------------------- | ----------------------------------------------- |
+| Nele Faber       | Telefonassistenz           | Anrufliste, Termine, Wiedervorlagen             |
+| Martina Weidmann | Teamleitung                | Team Nord: Team, Hunter, Termine, Einstellungen |
+| Steffen Sixthor  | Head of Sales New Business | Vertriebsgebiet Nordwest: Regionen Nord und NRW |
 
 Rollenwechsel über „Abmelden“ oben rechts. Die Anmeldung gilt je Browser-Tab und bleibt
 beim Neuladen bestehen.
@@ -108,14 +109,16 @@ beim Neuladen bestehen.
 3. Abmelden, als Nele Faber anmelden: Die Anrufliste startet mit der Leadliste ihres
    Hunters (Auswahl „Hunter“), sortiert nach Score, mit letzter Aktivität; Accounts mit
    Aktivität in den letzten 14 Tagen sind gesperrt, Briefing mit Aufhängern und persönlichem
-   Einstiegssatz. Taste 1 bucht einen Termin, „Jetzt eintragen“ und „Termin in Salesforce
-   anlegen“ öffnen den neuen Termin in Salesforce. Taste 2 plant eine Wiedervorlage mit
+   Einstiegssatz. „Termin vereinbaren“ (Taste 1) öffnet den Salesforce-Kalender in der
+   Wochenansicht und erfasst den Termin. Taste 2 plant eine Wiedervorlage mit
    Datum. Die Reiter Termine und Wiedervorlagen zeigen den Stand, mit Demo-Daten auch
    Termine der Vorwochen und Wiedervorlagen aus früheren Anrufen.
-4. Abmelden, als Martina Weidmann anmelden: Potenzialliste je Hunter, Termine in Salesforce
-   mit dem Termin von Nele Faber (markiert als „erfasst“). Klick auf eine Person zeigt den
-   Werdegang und das Auswahlfeld „Arbeitet für Hunter“; nach einer Umstellung startet Nele
-   Faber mit der Leadliste des neuen Hunters.
+4. Abmelden, als Martina Weidmann anmelden: oben vier Kennzahlen (Termine der Woche,
+   Anrufe heute, im Wochenziel, noch nicht in Salesforce), darunter ein Bereich mit den
+   Ansichten Team, Hunter und Termine. Team zeigt je Person Hunter, Termine und Anrufe; ein
+   Klick öffnet rechts Werdegang und das Auswahlfeld „Arbeitet für Hunter“. Termine zeigt
+   den Termin von Nele Faber (markiert als „erfasst“) mit Status in Salesforce. Die Kachel
+   „Noch nicht in Salesforce“ springt direkt zu den offenen Terminen.
 5. Als Steffen Sixthor: dieselben Bausteine je Region, dazu der Regionsvergleich.
 
 Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link
