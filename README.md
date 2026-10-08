@@ -40,7 +40,7 @@ Kein Backend, keine API-Schlüssel. Die Kartenkacheln kommen von OpenStreetMap.
 | Reiter         | Inhalt                                                                          | Rollen                     |
 | -------------- | ------------------------------------------------------------------------------- | -------------------------- |
 | Anrufliste     | Warteschlange links, Briefing rechts, Ergebnisleiste unten mit Taste 1 bis 4    | Telefonassistenz           |
-| Termine        | Eigene Termine der Woche mit Status in Salesforce, dazu die Vorwochen           | Telefonassistenz           |
+| Termine        | Öffnet den Salesforce-Kalender in der Wochenansicht ab heute, neuer Tab         | Telefonassistenz           |
 | Wiedervorlagen | Rückrufe und Vertragsenden nach Fälligkeit, Anrufen mit einem Klick             | Telefonassistenz           |
 | Dashboard      | Je Rolle: eigene Ziele, Team oder Vertriebsgebiet                               | alle                       |
 | Karte          | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat | alle                       |
@@ -71,8 +71,9 @@ Die Terminvergabe passiert direkt in Salesforce. „Termin vereinbaren“ (Taste
 einem neuen Tab den Salesforce-Kalender in der Wochenansicht ab heute
 (`/lightning/o/Event/home?startDate=…&view=week`). Dort trägt die Telefonassistenz Datum,
 Uhrzeit, Hunter und Einladung ein. Das Cockpit erfasst das Ergebnis „Termin vereinbart“ und
-merkt sich, dass der Kalender geöffnet wurde; der Reiter Termine und die Teamleitung sehen
-den Status. Standard ist `https://cws-workwear.lightning.force.com`; eine andere Adresse,
+merkt sich, dass der Kalender geöffnet wurde; die Teamleitung sieht den Status. Der
+Eintrag „Termine“ in der Navigation öffnet denselben Kalender, eine eigene Terminseite im
+Cockpit gibt es nicht. Standard ist `https://cws-workwear.lightning.force.com`; eine andere Adresse,
 etwa eine Sandbox, steht in `VITE_SALESFORCE_URL` (siehe `.env.example`, in Vercel unter
 Environment Variables).
 
@@ -111,8 +112,8 @@ beim Neuladen bestehen.
    Aktivität in den letzten 14 Tagen sind gesperrt, Briefing mit Aufhängern und persönlichem
    Einstiegssatz. „Termin vereinbaren“ (Taste 1) öffnet den Salesforce-Kalender in der
    Wochenansicht und erfasst den Termin. Taste 2 plant eine Wiedervorlage mit
-   Datum. Die Reiter Termine und Wiedervorlagen zeigen den Stand, mit Demo-Daten auch
-   Termine der Vorwochen und Wiedervorlagen aus früheren Anrufen.
+   Datum. „Termine“ in der Navigation öffnet den Salesforce-Kalender, der Reiter
+   Wiedervorlagen zeigt mit Demo-Daten auch Wiedervorlagen aus früheren Anrufen.
 4. Abmelden, als Martina Weidmann anmelden: oben vier Kennzahlen (Termine der Woche,
    Anrufe heute, im Wochenziel, noch nicht in Salesforce), darunter ein Bereich mit den
    Ansichten Team, Hunter und Termine. Team zeigt je Person Hunter, Termine und Anrufe; ein

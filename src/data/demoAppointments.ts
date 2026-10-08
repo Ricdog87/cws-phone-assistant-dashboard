@@ -2,7 +2,6 @@ import type { TeamAppointment } from '@/domain/appointments';
 import type { MemberActivity } from '@/domain/standings';
 import type { Lead } from '@/domain/types';
 import { demoAssignment } from './demoAssignments';
-import { demoPastWeek } from './demoHistory';
 import { demoRecalls } from './demoRecalls';
 import { withDemoOwnership } from './demoOwnership';
 import { DEMO_REGIONS, LIVE_ASSISTANT_ID } from './demoTeam';
@@ -33,8 +32,8 @@ function demoBookedAt(today: Date, seed: number): string {
 
 /**
  * Fiktive Termine der Demo-Personen einer Region: so viele, wie sie diese Woche
- * vereinbart haben, bei Firmen ihres Hunters, je Firma höchstens einer. Firmen mit Termin
- * oder Wiedervorlage der Live-Assistenz bleiben frei. Etwa jeder vierte ist noch nicht in
+ * vereinbart haben, bei Firmen ihres Hunters, je Firma höchstens einer. Firmen mit
+ * Wiedervorlage der Live-Assistenz bleiben frei. Etwa jeder vierte ist noch nicht in
  * Salesforce eingetragen.
  */
 export function demoTeamAppointments(
@@ -54,10 +53,6 @@ export function demoTeamAppointments(
   const liveHunter = assignments[LIVE_ASSISTANT_ID] ?? fallback.get(LIVE_ASSISTANT_ID);
   if (liveHunter) {
     for (const recall of demoRecalls(leads, liveHunter, today)) used.add(recall.leadId);
-    for (const row of demoEarlierAppointments(leads, liveHunter, '', today)) {
-      const lead = leads.find((item) => item.name === row.leadName);
-      if (lead) used.add(lead.id);
-    }
   }
   const rows: TeamAppointment[] = [];
   for (const member of members) {
@@ -95,60 +90,4 @@ function firstUnused(
     if (lead && !used.has(lead.id)) return lead;
   }
   return undefined;
-}
-
-/**
- * Fiktive Termine der Live-Assistenz aus den Vorwochen, so viele wie ihr Werdegang zeigt,
- * je Firma höchstens einer und nie bei Firmen mit offener Demo-Wiedervorlage. Alle sind in
- * Salesforce eingetragen; die laufende Woche kommt aus den erfassten Anrufen.
- */
-export function demoEarlierAppointments(
-  leads: readonly Lead[],
-  owner: string,
-  assistantName: string,
-  today: Date = new Date(),
-  weeks = 2,
-): TeamAppointment[] {
-  const recallLeads = new Set(demoRecalls(leads, owner, today).map((recall) => recall.leadId));
-  const pool = leads
-    .filter((lead) => !lead.isCustomer && lead.owner === owner && !recallLeads.has(lead.id))
-    .sort((a, b) => hash(`termin-${a.id}`) - hash(`termin-${b.id}`));
-  const member = {
-    id: LIVE_ASSISTANT_ID,
-    givenName: '',
-    familyName: '',
-    dayCalls: 0,
-    weekCalls: 0,
-    weekAppointments: 0,
-    live: true,
-  };
-  const weekday = today.getDay() === 0 ? 7 : today.getDay();
-  const rows: TeamAppointment[] = [];
-  for (let back = 1; back <= weeks; back++) {
-    const { appointments } = demoPastWeek(member, today, back);
-    const monday = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() - (weekday - 1) - back * 7,
-    );
-    for (let i = 0; i < appointments; i++) {
-      const lead = pool[rows.length];
-      if (!lead) return rows;
-      const seed = hash(`${LIVE_ASSISTANT_ID}-${back}-${i}`);
-      const booked = new Date(monday);
-      booked.setDate(monday.getDate() + (seed % 5));
-      booked.setHours(8 + (Math.floor(seed / 8) % 8), (seed >>> 4) % 60);
-      rows.push({
-        id: `demo-${LIVE_ASSISTANT_ID}-${back}-${i}`,
-        leadId: null,
-        leadName: lead.name,
-        bookedAt: booked.toISOString(),
-        hunterName: owner,
-        assistantName,
-        status: 'entered',
-        live: false,
-      });
-    }
-  }
-  return rows;
 }

@@ -8,11 +8,21 @@ export interface TabDefinition {
   roles: readonly ViewLevel[];
 }
 
+/** Eintrag der Navigation, der keine Ansicht im Cockpit hat, sondern Salesforce öffnet */
+export interface NavLinkDefinition {
+  link: 'salesforceCalendar';
+  label: string;
+  roles: readonly ViewLevel[];
+}
+
+export type NavItem = TabDefinition | NavLinkDefinition;
+
 const LEADERSHIP: readonly ViewLevel[] = ['teamLead', 'director'];
 
-export const TABS: readonly TabDefinition[] = [
+/** Navigation in Anzeigereihenfolge; „Termine“ öffnet den Salesforce-Kalender */
+export const NAV: readonly NavItem[] = [
   { id: 'queue', label: 'Anrufliste', roles: ['assistant'] },
-  { id: 'appointments', label: 'Termine', roles: ['assistant'] },
+  { link: 'salesforceCalendar', label: 'Termine', roles: ['assistant'] },
   { id: 'recalls', label: 'Wiedervorlagen', roles: ['assistant'] },
   { id: 'dashboard', label: 'Dashboard', roles: ['assistant', ...LEADERSHIP] },
   { id: 'map', label: 'Karte', roles: ['assistant', ...LEADERSHIP] },
@@ -20,9 +30,18 @@ export const TABS: readonly TabDefinition[] = [
   { id: 'data', label: 'Daten', roles: LEADERSHIP },
 ];
 
-/** Reiter der Rolle in Anzeigereihenfolge */
+export function isTab(item: NavItem): item is TabDefinition {
+  return 'id' in item;
+}
+
+/** Navigation der Rolle in Anzeigereihenfolge */
+export function navFor(level: ViewLevel): NavItem[] {
+  return NAV.filter((item) => item.roles.includes(level));
+}
+
+/** Reiter mit eigener Ansicht im Cockpit */
 export function tabsFor(level: ViewLevel): TabDefinition[] {
-  return TABS.filter((tab) => tab.roles.includes(level));
+  return navFor(level).filter(isTab);
 }
 
 /** Startreiter der Rolle */

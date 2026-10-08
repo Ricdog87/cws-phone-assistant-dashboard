@@ -37,8 +37,9 @@ Die Regel „domain ohne React und DOM“ ist in `eslint.config.js` abgesichert.
 
 Rechte je Rolle stehen in `src/app/tabs.ts`: Die Telefonassistenz sieht Anrufliste,
 Termine, Wiedervorlagen, Dashboard und Karte, Teamleitung und Head of Sales Dashboard,
-Karte und die Einstellungen (Scoring, Daten). `setTab` im Store und `allowedTab()` lassen
-andere Reiter nicht zu.
+Karte und die Einstellungen (Scoring, Daten). „Termine“ ist kein Reiter mit eigener
+Ansicht, sondern ein Link auf den Salesforce-Kalender in der Wochenansicht
+(`NavLinkDefinition`). `setTab` im Store und `allowedTab()` lassen andere Reiter nicht zu.
 
 ### Führungsansichten
 
@@ -63,10 +64,9 @@ Team-Ansicht, „Noch nicht in Salesforce“ springt zu den offenen Terminen.
 - Wie beim Termin entsteht die Aufgabe in Salesforce über einen Link
   (`newTaskUrl`, `/lightning/o/Task/new` mit `ActivityDate`); das Cockpit merkt sich nur,
   dass das Formular geöffnet wurde.
-- Mit Demo-Daten zeigen die Reiter zusätzlich fiktive Termine der Vorwochen
-  (`demoEarlierAppointments`, Anzahl aus dem Werdegang) und Wiedervorlagen aus früheren
-  Anrufen (`demoRecalls`). Sie überschneiden sich nicht mit den Terminen der Kolleginnen
-  und Kollegen.
+- Mit Demo-Daten zeigt der Reiter Wiedervorlagen zusätzlich fiktive Wiedervorlagen aus
+  früheren Anrufen (`demoRecalls`). Sie überschneiden sich nicht mit den Terminen der
+  Kolleginnen und Kollegen.
 
 ## Datenfluss
 

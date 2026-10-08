@@ -40,7 +40,7 @@ import { DEMO_USER, type ViewLevel } from './demoUser';
 import { allowedTab, homeTab } from './tabs';
 import { loadSession, saveSession } from './session';
 
-export type TabId = 'queue' | 'appointments' | 'recalls' | 'map' | 'dashboard' | 'scoring' | 'data';
+export type TabId = 'queue' | 'recalls' | 'map' | 'dashboard' | 'scoring' | 'data';
 
 export interface AppState {
   activeTab: TabId;

@@ -27,7 +27,7 @@ export function isoWeek(date: Date): number {
 }
 
 /** Fiktive Werte einer Vorwoche um das übliche Niveau der Person, back Wochen zurück */
-export function demoPastWeek(
+function demoPastWeek(
   member: MemberActivity,
   today: Date,
   back: number,

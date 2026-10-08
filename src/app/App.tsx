@@ -1,18 +1,17 @@
 import { useEffect, type ReactNode } from 'react';
 import { DemoNotice } from '@/components/DemoNotice';
 import { dueRecallCount } from '@/domain/recall';
-import { AppointmentsView } from '@/features/appointments/AppointmentsView';
 import { DashboardView } from '@/features/dashboard/DashboardView';
-import { useLiveAppointments } from '@/features/dashboard/useRegionBoard';
 import { DataView } from '@/features/data/DataView';
 import { MapView } from '@/features/map/MapView';
 import { QueueView } from '@/features/queue/QueueView';
+import { salesforceCalendarHref } from '@/features/queue/useEventBooking';
 import { RecallsView } from '@/features/recalls/RecallsView';
 import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { ScoringView } from '@/features/scoring/ScoringView';
 import { todayLocal } from './selectors';
 import { bootstrap, useAppStore, type TabId } from './store';
-import { allowedTab, tabsFor } from './tabs';
+import { allowedTab, isTab, navFor, tabsFor } from './tabs';
 import { UserBadge } from './UserBadge';
 import { LoginScreen } from './login/LoginScreen';
 
@@ -25,7 +24,9 @@ export function App() {
   const signedIn = useAppStore((s) => s.signedIn);
   const workplace = viewLevel === 'assistant';
   // Rechte je Rolle: Einstellungen (Scoring, Daten) nur für Teamleitung und Head of Sales
+  const nav = navFor(viewLevel);
   const tabs = tabsFor(viewLevel);
+  const calendarHref = salesforceCalendarHref();
   const activeTab = allowedTab(viewLevel, selectedTab);
   const badges = useTabBadges();
   const scope =
@@ -59,32 +60,47 @@ export function App() {
           </div>
           <UserBadge />
         </div>
-        {tabs.length > 1 && (
+        {nav.length > 1 && (
           <div className="flex items-center border-t border-border px-4 py-1.5">
-            <nav
-              role="tablist"
-              aria-label="Bereiche"
-              className="flex max-w-full gap-1 overflow-x-auto"
-            >
-              {tabs.map((tab) => {
-                const active = tab.id === activeTab;
+            <nav aria-label="Bereiche" className="flex max-w-full gap-1 overflow-x-auto">
+              {nav.map((item) => {
+                if (!isTab(item)) {
+                  // Termine liegen in Salesforce: der Eintrag öffnet den Kalender im neuen Tab
+                  if (!calendarHref) return null;
+                  return (
+                    <a
+                      key={item.label}
+                      href={calendarHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Öffnet den Salesforce-Kalender in der Wochenansicht"
+                      className={`${NAV_ITEM} text-brand-ink hover:bg-surface`}
+                    >
+                      {item.label}
+                      <span aria-hidden className="ml-1 text-xs text-muted">
+                        ↗
+                      </span>
+                      <span className="sr-only"> (Salesforce-Kalender, neuer Tab)</span>
+                    </a>
+                  );
+                }
+                const active = item.id === activeTab;
                 return (
                   <button
-                    key={tab.id}
+                    key={item.id}
                     type="button"
-                    role="tab"
-                    id={`tab-${tab.id}`}
-                    aria-selected={active}
-                    aria-controls={`panel-${tab.id}`}
-                    onClick={() => setTab(tab.id)}
-                    className={`whitespace-nowrap rounded px-2 py-1.5 text-sm sm:px-3 ${
+                    id={`tab-${item.id}`}
+                    aria-current={active ? 'page' : undefined}
+                    aria-controls={`panel-${item.id}`}
+                    onClick={() => setTab(item.id)}
+                    className={`${NAV_ITEM} ${
                       active
                         ? 'bg-brand-ink font-bold text-on-primary'
                         : 'text-brand-ink hover:bg-surface'
                     }`}
                   >
-                    {tab.label}
-                    <TabBadge count={badges[tab.id]} hint={BADGE_HINTS[tab.id]} />
+                    {item.label}
+                    <TabBadge count={badges[item.id]} hint={BADGE_HINTS[item.id]} />
                   </button>
                 );
               })}
@@ -99,11 +115,6 @@ export function App() {
         {activeTab === 'queue' && (
           <TabPanel id="queue">
             <QueueView />
-          </TabPanel>
-        )}
-        {activeTab === 'appointments' && (
-          <TabPanel id="appointments">
-            <AppointmentsView />
           </TabPanel>
         )}
         {activeTab === 'recalls' && (
@@ -137,20 +148,17 @@ export function App() {
   );
 }
 
+const NAV_ITEM = 'whitespace-nowrap rounded px-2 py-1.5 text-sm sm:px-3';
+
 const BADGE_HINTS: Partial<Record<TabId, string>> = {
-  appointments: 'noch nicht in Salesforce',
   recalls: 'fällig',
 };
 
-/** Zähler an den Reitern: Termine ohne Salesforce-Eintrag, heute fällige Wiedervorlagen */
+/** Zähler am Reiter Wiedervorlagen: heute fällige und überfällige */
 function useTabBadges(): Partial<Record<TabId, number>> {
   const recalls = useOpenRecalls();
-  const appointments = useLiveAppointments();
   const today = todayLocal();
-  return {
-    appointments: appointments.filter((row) => row.status === 'open').length,
-    recalls: dueRecallCount(recalls, today),
-  };
+  return { recalls: dueRecallCount(recalls, today) };
 }
 
 function TabBadge({ count, hint }: { count: number | undefined; hint: string | undefined }) {
@@ -181,7 +189,7 @@ function TabPanel({
 }) {
   return (
     <div
-      role="tabpanel"
+      role="region"
       id={`panel-${id}`}
       aria-labelledby={`tab-${id}`}
       hidden={hidden}
