@@ -99,3 +99,10 @@ export function normalizeProtocol(protocol: CallProtocol): CallProtocol {
     note: note ? note : null,
   };
 }
+
+/** Gleicher Inhalt nach dem Bereinigen, etwa um ungespeicherte Änderungen zu erkennen */
+export function sameProtocol(a: CallProtocol, b: CallProtocol): boolean {
+  const left = normalizeProtocol(a);
+  const right = normalizeProtocol(b);
+  return (Object.keys(left) as (keyof CallProtocol)[]).every((key) => left[key] === right[key]);
+}

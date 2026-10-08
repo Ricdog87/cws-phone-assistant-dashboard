@@ -2,10 +2,10 @@ import { OUTCOME_LABELS } from './outcomes';
 import { CONTACT_ROLE_LABELS, PROTOCOL_FLAG_LABELS, protocolFlags, solutionText } from './protocol';
 import { recallReasonText } from './recall';
 import { salesforceObjectOf } from './salesforce';
-import type { CallOutcome, ContactUpdate, Recall } from './types';
+import type { CallProtocol, ContactUpdate, OutcomeType, Recall } from './types';
 
 /**
- * Aufgabe (Task) für Salesforce. Das Cockpit legt nur Aufgaben an: das Anrufprotokoll als
+ * Aufgabe (Task) für Salesforce. Das Cockpit schreibt nur Aufgaben: das Anrufprotokoll als
  * erledigte Aufgabe „Anruf“ und die Wiedervorlage als offene Aufgabe mit Fälligkeit.
  */
 export interface SalesforceTaskInput {
@@ -34,14 +34,17 @@ export const SYNC_STATUS_LABELS: Record<SyncStatus, string> = {
   demo: 'In Salesforce (Demo)',
 };
 
-/** Eintrag im Postausgang nach Salesforce, je Anrufergebnis oder Wiedervorlage einer */
+/**
+ * Eintrag im Postausgang nach Salesforce, je Gespräch oder Wiedervorlage einer. Wird ein
+ * Eintrag geändert, aktualisiert die nächste Übertragung dieselbe Aufgabe.
+ */
 export interface SyncItem {
-  /** Gleich der ID des Ergebnisses oder der Wiedervorlage */
+  /** Gleich der ID des Gesprächs (später des Ergebnisses) oder der Wiedervorlage */
   id: string;
   task: SalesforceTaskInput;
   status: SyncStatus;
   attempts: number;
-  /** ID der angelegten Aufgabe in Salesforce */
+  /** ID der Aufgabe in Salesforce, sobald sie angelegt ist */
   salesforceId: string | null;
   updatedAt: string;
 }
@@ -72,33 +75,44 @@ function contactLines(contact: ContactUpdate | undefined): string[] {
   ].filter((line): line is string => line !== null);
 }
 
-/** Anrufprotokoll als erledigte Aufgabe „Anruf“ */
+/** Grundlage der Aufgabe „Anruf“: ein gebuchtes Ergebnis oder ein offenes Gespräch */
+export interface CallSource {
+  leadId: string;
+  leadName: string;
+  owner?: string | null;
+  protocol?: CallProtocol;
+  /** null, solange nur das Protokoll gespeichert ist */
+  outcome: OutcomeType | null;
+  recordedAt: string;
+}
+
+/** Anrufprotokoll als erledigte Aufgabe „Anruf“; das Ergebnis kommt nach, sobald es feststeht */
 export function callLogTask(
-  outcome: CallOutcome,
+  call: CallSource,
   assistantName: string,
   contact?: ContactUpdate,
 ): SalesforceTaskInput {
-  const protocol = outcome.protocol;
+  const protocol = call.protocol;
   const flags = protocolFlags(protocol).map((flag) => PROTOCOL_FLAG_LABELS[flag]);
   const lines = [
-    `Ergebnis: ${OUTCOME_LABELS[outcome.outcome]}`,
+    `Ergebnis: ${call.outcome ? OUTCOME_LABELS[call.outcome] : 'noch offen'}`,
     protocol?.contactRole ? `Gesprächspartner: ${CONTACT_ROLE_LABELS[protocol.contactRole]}` : null,
     solutionText(protocol) ? `Aktuelle Lösung: ${solutionText(protocol)}` : null,
     flags.length > 0 ? `Hinweise: ${flags.join(', ')}` : null,
     ...contactLines(contact),
     protocol?.note ? `Notiz: ${protocol.note}` : null,
-    outcome.owner ? `Hunter: ${outcome.owner}` : null,
+    call.owner ? `Hunter: ${call.owner}` : null,
     `Erfasst von ${assistantName} über das Lead-Cockpit.`,
   ].filter((line): line is string => line !== null);
   return {
     kind: 'callLog',
-    subject: `Anruf: ${outcome.leadName}`,
+    subject: `Anruf: ${call.leadName}`,
     description: lines.join('\n'),
-    activityDate: localDate(outcome.recordedAt),
+    activityDate: localDate(call.recordedAt),
     status: 'Completed',
-    callDisposition: OUTCOME_LABELS[outcome.outcome],
+    callDisposition: call.outcome ? OUTCOME_LABELS[call.outcome] : null,
     reminderAt: null,
-    ...relatedIds(outcome.leadId),
+    ...relatedIds(call.leadId),
   };
 }
 

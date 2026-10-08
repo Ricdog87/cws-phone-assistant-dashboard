@@ -43,34 +43,39 @@ export function useLiveAppointments(): TeamAppointment[] {
   }, [latest, agentName, syncStatus]);
 }
 
-/** Gespräche mit Protokoll aus diesem Browser */
+/** Gespräche mit Protokoll aus diesem Browser, gespeicherte ohne Ergebnis eingeschlossen */
 export function useLiveCalls(): TeamCall[] {
   const outcomes = useAppStore((s) => s.outcomes);
+  const openCalls = useAppStore((s) => s.openCalls);
   const leads = useAppStore((s) => s.leads);
   const agentName = useAppStore((s) => s.agentName);
   const syncStatus = useSyncStatus();
   return useMemo(() => {
     const cityOf = new Map(leads.map((lead) => [lead.id, lead.city]));
-    return outcomes.flatMap((outcome) =>
-      hasProtocolInfo(outcome.protocol)
+    const sources = [
+      ...outcomes,
+      ...openCalls.map((call) => ({ ...call, outcome: null, recordedAt: call.savedAt })),
+    ];
+    return sources.flatMap((source) =>
+      hasProtocolInfo(source.protocol)
         ? [
             {
-              id: outcome.id,
-              leadId: outcome.leadId,
-              leadName: outcome.leadName,
-              city: cityOf.get(outcome.leadId) ?? '',
-              hunterName: outcome.owner ?? 'nicht zugeordnet',
+              id: source.id,
+              leadId: source.leadId,
+              leadName: source.leadName,
+              city: cityOf.get(source.leadId) ?? '',
+              hunterName: source.owner ?? 'nicht zugeordnet',
               assistantName: agentName,
-              recordedAt: outcome.recordedAt,
-              outcome: outcome.outcome,
-              protocol: outcome.protocol,
-              status: syncStatus(outcome.id),
+              recordedAt: source.recordedAt,
+              outcome: source.outcome,
+              protocol: source.protocol,
+              status: syncStatus(source.id),
               live: true,
             },
           ]
         : [],
     );
-  }, [outcomes, leads, agentName, syncStatus]);
+  }, [outcomes, openCalls, leads, agentName, syncStatus]);
 }
 
 /**

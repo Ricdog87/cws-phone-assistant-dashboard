@@ -19,7 +19,8 @@ Zustand als Store, Dexie für IndexedDB, react-leaflet mit OpenStreetMap-Kacheln
                               └──────────────────┘
 
 IndexedDB-Tabellen (src/data/db.ts): outcomes, columnMappings, geocodeCache, contacts,
-recalls, syncItems (Postausgang nach Salesforce)
+recalls, syncItems (Postausgang nach Salesforce), openCalls (gespeicherte Protokolle ohne
+Ergebnis)
 ```
 
 ## Schichten
@@ -59,12 +60,18 @@ Live-Person aus den erfassten Anrufen.
 
 - Gesprächsprotokoll und Ergebnis stehen fest unter dem Briefing
   (`features/queue/OutcomeBar.tsx` mit `ProtocolPanel`): Gesprächspartner, Aktuelle Lösung,
-  Wettbewerber (`COMPETITORS` in `qualificationConfig.ts`), vier Häkchen, Notiz. Das
-  Protokoll (`CallProtocol`, `domain/protocol.ts`) wird mit dem Ergebnis im `CallOutcome`
-  gespeichert und beginnt bei jedem Leadwechsel leer. Nettokontakt heißt Entscheider
-  erreicht (`isNetContact`).
-- „Termin vereinbaren“ öffnet den Salesforce-Kalender in der Wochenansicht ab heute
-  (`calendarUrl()`), dort entsteht der Termin.
+  Wettbewerber (`COMPETITORS` in `qualificationConfig.ts`), vier Häkchen, Notiz.
+  Nettokontakt heißt Entscheider erreicht (`isNetContact`).
+- „Protokoll speichern“ (Strg+Enter) legt über `useSaveProtocol` ein `OpenCall` an oder
+  ersetzt es (je Lead höchstens eines, `openCallFor()` in `domain/openCalls.ts`) und stellt
+  die Aufgabe „Anruf“ mit derselben ID in den Postausgang. Ungespeicherte Eingaben hält
+  `QueueView` je Lead als Entwurf; `sameProtocol()` erkennt Änderungen.
+- Das Ergebnis (`useRecordOutcome`) übernimmt Protokoll und ID des offenen Gesprächs,
+  speichert das Protokoll im `CallOutcome` und schließt das Gespräch. So bleibt es in
+  Salesforce bei einer Aufgabe je Gespräch. Danach beginnt das Protokoll leer.
+- Termine entstehen nur in Salesforce. Der kleine Knopf „Termin gebucht“ bucht das Ergebnis
+  `appointment` allein für die Kennzahlen; das Cockpit öffnet keinen Kalender. Die Tasten 1
+  bis 3 liegen auf Wiedervorlage, Nicht erreicht und Kein Interesse (`KEYED_OUTCOMES`).
 - „Wiedervorlage“ öffnet `RecallForm`: Rückruf mit Datum und Uhrzeit oder Vertragsende,
   bei Wettbewerb vorgewählt; das Datum dazu liefert `suggestRecallDate()` aus
   `domain/recall.ts` (`CONTRACT_RECALL_MONTHS_BEFORE`, `BOOKING_LEAD_DAYS_MIN`). Die Notiz
@@ -83,13 +90,19 @@ Live-Person aus den erfassten Anrufen.
   „Anruf“ (TaskSubtype Call, CallDisposition = Ergebnis, Beschreibung mit Protokoll und
   Ansprechpartner), `recallTask()` als offene Aufgabe mit ActivityDate und Erinnerung.
   Accounts gehen in WhatId, Leads und Kontakte in WhoId; Demo-IDs bleiben ohne Bezug.
-- Der Store hält den Postausgang (`syncItems`). `flushSync()` läuft nach jedem Ergebnis und
-  beim Start, nie doppelt; mit Demo-Daten wird nur simuliert (Status `demo`).
+- Der Store hält den Postausgang (`syncItems`). `enqueueSync()` behält die Salesforce-ID
+  eines schon übertragenen Eintrags, die nächste Übertragung aktualisiert dann dieselbe
+  Aufgabe. `flushSync()` läuft nach jedem Speichern, jedem Ergebnis und beim Start, nie
+  doppelt; was sich während einer Übertragung ändert, schickt sie gleich hinterher. Mit
+  Demo-Daten wird nur simuliert (Status `demo`).
 - `app/salesforceClient.ts` ruft `/api/salesforce` auf. Die Serverfunktion
   (`api/salesforce.ts`, lokal `server/salesforceProxyPlugin.ts`) nutzt
   `server/salesforceHandler.ts`: Prüfung mit Zod (nur Standardfelder, strikte IDs), Token
-  per OAuth Client Credentials, genau ein `POST /sobjects/Task`, bei 401 einmal neu
-  anmelden, Protokoll ohne Inhalte. Ohne `SALESFORCE_SYNC_ENABLED=true` antwortet sie mit
+  per OAuth Client Credentials, dann `POST /sobjects/Task` für eine neue Aufgabe oder
+  `PATCH /sobjects/Task/{id}` für eine schon übertragene (nur IDs mit 00T, ohne
+  TaskSubtype; ist sie in Salesforce gelöscht, wird sie neu angelegt). Bei 401 einmal neu
+  anmelden, Protokoll ohne Inhalte. Auf Vercel importiert `api/salesforce.ts` den Handler
+  mit `.js`-Endung, weil Node dort ESM ohne Dateiendung nicht auflöst. Ohne `SALESFORCE_SYNC_ENABLED=true` antwortet sie mit
   503, das Cockpit zeigt „Salesforce nicht verbunden“ und versucht es später erneut.
 - Offen mit dem Salesforce-Team: Connected App und Ausführungsbenutzer, Zuordnung der
   Aufgaben zur Telefonassistenz (OwnerId), Felder am Account für Aktuelle Lösung,
@@ -109,9 +122,9 @@ Live-Person aus den erfassten Anrufen.
 5. Dashboard und Export lesen ausschließlich aus den gespeicherten Ergebnissen. Im
    Gespräch erfasste Kontakte liegen als `ContactUpdate` über das `ContactRepository`
    ebenfalls in IndexedDB und gehen mit `contactsToCsv()` zurück nach Salesforce. Termine
-   entstehen direkt im Salesforce-Kalender. Anrufprotokolle und Wiedervorlagen stellt
+   entstehen direkt in Salesforce. Anrufprotokolle stellen `useSaveProtocol` und
    `useRecordOutcome` als Aufgabe in den Postausgang (`SyncItem`, `SyncRepository`),
-   `flushSync()` im Store überträgt sie.
+   Wiedervorlagen `useRecordOutcome`; `flushSync()` im Store überträgt sie.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
    Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
    0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine

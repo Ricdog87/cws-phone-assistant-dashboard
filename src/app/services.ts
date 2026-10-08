@@ -9,6 +9,11 @@ import {
 } from '@/data/contactRepository';
 import { AppDatabase } from '@/data/db';
 import {
+  DexieOpenCallRepository,
+  InMemoryOpenCallRepository,
+  type OpenCallRepository,
+} from '@/data/openCallRepository';
+import {
   DexieRecallRepository,
   InMemoryRecallRepository,
   type RecallRepository,
@@ -18,7 +23,6 @@ import {
   InMemorySyncRepository,
   type SyncRepository,
 } from '@/data/syncRepository';
-import { normalizeSalesforceUrl } from '@/domain/salesforce';
 import { createGeocoder } from '@/data/geocoding';
 import { DexieGeocodeCache, InMemoryGeocodeCache, type GeocodeCache } from '@/data/geocoding/cache';
 import type { Geocoder } from '@/data/geocoding/types';
@@ -47,6 +51,10 @@ export const contactRepository: ContactRepository = db
 export const syncRepository: SyncRepository = db
   ? new DexieSyncRepository(db)
   : new InMemorySyncRepository();
+
+export const openCallRepository: OpenCallRepository = db
+  ? new DexieOpenCallRepository(db)
+  : new InMemoryOpenCallRepository();
 
 export const recallRepository: RecallRepository = db
   ? new DexieRecallRepository(db)
@@ -78,11 +86,3 @@ export type BriefingMode = 'rules' | 'llm';
 
 export const DEFAULT_BRIEFING_MODE: BriefingMode =
   import.meta.env.VITE_BRIEFING_MODE === 'llm' ? 'llm' : 'rules';
-
-/** Salesforce-Oberfläche der CWS, solange VITE_SALESFORCE_URL nichts anderes vorgibt */
-const DEFAULT_SALESFORCE_URL = 'https://cws-workwear.lightning.force.com';
-
-/** Salesforce-Oberfläche für Kalender, Aufgaben und Datensätze */
-export const salesforceUrl: string | null =
-  normalizeSalesforceUrl(import.meta.env.VITE_SALESFORCE_URL) ??
-  normalizeSalesforceUrl(DEFAULT_SALESFORCE_URL);

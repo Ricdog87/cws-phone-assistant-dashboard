@@ -3,8 +3,8 @@ import { DEMO_USER } from '@/app/demoUser';
 import { todayLocal, useCooldownCount, useLatestOutcomes, useQueue } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { ACTIVITY_COOLDOWN_DAYS } from '@/domain/activity';
-import { OUTCOME_TYPES } from '@/domain/outcomes';
-import { emptyProtocol } from '@/domain/protocol';
+import { openCallFor } from '@/domain/openCalls';
+import { emptyProtocol, sameProtocol } from '@/domain/protocol';
 import type { CallProtocol, OutcomeType } from '@/domain/types';
 import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { AgentLivePanel } from './AgentLivePanel';
@@ -12,8 +12,11 @@ import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { HunterSelect } from './HunterSelect';
 import { OutcomeBar } from './OutcomeBar';
-import { openSalesforceCalendar } from './salesforceCalendar';
+import { KEYED_OUTCOMES } from './outcomeKeys';
 import { useRecordOutcome, type RecallDraft } from './useRecordOutcome';
+import { useSaveProtocol } from './useSaveProtocol';
+
+const EMPTY_PROTOCOL = emptyProtocol();
 
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -26,22 +29,46 @@ export function QueueView() {
   const selectedId = useAppStore((s) => s.selectedLeadId);
   const selectLead = useAppStore((s) => s.selectLead);
   const recordOutcome = useRecordOutcome(queue);
+  const saveProtocol = useSaveProtocol();
   const syncItems = useAppStore((s) => s.syncItems);
+  const openCalls = useAppStore((s) => s.openCalls);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   // Lead, für den gerade die Wiedervorlage geplant wird
   const [planningFor, setPlanningFor] = useState<string | null>(null);
 
   const selectedIndex = queue.findIndex((e) => e.lead.id === selectedId);
   const selected = selectedIndex >= 0 ? queue[selectedIndex] : undefined;
   const planning = selected !== undefined && planningFor === selected.lead.id;
-  // Protokoll gilt für den gewählten Lead und beginnt bei jedem Wechsel leer
-  const [protocol, setProtocol] = useState<CallProtocol>(emptyProtocol);
   const selectedLeadId = selected?.lead.id;
-  useEffect(() => setProtocol(emptyProtocol()), [selectedLeadId]);
-  const latestSync = useMemo(() => {
-    const outcome = selectedLeadId ? latest.get(selectedLeadId) : undefined;
-    return outcome ? syncItems.find((item) => item.id === outcome.id)?.status : undefined;
-  }, [selectedLeadId, latest, syncItems]);
+  // Gespeichertes Protokoll des offenen Gesprächs, darüber ungespeicherte Eingaben je Lead
+  const openCall = selectedLeadId ? openCallFor(openCalls, selectedLeadId) : undefined;
+  const savedProtocol = openCall?.protocol ?? EMPTY_PROTOCOL;
+  const [drafts, setDrafts] = useState<ReadonlyMap<string, CallProtocol>>(() => new Map());
+  const protocol = (selectedLeadId ? drafts.get(selectedLeadId) : undefined) ?? savedProtocol;
+  const dirty = !sameProtocol(protocol, savedProtocol);
+  const setProtocol = useCallback(
+    (next: CallProtocol) => {
+      if (selectedLeadId) setDrafts((prev) => new Map(prev).set(selectedLeadId, next));
+    },
+    [selectedLeadId],
+  );
+  /** Entwurf verwerfen; mit expected nur, wenn seither nichts mehr eingegeben wurde */
+  const dropDraft = useCallback((leadId: string, expected?: CallProtocol) => {
+    setDrafts((prev) => {
+      if (!prev.has(leadId) || (expected && prev.get(leadId) !== expected)) return prev;
+      const next = new Map(prev);
+      next.delete(leadId);
+      return next;
+    });
+  }, []);
+  const statusOf = useCallback(
+    (id: string) => syncItems.find((item) => item.id === id)?.status,
+    [syncItems],
+  );
+  const latestOutcome = selectedLeadId ? latest.get(selectedLeadId) : undefined;
+  const latestSync = latestOutcome ? statusOf(latestOutcome.id) : undefined;
+  const saved = openCall ? { savedAt: openCall.savedAt, status: statusOf(openCall.id) } : null;
   const recalls = useOpenRecalls();
   const recallByLead = useMemo(
     () => new Map(recalls.map((recall) => [recall.leadId, recall])),
@@ -66,21 +93,37 @@ export function QueueView() {
         setPlanningFor(selected.lead.id);
         return;
       }
-      // Termin vereinbaren öffnet den Salesforce-Kalender, noch in der Bedienhandlung
-      if (outcome === 'appointment') openSalesforceCalendar();
       setBusy(true);
       try {
         await recordOutcome(selected, outcome, { recall, protocol });
+        dropDraft(selected.lead.id);
         setPlanningFor(null);
       } finally {
         setBusy(false);
       }
     },
-    [selected, busy, recordOutcome, protocol],
+    [selected, busy, recordOutcome, protocol, dropDraft],
   );
+
+  const save = useCallback(async () => {
+    if (!selected || !dirty || saving || busy) return;
+    setSaving(true);
+    try {
+      await saveProtocol(selected, protocol);
+      dropDraft(selected.lead.id, protocol);
+    } finally {
+      setSaving(false);
+    }
+  }, [selected, dirty, saving, busy, saveProtocol, protocol, dropDraft]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      // Strg+Enter speichert das Protokoll, auch mitten in der Notiz
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        void save();
+        return;
+      }
       if (event.altKey || event.ctrlKey || event.metaKey || isTypingTarget(event.target)) return;
       if (planning) {
         if (event.key === 'Escape') setPlanningFor(null);
@@ -95,8 +138,7 @@ export function QueueView() {
         if (next) selectLead(next.lead.id);
         return;
       }
-      const index = ['1', '2', '3', '4'].indexOf(event.key);
-      const outcome = OUTCOME_TYPES[index];
+      const outcome = KEYED_OUTCOMES[['1', '2', '3'].indexOf(event.key)];
       if (outcome) {
         event.preventDefault();
         void book(outcome);
@@ -104,7 +146,7 @@ export function QueueView() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [queue, selectedIndex, selectLead, book, planning]);
+  }, [queue, selectedIndex, selectLead, book, save, planning]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -153,6 +195,10 @@ export function QueueView() {
               recall={openRecall}
               protocol={protocol}
               onProtocolChange={setProtocol}
+              saved={saved}
+              dirty={dirty}
+              saving={saving}
+              onProtocolSave={() => void save()}
               busy={busy}
               planning={planning}
               today={new Date()}

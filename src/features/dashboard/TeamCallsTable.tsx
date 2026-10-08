@@ -2,7 +2,6 @@ import { Button } from '@/components/Button';
 import { downloadText } from '@/components/download';
 import { formatInt } from '@/components/format';
 import { callsToCsv } from '@/domain/export';
-import { OUTCOME_LABELS } from '@/domain/outcomes';
 import {
   CALL_SOLUTIONS,
   CALL_SOLUTION_LABELS,
@@ -12,6 +11,7 @@ import {
   solutionText,
 } from '@/domain/protocol';
 import {
+  callOutcomeText,
   filterCalls,
   summarizeCalls,
   type CallFilter,
@@ -188,7 +188,7 @@ export function TeamCallsTable({ calls }: { calls: readonly TeamCall[] }) {
                     </span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-4 py-2.5">{OUTCOME_LABELS[call.outcome]}</td>
+                <td className="whitespace-nowrap px-4 py-2.5">{callOutcomeText(call.outcome)}</td>
                 <td className="px-4 py-2.5">
                   <span className="block">{call.hunterName}</span>
                   <span className="flex items-center gap-2 text-xs text-muted">

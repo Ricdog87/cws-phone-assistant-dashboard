@@ -6,7 +6,7 @@ import {
   PROTOCOL_FLAG_LABELS,
   isNetContact,
 } from './protocol';
-import type { TeamCall } from './teamCalls';
+import { callOutcomeText, type TeamCall } from './teamCalls';
 import type { CallOutcome, CallProtocol, ContactUpdate } from './types';
 
 /** Byte Order Mark, damit Excel die Datei als UTF-8 erkennt */
@@ -145,7 +145,7 @@ export function callsToCsv(calls: readonly TeamCall[]): string {
       call.city,
       call.hunterName,
       call.assistantName,
-      OUTCOME_LABELS[call.outcome],
+      callOutcomeText(call.outcome),
       ...protocolCells(call.protocol),
     ]
       .map(escapeCsvCell)

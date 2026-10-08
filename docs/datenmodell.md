@@ -73,8 +73,8 @@ Dashboard als CSV mit Semikolon, Dezimalkomma und BOM, mit den Spalten des Proto
 
 ## Gesprächsprotokoll
 
-`CallProtocol` in `src/domain/types.ts`, erfasst unter dem Briefing und mit dem Ergebnis
-gespeichert.
+`CallProtocol` in `src/domain/types.ts`, erfasst unter dem Briefing. „Protokoll speichern“
+legt es als offenes Gespräch ab, das Ergebnis übernimmt es in den `CallOutcome`.
 
 | Feld               | Werte                                                                   |
 | ------------------ | ----------------------------------------------------------------------- |
@@ -88,6 +88,22 @@ gespeichert.
 | `note`             | Notiz zum Telefonat, höchstens 500 Zeichen, ohne private Angaben        |
 
 Die Liste der Lösungen und Wettbewerber kommt aus dem Vertrieb (Stand 08.10.2026).
+
+## Offenes Gespräch
+
+`OpenCall` in `src/domain/types.ts`, Tabelle `openCalls` ab Datenbankversion 8: ein
+gespeichertes Protokoll, dem noch das Ergebnis fehlt, je Lead höchstens eines.
+
+| Feld                 | Bedeutung                                   |
+| -------------------- | ------------------------------------------- |
+| `id`                 | Zufällige ID, später die ID des Ergebnisses |
+| `leadId`, `leadName` | Bezug zum Lead                              |
+| `owner`              | Hunter (Accountinhaber) beim Speichern      |
+| `protocol`           | Gesprächsprotokoll                          |
+| `savedAt`            | Zuletzt gespeichert, ISO 8601               |
+
+Mit dem Ergebnis wird das offene Gespräch geschlossen; das Ergebnis trägt seine ID, damit
+die Aufgabe in Salesforce dieselbe bleibt.
 
 ## Wiedervorlage
 
@@ -115,9 +131,12 @@ und Notiz.
 ## Postausgang nach Salesforce
 
 `SyncItem` in `src/domain/salesforceSync.ts`, Tabelle `syncItems` ab Datenbankversion 7
-(die frühere Tabelle `appointments` entfällt). Je Ergebnis und je Wiedervorlage ein
+(die frühere Tabelle `appointments` entfällt). Je Gespräch und je Wiedervorlage ein
 Eintrag mit derselben ID, der fertigen Aufgabe (`task`), Status (`pending`, `synced`,
 `failed`, `notConnected`, `demo`), Zahl der Versuche und der ID der Aufgabe in Salesforce.
+Wird ein übertragener Eintrag geändert, etwa weil das Protokoll erneut gespeichert oder das
+Ergebnis gebucht wird, aktualisiert die nächste Übertragung dieselbe Aufgabe
+(`PATCH /sobjects/Task/{id}`).
 
 | Aufgabe in Salesforce | Anrufprotokoll                       | Wiedervorlage                       |
 | --------------------- | ------------------------------------ | ----------------------------------- |
@@ -125,7 +144,7 @@ Eintrag mit derselben ID, der fertigen Aufgabe (`task`), Status (`pending`, `syn
 | `Status`              | Completed                            | Not Started                         |
 | `TaskSubtype`         | Call                                 | Task                                |
 | `ActivityDate`        | Tag des Anrufs                       | Fälligkeit                          |
-| `CallDisposition`     | Ergebnis, etwa „Kein Interesse“      | leer                                |
+| `CallDisposition`     | Ergebnis, leer solange es aussteht   | leer                                |
 | `ReminderDateTime`    | leer                                 | bei Uhrzeit, mit `IsReminderSet`    |
 | `Description`         | Ergebnis, Protokoll, Ansprechpartner | Grund, Uhrzeit, Notiz, Hunter       |
 | `WhatId` / `WhoId`    | Account oder Lead der Salesforce-ID  | Account oder Lead der Salesforce-ID |

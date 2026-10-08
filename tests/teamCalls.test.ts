@@ -3,15 +3,18 @@ import { demoTeamAppointments } from '@/data/demoAppointments';
 import { demoTeamCalls } from '@/data/demoCalls';
 import { DEMO_REGIONS } from '@/data/demoTeam';
 import { callsToCsv } from '@/domain/export';
+import { openCallFor } from '@/domain/openCalls';
 import {
   emptyProtocol,
   hasProtocolInfo,
   isNetContact,
   normalizeProtocol,
+  sameProtocol,
   solutionText,
 } from '@/domain/protocol';
 import {
   ALL_CALLS,
+  callOutcomeText,
   filterCalls,
   latestCallPerCompany,
   summarizeCalls,
@@ -61,6 +64,31 @@ describe('Gesprächsprotokoll', () => {
     expect(isNetContact(undefined)).toBe(false);
     expect(solutionText(teamCall().protocol)).toBe('Wettbewerb: MEWA');
   });
+
+  it('erkennt ungespeicherte Änderungen erst nach dem Bereinigen', () => {
+    const saved = normalizeProtocol({ ...emptyProtocol(), note: 'Vertrag bis 2027' });
+    expect(sameProtocol({ ...saved, note: ' Vertrag bis 2027 ' }, saved)).toBe(true);
+    expect(sameProtocol({ ...saved, doNotCall: true }, saved)).toBe(false);
+    expect(sameProtocol({ ...emptyProtocol(), note: '' }, emptyProtocol())).toBe(true);
+  });
+
+  it('findet das offene Gespräch zum Lead', () => {
+    const call = (id: string, leadId: string, savedAt: string) => ({
+      id,
+      leadId,
+      leadName: 'Bau Fehn GmbH',
+      owner: null,
+      protocol: emptyProtocol(),
+      savedAt,
+    });
+    const calls = [
+      call('a', 'L-1', '2026-10-08T09:00:00Z'),
+      call('b', 'L-1', '2026-10-08T10:00:00Z'),
+      call('c', 'L-2', '2026-10-08T11:00:00Z'),
+    ];
+    expect(openCallFor(calls, 'L-1')?.id).toBe('b');
+    expect(openCallFor(calls, 'L-3')).toBeUndefined();
+  });
 });
 
 describe('Gespräche der Führung', () => {
@@ -80,6 +108,13 @@ describe('Gespräche der Führung', () => {
     teamCall({ id: '4', leadId: 'C', protocol: { ...emptyProtocol(), solution: 'none' } }),
     teamCall({ id: '5', leadId: 'D', protocol: { ...emptyProtocol(), note: 'kurz' } }),
   ];
+
+  it('nennt Gespräche ohne gebuchtes Ergebnis offen', () => {
+    expect(callOutcomeText(null)).toBe('Ergebnis offen');
+    expect(callOutcomeText('callback')).toBe('Wiedervorlage');
+    const csv = callsToCsv([teamCall({ outcome: null })]);
+    expect(csv).toContain('Ergebnis offen');
+  });
 
   it('zeigt je Firma nur das jüngste Gespräch', () => {
     expect(latestCallPerCompany(calls).map((call) => call.id)).toEqual(['3', '4', '5', '2']);

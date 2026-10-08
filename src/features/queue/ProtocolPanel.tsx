@@ -21,7 +21,7 @@ const SELECT =
 
 /**
  * Gesprächsprotokoll direkt über den Ergebnis-Schaltflächen: erst Auswahlfelder, dann die
- * Notiz zum Telefonat. Geht mit dem Ergebnis als Aufgabe „Anruf“ nach Salesforce.
+ * Notiz zum Telefonat. Speichern schickt es sofort als Aufgabe „Anruf“ nach Salesforce.
  */
 export function ProtocolPanel({ protocol, onChange }: ProtocolPanelProps) {
   const id = useId();
@@ -109,7 +109,7 @@ export function ProtocolPanel({ protocol, onChange }: ProtocolPanelProps) {
           value={protocol.note ?? ''}
           maxLength={PROTOCOL_NOTE_MAX_LENGTH}
           onChange={(event) => set({ note: event.target.value })}
-          placeholder="Was wurde besprochen? Etwa Vertragslaufzeit, Ansprechpartner, nächste Schritte"
+          placeholder="Was wurde besprochen? Etwa Vertragslaufzeit, Ansprechpartner, nächste Schritte. Strg+Enter speichert."
           className="mt-1 block w-full resize-y rounded border border-border bg-panel px-2 py-1.5 text-sm text-brand-ink"
         />
       </label>

@@ -114,7 +114,8 @@ export type CallSolution = 'companyBuys' | 'employeesBuy' | 'competitor' | 'none
 
 /**
  * Gesprächsprotokoll zum Anruf, alles auf einem Fleck: Gesprächspartner, aktuelle Lösung,
- * Merkmale und Notiz. Geht mit dem Ergebnis als Aufgabe „Anruf“ nach Salesforce.
+ * Merkmale und Notiz. Geht beim Speichern sofort und mit dem Ergebnis erneut als Aufgabe
+ * „Anruf“ nach Salesforce, jedes Mal in dieselbe Aufgabe.
  */
 export interface CallProtocol {
   /** Wer am Telefon war; Entscheider zählt als Nettokontakt */
@@ -127,6 +128,21 @@ export interface CallProtocol {
   existingCustomer: boolean;
   doNotCall: boolean;
   note: string | null;
+}
+
+/**
+ * Gespräch mit gespeichertem Protokoll, dem noch das Ergebnis fehlt; je Lead höchstens eines.
+ * Das Ergebnis übernimmt später die ID und damit dieselbe Aufgabe in Salesforce.
+ */
+export interface OpenCall {
+  id: string;
+  leadId: string;
+  leadName: string;
+  /** Accountinhaber des Leads beim Speichern */
+  owner: string | null;
+  protocol: CallProtocol;
+  /** Zuletzt gespeichert */
+  savedAt: string;
 }
 
 /** Wiedervorlage aus dem Cockpit; geht automatisch als Aufgabe nach Salesforce */

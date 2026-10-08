@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   DEFAULT_BRIEFING_MODE,
   contactRepository,
+  openCallRepository,
   outcomeRepository,
   recallRepository,
   syncRepository,
@@ -15,6 +16,7 @@ import {
   type ProviderId,
 } from '@/data/providers/types';
 import { InMemoryContactRepository, type ContactRepository } from '@/data/contactRepository';
+import { InMemoryOpenCallRepository, type OpenCallRepository } from '@/data/openCallRepository';
 import { InMemoryRecallRepository, type RecallRepository } from '@/data/recallRepository';
 import { InMemorySyncRepository, type SyncRepository } from '@/data/syncRepository';
 import { needsSync, type SalesforceTaskInput, type SyncItem } from '@/domain/salesforceSync';
@@ -28,6 +30,7 @@ import type {
   ContactUpdate,
   DimensionKey,
   Lead,
+  OpenCall,
   Recall,
   Weights,
 } from '@/domain/types';
@@ -65,7 +68,9 @@ export interface AppState {
   contacts: ContactUpdate[];
   /** Wiedervorlagen mit Fälligkeit */
   recalls: Recall[];
-  /** Postausgang nach Salesforce mit Status je Anrufergebnis und Wiedervorlage */
+  /** Gespräche mit gespeichertem Protokoll, denen noch das Ergebnis fehlt */
+  openCalls: OpenCall[];
+  /** Postausgang nach Salesforce mit Status je Gespräch und Wiedervorlage */
   syncItems: SyncItem[];
   viewLevel: ViewLevel;
   /** Simulierte Anmeldung per Single Sign-on */
@@ -90,15 +95,23 @@ export interface AppState {
   loadFromProvider(provider: LeadProvider, report?: () => LoadReport | null): Promise<void>;
   loadOutcomes(): Promise<void>;
   addOutcome(outcome: CallOutcome): Promise<void>;
-  /** Löscht Anrufergebnisse, erfasste Kontakte, Wiedervorlagen und den Postausgang */
+  /** Löscht Anrufergebnisse, Kontakte, Wiedervorlagen, offene Gespräche und den Postausgang */
   clearOutcomes(): Promise<void>;
   loadContacts(): Promise<void>;
   addContact(contact: ContactUpdate): Promise<void>;
   loadRecalls(): Promise<void>;
   /** Legt eine Wiedervorlage an oder ersetzt sie mit derselben ID */
   addRecall(recall: Recall): Promise<void>;
+  loadOpenCalls(): Promise<void>;
+  /** Legt ein offenes Gespräch an oder ersetzt es mit derselben ID */
+  saveOpenCall(call: OpenCall): Promise<void>;
+  /** Schließt ein offenes Gespräch, sobald sein Ergebnis gebucht ist */
+  removeOpenCall(id: string): Promise<void>;
   loadSyncItems(): Promise<void>;
-  /** Stellt eine Aufgabe in den Postausgang; id ist die ID des Ergebnisses oder der Wiedervorlage */
+  /**
+   * Stellt eine Aufgabe in den Postausgang; id ist die ID des Gesprächs oder der Wiedervorlage.
+   * Ist sie schon übertragen, aktualisiert die nächste Übertragung dieselbe Aufgabe.
+   */
   enqueueSync(id: string, task: SalesforceTaskInput): Promise<void>;
   /** Überträgt alles Offene; mit Demo-Daten wird die Übertragung nur simuliert */
   flushSync(): Promise<void>;
@@ -110,6 +123,7 @@ export function createAppStore(
   recallStore: RecallRepository = new InMemoryRecallRepository(),
   syncStore: SyncRepository = new InMemorySyncRepository(),
   sendTask: TaskSender = postTask,
+  openCallStore: OpenCallRepository = new InMemoryOpenCallRepository(),
 ) {
   // Ein Durchlauf zur Zeit, damit keine Aufgabe doppelt in Salesforce landet
   let flushing: Promise<void> | null = null;
@@ -138,6 +152,7 @@ export function createAppStore(
     outcomes: [],
     contacts: [],
     recalls: [],
+    openCalls: [],
     syncItems: [],
     viewLevel: restoredLevel ?? 'teamLead',
     signedIn: restoredLevel !== null,
@@ -232,8 +247,9 @@ export function createAppStore(
         contactStore.clear(),
         recallStore.clear(),
         syncStore.clear(),
+        openCallStore.clear(),
       ]);
-      set({ outcomes: [], contacts: [], recalls: [], syncItems: [] });
+      set({ outcomes: [], contacts: [], recalls: [], openCalls: [], syncItems: [] });
     },
 
     async loadContacts() {
@@ -254,17 +270,33 @@ export function createAppStore(
       set({ recalls: [...get().recalls.filter((r) => r.id !== recall.id), recall] });
     },
 
+    async loadOpenCalls() {
+      set({ openCalls: await openCallStore.list() });
+    },
+
+    async saveOpenCall(call) {
+      await openCallStore.put(call);
+      set({ openCalls: [...get().openCalls.filter((c) => c.id !== call.id), call] });
+    },
+
+    async removeOpenCall(id) {
+      await openCallStore.remove(id);
+      set({ openCalls: get().openCalls.filter((c) => c.id !== id) });
+    },
+
     async loadSyncItems() {
       set({ syncItems: await syncStore.list() });
     },
 
     async enqueueSync(id, task) {
+      const existing = get().syncItems.find((entry) => entry.id === id);
       const item: SyncItem = {
         id,
         task,
         status: 'pending',
         attempts: 0,
-        salesforceId: null,
+        // Schon übertragen: dieselbe Aufgabe aktualisieren statt eine zweite anzulegen
+        salesforceId: existing?.salesforceId ?? null,
         updatedAt: new Date().toISOString(),
       };
       await syncStore.put(item);
@@ -273,29 +305,44 @@ export function createAppStore(
 
     async flushSync() {
       if (flushing) return flushing;
-      const save = async (item: SyncItem) => {
+      /**
+       * Ergebnis einer Übertragung sichern. Wurde der Eintrag währenddessen geändert, bleibt
+       * er offen und behält nur die neue Salesforce-ID; der nächste Durchlauf schickt ihn nach.
+       */
+      const settle = async (sent: SyncItem, result: Partial<SyncItem>) => {
+        const current = get().syncItems.find((entry) => entry.id === sent.id);
+        // Inzwischen gelöscht, etwa über „Ergebnisse löschen“
+        if (!current) return;
+        const item: SyncItem =
+          current.task !== sent.task
+            ? { ...current, salesforceId: result.salesforceId ?? current.salesforceId }
+            : { ...sent, ...result, updatedAt: new Date().toISOString() };
         await syncStore.put(item);
         set({ syncItems: get().syncItems.map((entry) => (entry.id === item.id ? item : entry)) });
       };
       flushing = (async () => {
-        for (const item of get().syncItems.filter(needsSync)) {
-          const updatedAt = new Date().toISOString();
-          // Demo-Leads haben keine Salesforce-IDs, die Übertragung wird nur simuliert
-          if (get().sourceId === 'mock') {
-            await save({ ...item, status: 'demo', updatedAt });
-            continue;
+        let batch = get().syncItems.filter(needsSync);
+        while (batch.length > 0) {
+          for (const item of batch) {
+            // Demo-Leads haben keine Salesforce-IDs, die Übertragung wird nur simuliert
+            if (get().sourceId === 'mock') {
+              await settle(item, { status: 'demo' });
+              continue;
+            }
+            const result = await sendTask(item.task, item.salesforceId);
+            await settle(item, {
+              status: result.status,
+              salesforceId: result.salesforceId ?? item.salesforceId,
+              attempts: item.attempts + 1,
+            });
           }
-          const result = await sendTask(item.task);
-          await save({
-            ...item,
-            status: result.status,
-            salesforceId: result.salesforceId,
-            attempts: item.attempts + 1,
-            updatedAt,
-          });
+          // Während der Übertragung geändert: gleich hinterher
+          batch = get().syncItems.filter((entry) => entry.status === 'pending');
         }
       })().finally(() => {
         flushing = null;
+        // Kurz vor Schluss eingestellt: nicht bis zur nächsten Aktion liegen lassen
+        if (get().syncItems.some((entry) => entry.status === 'pending')) void get().flushSync();
       });
       return flushing;
     },
@@ -307,19 +354,21 @@ export const useAppStore = createAppStore(
   contactRepository,
   recallRepository,
   syncRepository,
+  postTask,
+  openCallRepository,
 );
 
-/** Startdaten laden: Demo-Leads, Anrufergebnisse, Kontakte, Wiedervorlagen, Postausgang */
+/** Startdaten laden: Demo-Leads, Ergebnisse, Kontakte, Wiedervorlagen, Gespräche, Postausgang */
 export async function bootstrap(): Promise<void> {
-  const { loadFromProvider, loadOutcomes, loadContacts, loadRecalls, loadSyncItems, flushSync } =
-    useAppStore.getState();
+  const state = useAppStore.getState();
   await Promise.all([
-    loadFromProvider(new MockProvider()),
-    loadOutcomes(),
-    loadContacts(),
-    loadRecalls(),
-    loadSyncItems(),
+    state.loadFromProvider(new MockProvider()),
+    state.loadOutcomes(),
+    state.loadContacts(),
+    state.loadRecalls(),
+    state.loadOpenCalls(),
+    state.loadSyncItems(),
   ]);
   // Was beim letzten Mal nicht übertragen wurde, jetzt nachholen
-  await flushSync();
+  await state.flushSync();
 }

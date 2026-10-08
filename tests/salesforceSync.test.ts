@@ -75,6 +75,35 @@ describe('Aufgaben für Salesforce', () => {
     ]);
   });
 
+  it('schreibt ein gespeichertes Protokoll ohne Ergebnis als offen', () => {
+    const task = callLogTask(
+      {
+        leadId: 'DEMO-1',
+        leadName: 'Bau Fehn GmbH',
+        owner: null,
+        outcome: null,
+        recordedAt: new Date(2026, 9, 8, 10).toISOString(),
+        protocol: {
+          contactRole: 'gatekeeper',
+          solution: 'companyBuys',
+          competitor: null,
+          companyDissolved: false,
+          centralDecision: false,
+          existingCustomer: false,
+          doNotCall: false,
+          note: null,
+        },
+      },
+      'Nele Faber',
+    );
+    expect(task).toMatchObject({ kind: 'callLog', status: 'Completed', callDisposition: null });
+    expect(task.description.split('\n').slice(0, 3)).toEqual([
+      'Ergebnis: noch offen',
+      'Gesprächspartner: Zentrale',
+      'Aktuelle Lösung: Kauft Berufskleidung',
+    ]);
+  });
+
   it('legt die Wiedervorlage als offene Aufgabe mit Erinnerung an', () => {
     const recall: Recall = {
       id: 'r',
@@ -141,7 +170,7 @@ describe('Postausgang nach Salesforce', () => {
       await useStore.getState().enqueueSync('r', task);
       await useStore.getState().flushSync();
     });
-    expect(sender).toHaveBeenCalledWith(task);
+    expect(sender).toHaveBeenCalledWith(task, null);
     expect(useStore.getState().syncItems[0]).toMatchObject({
       status: 'synced',
       salesforceId: '00T1',
@@ -163,6 +192,62 @@ describe('Postausgang nach Salesforce', () => {
     expect(item && needsSync(item)).toBe(true);
     await act(async () => useStore.getState().flushSync());
     expect(sender).toHaveBeenCalledTimes(2);
+  });
+
+  it('aktualisiert nach einer Änderung dieselbe Aufgabe statt eine zweite anzulegen', async () => {
+    const { useStore, sender } = store('synced');
+    const changed = { ...task, description: 'Grund: Rückruf vereinbart\nNotiz: neu' };
+    await act(async () => {
+      await useStore.getState().enqueueSync('r', task);
+      await useStore.getState().flushSync();
+      await useStore.getState().enqueueSync('r', changed);
+    });
+    expect(useStore.getState().syncItems[0]).toMatchObject({
+      status: 'pending',
+      salesforceId: '00T1',
+    });
+    await act(async () => useStore.getState().flushSync());
+    expect(sender).toHaveBeenLastCalledWith(changed, '00T1');
+    expect(useStore.getState().syncItems).toHaveLength(1);
+    expect(useStore.getState().syncItems[0]?.status).toBe('synced');
+  });
+
+  it('schickt eine Änderung während der Übertragung gleich hinterher', async () => {
+    let release: () => void = () => undefined;
+    const sender = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            release = () => resolve({ status: 'synced', salesforceId: '00T1' });
+          }),
+      )
+      .mockResolvedValue({ status: 'synced', salesforceId: '00T1' });
+    const useStore = createAppStore(
+      new InMemoryOutcomeRepository(),
+      new InMemoryContactRepository(),
+      new InMemoryRecallRepository(),
+      new InMemorySyncRepository(),
+      sender,
+    );
+    useStore.setState({ sourceId: 'csv' });
+    const changed = { ...task, description: 'geändert' };
+    await act(async () => {
+      await useStore.getState().enqueueSync('r', task);
+      const flushing = useStore.getState().flushSync();
+      await useStore.getState().enqueueSync('r', changed);
+      release();
+      await flushing;
+    });
+    expect(sender).toHaveBeenCalledTimes(2);
+    expect(sender).toHaveBeenNthCalledWith(1, task, null);
+    // Zweiter Durchlauf aktualisiert die gerade angelegte Aufgabe
+    expect(sender).toHaveBeenNthCalledWith(2, changed, '00T1');
+    expect(useStore.getState().syncItems[0]).toMatchObject({
+      task: changed,
+      status: 'synced',
+      salesforceId: '00T1',
+    });
   });
 
   it('simuliert die Übertragung mit Demo-Daten', async () => {

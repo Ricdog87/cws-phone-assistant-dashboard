@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { SyncItem } from '@/domain/salesforceSync';
-import type { CallOutcome, ContactUpdate, Recall } from '@/domain/types';
+import type { CallOutcome, ContactUpdate, OpenCall, Recall } from '@/domain/types';
 import type { ColumnMapping } from './csvMapping';
 
 export interface StoredColumnMapping {
@@ -29,6 +29,7 @@ export class AppDatabase extends Dexie {
   contacts!: Table<ContactUpdate, string>;
   recalls!: Table<Recall, string>;
   syncItems!: Table<SyncItem, string>;
+  openCalls!: Table<OpenCall, string>;
 
   constructor(name = 'cws-lead-cockpit') {
     super(name);
@@ -57,6 +58,10 @@ export class AppDatabase extends Dexie {
     this.version(7).stores({
       syncItems: 'id, status, updatedAt',
       appointments: null,
+    });
+    // Gespeicherte Gesprächsprotokolle, denen noch das Ergebnis fehlt
+    this.version(8).stores({
+      openCalls: 'id, leadId, savedAt',
     });
   }
 }

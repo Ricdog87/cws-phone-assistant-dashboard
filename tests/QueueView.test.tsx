@@ -1,7 +1,6 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { todayLocal } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { MockProvider } from '@/data/providers/mockProvider';
 import { nextBusinessDay } from '@/domain/recall';
@@ -45,14 +44,16 @@ describe('QueueView', () => {
     expect(selectedName()).toBe(first);
   });
 
-  it('bucht mit Taste 1 einen Termin und springt zum nächsten offenen Lead', async () => {
+  it('zählt mit Termin gebucht einen Termin für die Kennzahlen, ohne Salesforce zu öffnen', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
     const first = selectedName();
 
-    await user.keyboard('1');
+    await user.click(screen.getByRole('button', { name: 'Termin gebucht' }));
     await waitFor(() => expect(selectedName()).not.toBe(first));
 
+    // Den Termin selbst legt die Telefonassistenz in Salesforce an, hier zählt er nur
+    expect(open).not.toHaveBeenCalled();
     const outcomes = useAppStore.getState().outcomes;
     expect(outcomes).toHaveLength(1);
     expect(outcomes[0]).toMatchObject({
@@ -60,7 +61,6 @@ describe('QueueView', () => {
       outcome: 'appointment',
       queuePosition: 1,
     });
-    expect(selectedName()).not.toBe(first);
 
     const booked = queueOptions()[0];
     expect(booked).toHaveClass('opacity-50');
@@ -74,31 +74,6 @@ describe('QueueView', () => {
     expect(live).toHaveTextContent('noch 3');
   });
 
-  it('öffnet mit Termin vereinbaren den Salesforce-Kalender in der Wochenansicht', async () => {
-    const user = userEvent.setup();
-    render(<QueueView />);
-    const first = selectedName();
-
-    await user.click(screen.getByRole('button', { name: /Termin vereinbaren/ }));
-
-    expect(open).toHaveBeenCalledTimes(1);
-    expect(open.mock.calls[0]?.[0]).toBe(
-      `https://cws-workwear.lightning.force.com/lightning/o/Event/home?startDate=${todayLocal()}&view=week`,
-    );
-    await waitFor(() => expect(useAppStore.getState().outcomes).toHaveLength(1));
-    expect(useAppStore.getState().outcomes[0]).toMatchObject({
-      leadName: first,
-      outcome: 'appointment',
-    });
-  });
-
-  it('öffnet den Kalender auch über Taste 1', async () => {
-    const user = userEvent.setup();
-    render(<QueueView />);
-    await user.keyboard('1');
-    expect(open).toHaveBeenCalledTimes(1);
-  });
-
   it('bucht über die Schaltfläche', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
@@ -106,19 +81,31 @@ describe('QueueView', () => {
     expect(useAppStore.getState().outcomes[0]?.outcome).toBe('not_interested');
   });
 
-  it('zeigt die Ergebnisleiste mit Termin und Wiedervorlage immer an', () => {
+  it('zeigt Wiedervorlage, Nicht erreicht und Kein Interesse, Termin nur noch als kleinen Knopf', () => {
     render(<QueueView />);
     const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
-    expect(within(bar).getByRole('button', { name: /Termin vereinbaren/ })).toBeInTheDocument();
-    expect(within(bar).getByRole('button', { name: /Wiedervorlage/ })).toBeInTheDocument();
+    expect(within(bar).queryByRole('button', { name: /Termin vereinbaren/ })).toBeNull();
+    expect(within(bar).getByRole('button', { name: /Wiedervorlage/ })).toHaveAttribute(
+      'aria-keyshortcuts',
+      '1',
+    );
+    expect(within(bar).getByRole('button', { name: /Nicht erreicht/ })).toHaveAttribute(
+      'aria-keyshortcuts',
+      '2',
+    );
+    expect(within(bar).getByRole('button', { name: /Kein Interesse/ })).toHaveAttribute(
+      'aria-keyshortcuts',
+      '3',
+    );
+    expect(within(bar).getByRole('button', { name: 'Termin gebucht' })).toHaveClass('text-xs');
   });
 
-  it('plant mit Taste 2 eine Wiedervorlage mit Datum, Uhrzeit und der Notiz aus dem Protokoll', async () => {
+  it('plant mit Taste 1 eine Wiedervorlage mit Datum, Uhrzeit und der Notiz aus dem Protokoll', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
     const first = selectedName();
 
-    await user.keyboard('2');
+    await user.keyboard('1');
     const form = screen.getByRole('form', { name: 'Wiedervorlage planen' });
     // Noch nichts gebucht, erst nach dem Speichern
     expect(useAppStore.getState().outcomes).toHaveLength(0);
@@ -199,6 +186,71 @@ describe('QueueView', () => {
     );
   });
 
+  it('speichert das Protokoll auf Bestätigung, schickt es sofort an Salesforce und aktualisiert bei jeder Änderung dieselbe Aufgabe', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const first = selectedName();
+    const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
+    const saveButton = within(bar).getByRole('button', { name: 'Protokoll speichern' });
+    const note = within(bar).getByLabelText('Notiz zum Telefonat');
+    expect(saveButton).toBeDisabled();
+
+    await user.selectOptions(
+      within(bar).getByLabelText('Aktuelle Lösung'),
+      'Wettbewerb (Mietservice)',
+    );
+    await user.selectOptions(within(bar).getByLabelText('Wettbewerber'), 'DBL');
+    await user.type(note, 'Vertrag bis 2027');
+    expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
+    await user.click(saveButton);
+
+    await waitFor(() => expect(useAppStore.getState().syncItems[0]?.status).toBe('demo'));
+    const [call] = useAppStore.getState().openCalls;
+    expect(call).toMatchObject({ leadName: first, protocol: { competitor: 'DBL' } });
+    expect(useAppStore.getState().outcomes).toHaveLength(0);
+    expect(useAppStore.getState().syncItems[0]).toMatchObject({
+      id: call?.id,
+      task: { kind: 'callLog', callDisposition: null },
+    });
+    expect(useAppStore.getState().syncItems[0]?.task.description).toContain('Ergebnis: noch offen');
+    expect(within(bar).getByRole('status')).toHaveTextContent('Gespeichert');
+    expect(within(bar).getByRole('status')).toHaveTextContent('In Salesforce (Demo)');
+    expect(saveButton).toBeDisabled();
+
+    // Änderung mit Strg+Enter: dieselbe Aufgabe, kein zweiter Eintrag
+    await user.type(note, ', Einkauf zentral');
+    await user.keyboard('{Control>}{Enter}{/Control}');
+    await waitFor(() =>
+      expect(useAppStore.getState().syncItems[0]?.task.description).toContain(
+        'Notiz: Vertrag bis 2027, Einkauf zentral',
+      ),
+    );
+    expect(useAppStore.getState().syncItems).toHaveLength(1);
+    expect(useAppStore.getState().openCalls).toHaveLength(1);
+
+    // Ungespeichertes bleibt beim Wechsel des Leads erhalten, Gespeichertes sowieso
+    await user.type(note, ' (Entwurf)');
+    await user.click(document.body);
+    await user.keyboard('{ArrowDown}');
+    expect(note).toHaveValue('');
+    await user.keyboard('{ArrowUp}');
+    expect(note).toHaveValue('Vertrag bis 2027, Einkauf zentral (Entwurf)');
+
+    // Das Ergebnis übernimmt das Gespräch und ergänzt dieselbe Aufgabe
+    await user.click(within(bar).getByRole('button', { name: /Kein Interesse/ }));
+    await waitFor(() => expect(useAppStore.getState().outcomes).toHaveLength(1));
+    expect(useAppStore.getState().outcomes[0]).toMatchObject({
+      id: call?.id,
+      outcome: 'not_interested',
+      protocol: { note: 'Vertrag bis 2027, Einkauf zentral (Entwurf)' },
+    });
+    expect(useAppStore.getState().openCalls).toHaveLength(0);
+    await waitFor(() =>
+      expect(useAppStore.getState().syncItems[0]?.task.callDisposition).toBe('Kein Interesse'),
+    );
+    expect(useAppStore.getState().syncItems).toHaveLength(1);
+  });
+
   it('schlägt bei Wettbewerb das Vertragsende als Grund der Wiedervorlage vor', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
@@ -221,15 +273,16 @@ describe('QueueView', () => {
   it('leitet die Wiedervorlage aus dem Vertragsende ab', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
-    await user.keyboard('2');
+    await user.keyboard('1');
     const form = screen.getByRole('form', { name: 'Wiedervorlage planen' });
     await user.click(within(form).getByText('Vertragsende bekannt'));
 
     const select = within(form).getByLabelText('Vertragsende');
     const options = within(select).getAllByRole('option') as HTMLOptionElement[];
-    // Laufender Monat liegt zu nah: jetzt einen Termin vereinbaren
+    // Laufender Monat liegt zu nah: Termin in Salesforce vereinbaren und hier zählen
     await user.selectOptions(select, options[1]?.value ?? '');
     expect(within(form).getByRole('alert')).toHaveTextContent('zu nah');
+    expect(within(form).getByRole('button', { name: 'Termin gebucht' })).toBeInTheDocument();
     expect(within(form).getByRole('button', { name: 'Wiedervorlage speichern' })).toBeDisabled();
 
     // In zwei Jahren: neun Monate vorher

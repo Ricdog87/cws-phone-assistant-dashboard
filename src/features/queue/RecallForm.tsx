@@ -19,7 +19,7 @@ interface RecallFormProps {
   busy: boolean;
   onSave(draft: RecallDraft): void;
   onCancel(): void;
-  /** Vertragsende zu nah: stattdessen jetzt einen Termin vereinbaren */
+  /** Vertragsende zu nah: Termin in Salesforce vereinbart, hier für die Kennzahlen erfassen */
   onBookAppointment(): void;
 }
 
@@ -202,9 +202,12 @@ export function RecallForm({
               role="alert"
               className="flex flex-wrap items-center gap-2 text-sm font-bold text-brand-primary"
             >
-              <span>Vertragsende liegt zu nah für eine Wiedervorlage.</span>
+              <span>
+                Vertragsende liegt zu nah für eine Wiedervorlage. Termin direkt in Salesforce
+                vereinbaren und hier als gebucht erfassen.
+              </span>
               <Button variant="primary" onClick={onBookAppointment} disabled={busy}>
-                Jetzt Termin vereinbaren
+                Termin gebucht
               </Button>
             </div>
           )}

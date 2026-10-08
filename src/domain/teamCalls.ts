@@ -1,3 +1,4 @@
+import { OUTCOME_LABELS } from './outcomes';
 import { isNetContact } from './protocol';
 import type { SyncStatus } from './salesforceSync';
 import type { CallProtocol, CallSolution, OutcomeType } from './types';
@@ -11,7 +12,8 @@ export interface TeamCall {
   hunterName: string;
   assistantName: string;
   recordedAt: string;
-  outcome: OutcomeType;
+  /** null: Protokoll gespeichert, Ergebnis steht noch aus */
+  outcome: OutcomeType | null;
   protocol: CallProtocol;
   status: SyncStatus;
   live: boolean;
@@ -19,6 +21,11 @@ export interface TeamCall {
 
 /** Auswahl „Aktuelle Lösung“ im Filter; open heißt nicht erfasst */
 export type SolutionFilter = CallSolution | 'all' | 'open';
+
+/** Ergebnis in Worten, auch für Gespräche ohne gebuchtes Ergebnis */
+export function callOutcomeText(outcome: OutcomeType | null): string {
+  return outcome ? OUTCOME_LABELS[outcome] : 'Ergebnis offen';
+}
 
 export interface CallFilter {
   solution: SolutionFilter;

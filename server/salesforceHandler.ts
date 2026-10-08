@@ -56,6 +56,8 @@ export function readSalesforceConfig(
 }
 
 const salesforceId = z.string().regex(/^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/);
+/** Aufgaben (Task) beginnen in Salesforce immer mit 00T */
+const taskId = z.string().regex(/^00T[a-zA-Z0-9]{12}([a-zA-Z0-9]{3})?$/);
 
 /** Gleicher Aufbau wie SalesforceTaskInput in src/domain/salesforceSync.ts */
 export const taskInputSchema = z
@@ -72,19 +74,39 @@ export const taskInputSchema = z
   })
   .strict();
 
+/** Anfrage aus dem Cockpit: die Aufgabe und, falls schon übertragen, ihre ID in Salesforce */
+export const syncRequestSchema = z
+  .object({
+    task: taskInputSchema,
+    salesforceId: taskId.nullable(),
+  })
+  .strict();
+
 export type TaskInput = z.infer<typeof taskInputSchema>;
 
-/** Felder der Aufgabe in Salesforce, nur Standardfelder */
-export function taskRecord(input: TaskInput): Record<string, string | boolean> {
+/**
+ * Felder der Aufgabe in Salesforce, nur Standardfelder. Die Art (TaskSubtype) lässt sich nur
+ * beim Anlegen setzen und fehlt deshalb beim Aktualisieren.
+ */
+export function taskRecord(
+  input: TaskInput,
+  mode: 'create' | 'update' = 'create',
+): Record<string, string | boolean | null> {
   return {
     Subject: input.subject,
     Description: input.description,
     ActivityDate: input.activityDate,
     Status: input.status,
     Priority: 'Normal',
-    TaskSubtype: input.kind === 'callLog' ? 'Call' : 'Task',
-    ...(input.callDisposition ? { CallDisposition: input.callDisposition } : {}),
-    ...(input.reminderAt ? { IsReminderSet: true, ReminderDateTime: input.reminderAt } : {}),
+    ...(mode === 'create' ? { TaskSubtype: input.kind === 'callLog' ? 'Call' : 'Task' } : {}),
+    ...(input.callDisposition || mode === 'update'
+      ? { CallDisposition: input.callDisposition }
+      : {}),
+    ...(input.reminderAt
+      ? { IsReminderSet: true, ReminderDateTime: input.reminderAt }
+      : mode === 'update'
+        ? { IsReminderSet: false }
+        : {}),
     ...(input.whatId ? { WhatId: input.whatId } : {}),
     ...(input.whoId ? { WhoId: input.whoId } : {}),
   };
@@ -147,7 +169,10 @@ async function requestToken(
   return { accessToken: payload.access_token, instanceUrl, expiresAt: now + TOKEN_TTL_MS };
 }
 
-/** Prüft die Anfrage und legt genau eine Aufgabe an. Andere Objekte ändert der Endpunkt nicht. */
+/**
+ * Prüft die Anfrage und legt genau eine Aufgabe an oder aktualisiert die schon übertragene.
+ * Wurde sie in Salesforce gelöscht, entsteht sie neu. Andere Objekte ändert der Endpunkt nicht.
+ */
 export async function handleSalesforceRequest(
   body: unknown,
   config: SalesforceConfig | null,
@@ -165,50 +190,62 @@ export async function handleSalesforceRequest(
   if (!config)
     return done('nicht_konfiguriert', { status: 503, body: { error: 'not_configured' } });
 
-  const input = taskInputSchema.safeParse(body);
-  if (!input.success)
+  const request = syncRequestSchema.safeParse(body);
+  if (!request.success)
     return done('anfrage_ungueltig', { status: 400, body: { error: 'bad_request' } });
+  const { task, salesforceId: existingId } = request.data;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.timeoutMs);
-  try {
+
+  /** Ruft die Task-Schnittstelle auf; bei abgelaufenem Token einmal neu anmelden. null ohne Anmeldung */
+  const send = async (method: 'POST' | 'PATCH', path: string, record: object) => {
     for (let attempt = 0; attempt < 2; attempt++) {
       if (!cachedToken || cachedToken.expiresAt <= now()) {
         cachedToken = await requestToken(config, fetchFn, controller.signal, now());
       }
-      if (!cachedToken) {
-        return done('anmeldung_fehlgeschlagen', { status: 502, body: { error: 'auth_failed' } });
-      }
+      if (!cachedToken) return null;
       const response = await fetchFn(
-        `${cachedToken.instanceUrl}/services/data/${config.apiVersion}/sobjects/Task`,
+        `${cachedToken.instanceUrl}/services/data/${config.apiVersion}/sobjects/Task${path}`,
         {
-          method: 'POST',
+          method,
           signal: controller.signal,
           headers: {
             Authorization: `Bearer ${cachedToken.accessToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(taskRecord(input.data)),
+          body: JSON.stringify(record),
         },
       );
-      // Abgelaufenes Token: einmal neu anmelden
       if (response.status === 401 && attempt === 0) {
         cachedToken = null;
         continue;
       }
-      if (!response.ok) {
-        return done(`salesforce_status_${response.status}`, {
-          status: 502,
-          body: { error: 'upstream_error' },
-        });
-      }
-      const created = (await response.json().catch(() => null)) as { id?: unknown } | null;
-      if (typeof created?.id !== 'string') {
-        return done('antwort_ungueltig', { status: 502, body: { error: 'invalid_response' } });
-      }
-      return done('angelegt', { status: 201, body: { id: created.id } });
+      return response;
     }
-    return done('anmeldung_abgelaufen', { status: 502, body: { error: 'auth_failed' } });
+    return null;
+  };
+  const authFailed = () =>
+    done('anmeldung_fehlgeschlagen', { status: 502, body: { error: 'auth_failed' } });
+  const upstream = (status: number) =>
+    done(`salesforce_status_${status}`, { status: 502, body: { error: 'upstream_error' } });
+
+  try {
+    if (existingId) {
+      const updated = await send('PATCH', `/${existingId}`, taskRecord(task, 'update'));
+      if (!updated) return authFailed();
+      if (updated.ok) return done('aktualisiert', { status: 200, body: { id: existingId } });
+      if (updated.status !== 404) return upstream(updated.status);
+      // In Salesforce gelöscht: neu anlegen
+    }
+    const response = await send('POST', '', taskRecord(task, 'create'));
+    if (!response) return authFailed();
+    if (!response.ok) return upstream(response.status);
+    const created = (await response.json().catch(() => null)) as { id?: unknown } | null;
+    if (typeof created?.id !== 'string') {
+      return done('antwort_ungueltig', { status: 502, body: { error: 'invalid_response' } });
+    }
+    return done('angelegt', { status: 201, body: { id: created.id } });
   } catch {
     const event = controller.signal.aborted ? 'zeitueberschreitung' : 'netzwerkfehler';
     return done(event, { status: 504, body: { error: event } });
