@@ -18,6 +18,7 @@ import {
   InMemoryRecallRepository,
   type RecallRepository,
 } from '@/data/recallRepository';
+import { normalizeSalesforceUrl } from '@/domain/salesforce';
 import {
   DexieSyncRepository,
   InMemorySyncRepository,
@@ -86,3 +87,11 @@ export type BriefingMode = 'rules' | 'llm';
 
 export const DEFAULT_BRIEFING_MODE: BriefingMode =
   import.meta.env.VITE_BRIEFING_MODE === 'llm' ? 'llm' : 'rules';
+
+/** Salesforce-Oberfläche der CWS, solange VITE_SALESFORCE_URL nichts anderes vorgibt */
+const DEFAULT_SALESFORCE_URL = 'https://cws-workwear.lightning.force.com';
+
+/** Salesforce-Oberfläche für die Links auf Accounts und Leads */
+export const salesforceUrl: string | null =
+  normalizeSalesforceUrl(import.meta.env.VITE_SALESFORCE_URL) ??
+  normalizeSalesforceUrl(DEFAULT_SALESFORCE_URL);

@@ -367,6 +367,27 @@ describe('QueueView', () => {
     expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
   });
 
+  it('verlinkt jede Firma direkt auf ihren Account in Salesforce', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const first = selectedName();
+    const briefing = screen.getByRole('article', { name: `Briefing ${first}` });
+    const link = within(briefing).getByRole('link', { name: first });
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('href')).toMatch(
+      /^https:\/\/cws-workwear\.lightning\.force\.com\/lightning\/r\/Account\/001DEMO\d{8}\/view$/,
+    );
+
+    // In der Warteschlange ein Symbol je Firma; der Klick wechselt nicht den Lead
+    const icons = within(screen.getByRole('listbox', { name: 'Warteschlange' })).getAllByRole(
+      'link',
+      { name: /in Salesforce öffnen/ },
+    );
+    expect(icons).toHaveLength(queueOptions().length);
+    await user.click(icons[1] as HTMLElement);
+    expect(selectedName()).toBe(first);
+  });
+
   it('filtert die Anrufliste nach Branche', async () => {
     const user = userEvent.setup();
     render(<QueueView />);

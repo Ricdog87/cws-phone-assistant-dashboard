@@ -1,4 +1,6 @@
 import { todayLocal } from '@/app/selectors';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import { formatInt } from '@/components/format';
 import { SyncBadge } from '@/components/SyncBadge';
 import {
@@ -68,6 +70,7 @@ export function TeamAppointmentsTable({
   appointments: readonly TeamAppointment[];
   filter: AppointmentFilter;
 }) {
+  const salesforceLink = useSalesforceLink();
   const rows = filterAppointments(appointments, filter, todayLocal());
   if (rows.length === 0) {
     return (
@@ -104,7 +107,9 @@ export function TeamAppointmentsTable({
               <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-muted">
                 {formatBooked(row.bookedAt)}
               </td>
-              <td className="px-4 py-2.5 font-bold">{row.leadName}</td>
+              <td className="px-4 py-2.5 font-bold">
+                <SalesforceLink target={salesforceLink(row.leadId)}>{row.leadName}</SalesforceLink>
+              </td>
               <td className="px-4 py-2.5">{row.hunterName}</td>
               <td className="px-4 py-2.5">
                 <span className="inline-flex items-center gap-2">

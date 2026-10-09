@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import { BandBadge } from '@/components/BandBadge';
 import { ControlTag } from '@/components/ControlTag';
 import { activityLabel, daysSinceActivity } from '@/domain/activity';
@@ -31,6 +33,7 @@ export function QueueList({
   onSelect,
 }: QueueListProps) {
   const selectedRef = useRef<HTMLLIElement>(null);
+  const salesforceLink = useSalesforceLink();
 
   // Ausgewählten Lead bei Tastaturnavigation im sichtbaren Bereich halten
   useEffect(() => {
@@ -71,6 +74,9 @@ export function QueueList({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-sm font-bold">{entry.lead.name}</span>
+                <SalesforceLink target={salesforceLink(entry.lead.id)} iconOnly>
+                  {entry.lead.name}
+                </SalesforceLink>
                 {entry.isControl && <ControlTag />}
               </div>
               <div className="truncate text-xs text-muted">

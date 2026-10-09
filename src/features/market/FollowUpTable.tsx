@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import { Button } from '@/components/Button';
 import { formatInt } from '@/components/format';
 import { settledReason, type MarketRow } from '@/domain/market';
@@ -50,6 +52,7 @@ export function FollowUpTable({
   onCall,
   onExport,
 }: FollowUpTableProps) {
+  const salesforceLink = useSalesforceLink();
   const [limit, setLimit] = useState(PAGE);
   const shown = rows.slice(0, limit);
 
@@ -96,7 +99,9 @@ export function FollowUpTable({
                 return (
                   <tr key={row.id} className="align-top">
                     <td className="px-5 py-2">
-                      <span className="block font-bold">{row.leadName}</span>
+                      <SalesforceLink target={salesforceLink(row.leadId)} className="font-bold">
+                        {row.leadName}
+                      </SalesforceLink>
                       <span className="block text-xs text-muted">{row.city}</span>
                     </td>
                     <td className="px-3 py-2">{row.industry || 'unbekannt'}</td>

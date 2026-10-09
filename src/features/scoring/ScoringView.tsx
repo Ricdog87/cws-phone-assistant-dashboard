@@ -1,4 +1,6 @@
 import { useQueue } from '@/app/selectors';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import type { BriefingMode } from '@/app/services';
 import { useAppStore } from '@/app/store';
 import { BandBadge } from '@/components/BandBadge';
@@ -32,6 +34,7 @@ const BRIEFING_OPTIONS: { mode: BriefingMode; label: string; hint: string }[] = 
 ];
 
 export function ScoringView() {
+  const salesforceLink = useSalesforceLink();
   const weights = useAppStore((s) => s.weights);
   const controlEnabled = useAppStore((s) => s.controlEnabled);
   const setWeight = useAppStore((s) => s.setWeight);
@@ -126,7 +129,9 @@ export function ScoringView() {
                     </td>
                     <td className="py-1.5">
                       <div className="flex items-center gap-2">
-                        <span>{entry.lead.name}</span>
+                        <SalesforceLink target={salesforceLink(entry.lead.id)}>
+                          {entry.lead.name}
+                        </SalesforceLink>
                         {entry.isControl && <ControlTag />}
                       </div>
                     </td>

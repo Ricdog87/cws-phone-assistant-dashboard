@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import { useCallDay, useGoalProgress } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { DirectorView } from './DirectorView';
@@ -32,6 +34,7 @@ export function DashboardView() {
 }
 
 function AssistantDashboard() {
+  const salesforceLink = useSalesforceLink();
   const outcomes = useAppStore((s) => s.outcomes);
   const contacts = useAppStore((s) => s.contacts);
   const recalls = useAppStore((s) => s.recalls);
@@ -171,7 +174,11 @@ function AssistantDashboard() {
                 {recent.map((o) => (
                   <tr key={o.id}>
                     <td className="py-1 tabular-nums">{formatDateTime(o.recordedAt)}</td>
-                    <td className="py-1">{o.leadName}</td>
+                    <td className="py-1">
+                      <SalesforceLink target={salesforceLink(o.leadId)}>
+                        {o.leadName}
+                      </SalesforceLink>
+                    </td>
                     <td className="py-1">{o.band}</td>
                     <td className="py-1">{OUTCOME_LABELS[o.outcome]}</td>
                     <td className="py-1">{o.isControl ? 'ja' : ''}</td>

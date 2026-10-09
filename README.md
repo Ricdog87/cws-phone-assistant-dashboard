@@ -94,6 +94,17 @@ zählt der kleine Knopf „Termin gebucht“ den Termin nur für die Kennzahlen 
 Termine heute und diese Woche im Dashboard) und ergänzt das Anrufprotokoll um das
 Ergebnis „Termin vereinbart“. Einen Kalender-Link gibt es im Cockpit nicht.
 
+### Links nach Salesforce
+
+Jeder Firmenname ist ein Link auf den Datensatz in Salesforce und öffnet ihn in einem neuen
+Tab (`/lightning/r/Account/{ID}/view`, bei Leads `/lightning/r/Lead/{ID}/view`): im
+Briefing, in Wiedervorlagen, Wettbewerb, Terminen, Scoring und auf der Karte; in der
+Warteschlange über das Symbol neben dem Namen, damit der Klick auf die Zeile weiter den Lead
+wählt. Die ID kommt aus der Spalte Account-ID des Imports. Demo-Leads haben keine
+Salesforce-ID; ihr Link trägt eine Platzhalter-ID (`001DEMO…`), den Account gibt es in
+Salesforce nicht. Standard ist `https://cws-workwear.lightning.force.com`, eine andere
+Adresse, etwa eine Sandbox, steht in `VITE_SALESFORCE_URL`.
+
 ### Wettbewerb und Vertragsenden
 
 Der Reiter Wettbewerb wertet je Firma das jüngste Gespräch mit Protokoll aus: aktuelle

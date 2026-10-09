@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import { todayLocal, useQueue, useSyncStatus } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { Button } from '@/components/Button';
@@ -108,6 +110,7 @@ interface RecallRowProps {
 }
 
 function RecallRow({ recall, status, due, callable, onCall }: RecallRowProps) {
+  const salesforceLink = useSalesforceLink();
   return (
     <li className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-[9rem_1fr_auto] sm:items-center">
       <div className={due ? 'text-brand-primary' : undefined}>
@@ -117,7 +120,9 @@ function RecallRow({ recall, status, due, callable, onCall }: RecallRowProps) {
         </div>
       </div>
       <div className="min-w-0">
-        <div className="truncate text-sm font-bold">{recall.leadName}</div>
+        <div className="truncate text-sm font-bold">
+          <SalesforceLink target={salesforceLink(recall.leadId)}>{recall.leadName}</SalesforceLink>
+        </div>
         <div className="text-xs text-muted">
           {recallReasonText(recall)}
           {recall.hunterName && ` · Hunter ${recall.hunterName}`}

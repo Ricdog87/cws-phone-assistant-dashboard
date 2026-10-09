@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import { BandBadge } from '@/components/BandBadge';
 import { ControlTag } from '@/components/ControlTag';
 import { Meter } from '@/components/Meter';
@@ -21,6 +23,7 @@ interface BriefingPanelProps {
 
 export function BriefingPanel({ entry, callerName }: BriefingPanelProps) {
   const { lead } = entry;
+  const salesforceLink = useSalesforceLink();
   const recall = useOpenRecall(lead.id);
   const { briefing, pending } = useBriefing(entry);
   // Regelbasiert mit dem Namen der Anruferin statt Platzhalter
@@ -34,7 +37,9 @@ export function BriefingPanel({ entry, callerName }: BriefingPanelProps) {
         <BandBadge band={entry.band} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-bold leading-tight">{lead.name}</h2>
+            <h2 className="text-lg font-bold leading-tight">
+              <SalesforceLink target={salesforceLink(lead.id)}>{lead.name}</SalesforceLink>
+            </h2>
             {entry.isControl && <ControlTag />}
           </div>
           <p className="text-sm text-muted">

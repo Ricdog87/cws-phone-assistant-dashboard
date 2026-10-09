@@ -75,7 +75,7 @@ export function demoTeamAppointments(
       used.add(lead.id);
       rows.push({
         id: `demo-${member.id}-${i}`,
-        leadId: null,
+        leadId: lead.id,
         leadName: lead.name,
         bookedAt: demoBookedAt(today, seed, i < member.dayAppointments),
         hunterName: hunter,

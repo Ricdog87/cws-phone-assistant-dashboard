@@ -54,6 +54,15 @@ mit Status in Salesforce). „Termine heute“ springt zu den heutigen Terminen,
 filtern die Team-Ansicht. `dayAppointments` je Person kommt aus den Demo-Werten, bei der
 Live-Person aus den erfassten Anrufen.
 
+### Links nach Salesforce
+
+`recordUrl()` in `domain/salesforce.ts` baut den Lightning-Link auf Account, Lead oder
+Kontakt (Präfix der ID über `salesforceObjectOf`). `useSalesforceLink()` in
+`app/salesforceLinks.ts` nimmt die Adresse aus `services.ts` (`VITE_SALESFORCE_URL`, sonst
+die CWS-Adresse) und gibt Demo-Leads eine Platzhalter-ID (`demoAccountId`). Angezeigt wird
+der Link über `components/SalesforceLink.tsx`, in der Warteschlange nur als Symbol. Eine
+Suche per URL in Lightning ist nicht dokumentiert und wird deshalb nicht genutzt.
+
 ### Wettbewerb und Vertragsenden
 
 `features/market/MarketView.tsx` für alle Rollen. `useCalls.ts` sammelt die Gespräche:

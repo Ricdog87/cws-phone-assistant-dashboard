@@ -35,6 +35,7 @@
 
 ## Oberfläche
 - Reiter je Rolle (src/app/tabs.ts): Telefonassistenz Anrufliste, Wiedervorlagen, Dashboard, Wettbewerb, Karte (kein Kalender-Link, der Salesforce-Kalender ist ohnehin offen); Teamleitung und Head of Sales Dashboard, Wettbewerb, Karte, Scoring, Daten. Einstellungen nie für die Telefonassistenz.
+- Firmennamen immer über SalesforceLink mit useSalesforceLink (Lightning-Datensatz /lightning/r/{Objekt}/{ID}/view, neuer Tab); keine undokumentierten Such-URLs.
 - Wettbewerbsauswertung nur über domain/market.ts (rein, getestet); Nachfass-Termin immer über contractFollowUpDate (neun Monate vor Vertragsende), nie eigene Datumsregeln in Komponenten.
 - Ergebnisleiste immer sichtbar unter dem Briefing; das Gesprächsprotokoll klappt erst über „Telefonat“ (Taste T) auf und bei jedem Leadwechsel zu, damit der Leitfaden Platz hat (Auswahlfelder Gesprächspartner, Aktuelle Lösung, Wettbewerber aus COMPETITORS, Vertragsende; vier Hinweise; Notiz). „Protokoll speichern“ (Strg+Enter) speichert ein OpenCall und schickt es sofort; jede Änderung und das Ergebnis aktualisieren dieselbe Aufgabe (gleiche ID, PATCH). Wiedervorlage bucht erst nach Grund und Datum; Datum beim Vertragsende nur über suggestRecallDate (domain/recall.ts).
 - Übertragung an Salesforce nur als Aufgaben (Task) über /api/salesforce und den Postausgang (domain/salesforceSync.ts). Zugangsdaten nur serverseitig, nie VITE_. Keine Inhalte im Log.

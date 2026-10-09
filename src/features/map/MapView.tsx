@@ -1,3 +1,5 @@
+import { useSalesforceLink } from '@/app/salesforceLinks';
+import { SalesforceLink } from '@/components/SalesforceLink';
 import {
   latLngBounds,
   type CircleMarker as LeafletCircleMarker,
@@ -71,6 +73,7 @@ function LeadMarker({
 }) {
   const { lead } = entry;
   const ref = useRef<LeafletCircleMarker>(null);
+  const salesforceLink = useSalesforceLink();
   const blocked = isInCooldown(lead.lastActivity, today);
   const blockedUntil = cooldownEnds(lead.lastActivity);
   const className = markerClass(entry.band, inList && !blocked, selected);
@@ -93,7 +96,9 @@ function LeadMarker({
         <div className="min-w-[220px] space-y-2 font-sans">
           <div className="flex items-center gap-2">
             <BandBadge band={entry.band} />
-            <strong className="text-sm">{lead.name}</strong>
+            <strong className="text-sm">
+              <SalesforceLink target={salesforceLink(lead.id)}>{lead.name}</SalesforceLink>
+            </strong>
           </div>
           <div className="text-xs text-muted">
             {lead.industry} · {lead.city}
