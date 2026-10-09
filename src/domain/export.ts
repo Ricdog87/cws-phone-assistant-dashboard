@@ -6,7 +6,9 @@ import {
   PROTOCOL_FLAG_LABELS,
   isNetContact,
 } from './protocol';
-import { callOutcomeText, type TeamCall } from './teamCalls';
+import type { MarketRow } from './market';
+import { formatMonth } from './recall';
+import { callOutcomeText } from './teamCalls';
 import type { CallOutcome, CallProtocol, ContactUpdate } from './types';
 
 /** Byte Order Mark, damit Excel die Datei als UTF-8 erkennt */
@@ -28,6 +30,7 @@ function protocolHeader(): string[] {
     'Nettokontakt',
     'Aktuelle Lösung',
     'Wettbewerber',
+    'Vertragsende',
     ...PROTOCOL_FLAGS.map((flag) => PROTOCOL_FLAG_LABELS[flag]),
     'Notiz',
   ];
@@ -39,6 +42,7 @@ function protocolCells(protocol: CallProtocol | undefined): string[] {
     isNetContact(protocol) ? 'ja' : 'nein',
     protocol?.solution ? CALL_SOLUTION_LABELS[protocol.solution] : '',
     protocol?.competitor ?? '',
+    protocol?.contractEnd ? formatMonth(protocol.contractEnd) : '',
     ...PROTOCOL_FLAGS.map((flag) => (protocol?.[flag] ? 'ja' : '')),
     protocol?.note ?? '',
   ];
@@ -126,30 +130,34 @@ export function contactsToCsv(contacts: readonly ContactUpdate[]): string {
   return CSV_BOM + [CONTACT_HEADER.join(CSV_SEPARATOR), ...rows].join('\r\n') + '\r\n';
 }
 
-const CALL_HEADER = [
-  'Datum',
+const MARKET_HEADER = [
   'Firma',
   'Ort',
+  'Branche',
   'Hunter',
   'Telefonassistenz',
+  'Gespräch am',
   'Ergebnis',
   ...protocolHeader(),
+  'Nachfassen ab',
 ];
 
-/** Gespräche aus der Übersicht der Führung, etwa alle Firmen beim Wettbewerb */
-export function callsToCsv(calls: readonly TeamCall[]): string {
-  const rows = calls.map((call) =>
+/** Wettbewerbsauswertung, etwa alle Firmen bei MEWA mit Vertragsende in diesem Jahr */
+export function marketToCsv(rows: readonly MarketRow[]): string {
+  const lines = rows.map((row) =>
     [
-      new Date(call.recordedAt).toLocaleDateString('de-DE'),
-      call.leadName,
-      call.city,
-      call.hunterName,
-      call.assistantName,
-      callOutcomeText(call.outcome),
-      ...protocolCells(call.protocol),
+      row.leadName,
+      row.city,
+      row.industry,
+      row.hunterName,
+      row.assistantName,
+      new Date(row.recordedAt).toLocaleDateString('de-DE'),
+      callOutcomeText(row.outcome),
+      ...protocolCells(row.protocol),
+      row.followUp ? row.followUp.split('-').reverse().join('.') : '',
     ]
       .map(escapeCsvCell)
       .join(CSV_SEPARATOR),
   );
-  return CSV_BOM + [CALL_HEADER.join(CSV_SEPARATOR), ...rows].join('\r\n') + '\r\n';
+  return CSV_BOM + [MARKET_HEADER.join(CSV_SEPARATOR), ...lines].join('\r\n') + '\r\n';
 }

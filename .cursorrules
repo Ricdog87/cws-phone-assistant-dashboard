@@ -34,8 +34,9 @@
 - Kalibrierungsvorschläge nie automatisch anwenden, nur nach Bestätigung im UI.
 
 ## Oberfläche
-- Reiter je Rolle (src/app/tabs.ts): Telefonassistenz Anrufliste, Wiedervorlagen, Dashboard, Karte (kein Kalender-Link, der Salesforce-Kalender ist ohnehin offen); Teamleitung und Head of Sales Dashboard, Karte, Scoring, Daten. Einstellungen nie für die Telefonassistenz.
-- Gesprächsprotokoll und Ergebnis immer sichtbar unter dem Briefing (Gesprächspartner, Aktuelle Lösung, Wettbewerber aus COMPETITORS, vier Häkchen, Notiz). „Protokoll speichern“ (Strg+Enter) speichert ein OpenCall und schickt es sofort; jede Änderung und das Ergebnis aktualisieren dieselbe Aufgabe (gleiche ID, PATCH). Wiedervorlage bucht erst nach Grund und Datum; Datum beim Vertragsende nur über suggestRecallDate (domain/recall.ts).
+- Reiter je Rolle (src/app/tabs.ts): Telefonassistenz Anrufliste, Wiedervorlagen, Dashboard, Wettbewerb, Karte (kein Kalender-Link, der Salesforce-Kalender ist ohnehin offen); Teamleitung und Head of Sales Dashboard, Wettbewerb, Karte, Scoring, Daten. Einstellungen nie für die Telefonassistenz.
+- Wettbewerbsauswertung nur über domain/market.ts (rein, getestet); Nachfass-Termin immer über contractFollowUpDate (neun Monate vor Vertragsende), nie eigene Datumsregeln in Komponenten.
+- Gesprächsprotokoll und Ergebnis immer sichtbar unter dem Briefing (Gesprächspartner, Aktuelle Lösung, bei Wettbewerb Anbieter aus COMPETITORS und Vertragsende, vier Hinweise, Notiz; Auswahl als Chips). „Protokoll speichern“ (Strg+Enter) speichert ein OpenCall und schickt es sofort; jede Änderung und das Ergebnis aktualisieren dieselbe Aufgabe (gleiche ID, PATCH). Wiedervorlage bucht erst nach Grund und Datum; Datum beim Vertragsende nur über suggestRecallDate (domain/recall.ts).
 - Übertragung an Salesforce nur als Aufgaben (Task) über /api/salesforce und den Postausgang (domain/salesforceSync.ts). Zugangsdaten nur serverseitig, nie VITE_. Keine Inhalte im Log.
 - Terminvergabe nur in Salesforce, kein Kalender-Link im Cockpit. Der kleine Knopf „Termin gebucht“ zählt den Termin nur für die Kennzahlen; Tasten 1 bis 3 für Wiedervorlage, Nicht erreicht, Kein Interesse. Keine eigenen Termin-Mails oder Kalenderdateien.
 - Führungsansichten: Kacheln oben, ein Bereich mit Team, Hunter, Termine (BoardSections). Keine weiteren Blöcke untereinander.

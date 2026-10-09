@@ -41,7 +41,7 @@ import { DEMO_USER, type ViewLevel } from './demoUser';
 import { allowedTab, homeTab } from './tabs';
 import { loadSession, saveSession } from './session';
 
-export type TabId = 'queue' | 'recalls' | 'map' | 'dashboard' | 'scoring' | 'data';
+export type TabId = 'queue' | 'recalls' | 'market' | 'map' | 'dashboard' | 'scoring' | 'data';
 
 export interface AppState {
   activeTab: TabId;
@@ -53,6 +53,8 @@ export interface AppState {
   loading: boolean;
   /** Accountinhaber, dessen Potenzialliste angerufen wird; null zeigt alle Hunter */
   ownerFilter: string | null;
+  /** Branche der Anrufliste; null zeigt alle */
+  industryFilter: string | null;
   /** Zuordnung Telefonassistenz zu Hunter (Sales Rep), gesetzt über die Auswahlfelder */
   assignments: Assignments;
   weights: Weights;
@@ -78,6 +80,7 @@ export interface AppState {
 
   setTab(tab: TabId): void;
   setOwnerFilter(owner: string | null): void;
+  setIndustryFilter(industry: string | null): void;
   /** Ordnet eine Telefonassistenz einem Hunter zu; null hebt die Zuordnung auf */
   setAssignment(memberId: string, hunter: string | null): void;
   setViewLevel(level: ViewLevel): void;
@@ -141,6 +144,7 @@ export function createAppStore(
     // Die angemeldete Telefonassistenz startet mit der Leadliste ihres Hunters
     ownerFilter:
       restoredLevel === 'assistant' ? (initialAssignments[LIVE_ASSISTANT_ID] ?? null) : null,
+    industryFilter: null,
     assignments: initialAssignments,
     weights: { ...DEFAULT_WEIGHTS },
     controlEnabled: true,
@@ -158,7 +162,9 @@ export function createAppStore(
     signedIn: restoredLevel !== null,
 
     setTab: (tab) => set({ activeTab: allowedTab(get().viewLevel, tab) }),
-    setOwnerFilter: (ownerFilter) => set({ ownerFilter, selectedLeadId: null }),
+    setOwnerFilter: (ownerFilter) =>
+      set({ ownerFilter, industryFilter: null, selectedLeadId: null }),
+    setIndustryFilter: (industryFilter) => set({ industryFilter, selectedLeadId: null }),
     setAssignment: (memberId, hunter) => {
       const others = Object.entries(get().assignments).filter(([id]) => id !== memberId);
       const next: Assignments = Object.fromEntries(
@@ -184,6 +190,7 @@ export function createAppStore(
         signedIn: true,
         selectedLeadId: null,
         activeTab: homeTab(viewLevel),
+        industryFilter: null,
         ownerFilter:
           viewLevel === 'assistant' ? (get().assignments[LIVE_ASSISTANT_ID] ?? null) : null,
       });

@@ -81,6 +81,7 @@ legt es als offenes Gespräch ab, das Ergebnis übernimmt es in den `CallOutcome
 | `contactRole`      | Entscheider, Zentrale, Sonstige; Entscheider zählt als Nettokontakt     |
 | `solution`         | Kauft Berufskleidung, Mitarbeitende kaufen selbst, Wettbewerb, keine BK |
 | `competitor`       | Nur bei Wettbewerb: MEWA, Bardusch, DBL, Alsco, Sonstiger, Unbekannt    |
+| `contractEnd`      | Nur bei Wettbewerb: Vertrag läuft bis, YYYY-MM; leer, wenn unbekannt    |
 | `companyDissolved` | Firma erloschen                                                         |
 | `centralDecision`  | Zentralentscheidung                                                     |
 | `existingCustomer` | Bestandskunde                                                           |
@@ -88,6 +89,9 @@ legt es als offenes Gespräch ab, das Ergebnis übernimmt es in den `CallOutcome
 | `note`             | Notiz zum Telefonat, höchstens 500 Zeichen, ohne private Angaben        |
 
 Die Liste der Lösungen und Wettbewerber kommt aus dem Vertrieb (Stand 08.10.2026).
+Nachgefasst wird ab dem ersten Werktag neun Monate vor Vertragsende
+(`contractFollowUpDate`), dieselbe Regel wie bei der Wiedervorlage. Ältere Protokolle ohne
+Vertragsende gelten als unbekannt.
 
 ## Offenes Gespräch
 
@@ -150,7 +154,7 @@ Ergebnis gebucht wird, aktualisiert die nächste Übertragung dieselbe Aufgabe
 | `WhatId` / `WhoId`    | Account oder Lead der Salesforce-ID  | Account oder Lead der Salesforce-ID |
 
 Für Auswertungen in Salesforce selbst braucht es Felder am Account, etwa
-`Aktuelle_Loesung__c`, `Wettbewerber__c` und die vier Häkchen; „Nicht mehr anrufen“
+`Aktuelle_Loesung__c`, `Wettbewerber__c`, `Vertragsende_Wettbewerb__c` und die vier Häkchen; „Nicht mehr anrufen“
 entspricht beim Lead dem Standardfeld `DoNotCall`. Das ist mit dem Salesforce-Team
 abzustimmen.
 

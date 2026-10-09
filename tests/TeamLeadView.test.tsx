@@ -29,7 +29,6 @@ describe('Dashboard Teamleitung', () => {
       'Team',
       'Hunter',
       'Termine',
-      'Gespräche',
     ]);
     // Team: eine Zeile je Person mit Hunter und Terminen heute
     const table = screen.getByRole('table');
@@ -66,17 +65,5 @@ describe('Dashboard Teamleitung', () => {
     const hunters = screen.getByRole('table');
     expect(within(hunters).getAllByRole('row')).toHaveLength(7);
     expect(within(hunters).getByText('Oldenburg und Ostfriesland')).toBeInTheDocument();
-  });
-
-  it('filtert die Gespräche nach Wettbewerber', async () => {
-    const user = userEvent.setup();
-    render(<TeamLeadView />);
-    await user.click(sectionButton(/Gespräche/));
-    expect(screen.getByText(/Nettokontakte/)).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Aktuelle Lösung'), 'competitor');
-    await user.selectOptions(screen.getByLabelText('Wettbewerber'), 'MEWA');
-    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-    expect(rows.length).toBeGreaterThan(3);
-    for (const row of rows) expect(row).toHaveTextContent('Wettbewerb: MEWA');
   });
 });

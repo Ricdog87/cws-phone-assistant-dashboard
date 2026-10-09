@@ -3,7 +3,9 @@ import { BandBadge } from '@/components/BandBadge';
 import { ControlTag } from '@/components/ControlTag';
 import { activityLabel, daysSinceActivity } from '@/domain/activity';
 import { OUTCOME_LABELS } from '@/domain/outcomes';
+import type { MarketRow } from '@/domain/market';
 import { PROTOCOL_FLAG_LABELS, protocolFlags } from '@/domain/protocol';
+import { formatMonth } from '@/domain/recall';
 import type { CallOutcome, QueueEntry, Recall } from '@/domain/types';
 
 interface QueueListProps {
@@ -12,12 +14,22 @@ interface QueueListProps {
   latest: ReadonlyMap<string, CallOutcome>;
   /** Offene Wiedervorlagen je Lead */
   recalls?: ReadonlyMap<string, Recall>;
+  /** Bekannter Stand je Lead aus früheren Gesprächen, für Wettbewerber und Vertragsende */
+  known?: ReadonlyMap<string, MarketRow>;
   /** Heute als YYYY-MM-DD für die Anzeige der letzten Aktivität */
   today: string;
   onSelect(id: string): void;
 }
 
-export function QueueList({ queue, selectedId, latest, recalls, today, onSelect }: QueueListProps) {
+export function QueueList({
+  queue,
+  selectedId,
+  latest,
+  recalls,
+  known,
+  today,
+  onSelect,
+}: QueueListProps) {
   const selectedRef = useRef<HTMLLIElement>(null);
 
   // Ausgewählten Lead bei Tastaturnavigation im sichtbaren Bereich halten
@@ -37,6 +49,8 @@ export function QueueList({ queue, selectedId, latest, recalls, today, onSelect 
         const selected = entry.lead.id === selectedId;
         const outcome = latest.get(entry.lead.id);
         const recall = recalls?.get(entry.lead.id);
+        const knownCall = known?.get(entry.lead.id);
+        const competitor = knownCall?.bucket ? knownCall : undefined;
         // Merkmale, die gegen einen weiteren Anruf sprechen, sichtbar machen
         const blockers = protocolFlags(outcome?.protocol).filter(
           (flag) => flag !== 'centralDecision',
@@ -74,6 +88,23 @@ export function QueueList({ queue, selectedId, latest, recalls, today, onSelect 
                   >
                     {' '}
                     · Wiedervorlage {shortDate(recall.dueDate)}
+                  </span>
+                )}
+                {competitor && (
+                  <span
+                    className={
+                      competitor.bucket === 'now' ? 'font-bold text-brand-primary' : undefined
+                    }
+                    title={
+                      competitor.followUp
+                        ? `Nachfassen ab ${shortDate(competitor.followUp)}`
+                        : 'Vertragsende unbekannt'
+                    }
+                  >
+                    {' '}
+                    · {competitor.protocol.competitor ?? 'Wettbewerb'}
+                    {competitor.protocol.contractEnd &&
+                      ` bis ${formatMonth(competitor.protocol.contractEnd)}`}
                   </span>
                 )}
               </div>

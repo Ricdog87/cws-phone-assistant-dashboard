@@ -24,12 +24,26 @@ const CALLED_SHARE = 45;
 
 /** Notizen bei Wettbewerb; closed passt nur zu „Kein Interesse“ */
 const COMPETITOR_NOTES: { text: (name: string) => string; closed: boolean }[] = [
-  { text: (name) => `Vertrag bei ${name} läuft noch rund ein Jahr`, closed: false },
+  {
+    text: (name) => `Mietvertrag bei ${name}, offen für einen Vergleich vor Vertragsende`,
+    closed: false,
+  },
   { text: (name) => `Unzufrieden mit der Liefertreue von ${name}`, closed: false },
   { text: (name) => `Preisvergleich zu ${name} gewünscht`, closed: false },
-  { text: (name) => `Zufrieden mit ${name}, Vertrag frisch verlängert`, closed: true },
+  { text: (name) => `Zufrieden mit ${name}, aktuell kein Wechselbedarf`, closed: true },
   { text: (name) => `Rahmenvertrag mit ${name} über die Zentrale`, closed: true },
 ];
+
+/** Anteil der Wettbewerbskunden mit erfragtem Vertragsende, in Prozent */
+const CONTRACT_KNOWN_SHARE = 72;
+
+/** Vertragsende 1 bis 34 Monate nach heute als YYYY-MM */
+function demoContractEnd(key: string, today: Date): string | null {
+  const seed = hash(`vertrag-${key}`);
+  if (seed % 100 >= CONTRACT_KNOWN_SHARE) return null;
+  const end = new Date(today.getFullYear(), today.getMonth() + 1 + ((seed >>> 8) % 34), 1);
+  return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`;
+}
 
 const NOTES: Record<Exclude<CallProtocol['solution'], 'competitor' | null>, string[]> = {
   companyBuys: [
@@ -57,7 +71,12 @@ function competitorOf(key: string): string {
  * Erfundenes Protokoll, Verteilung als Annahme für die Demo. Jedes Merkmal hat einen eigenen
  * Streuwert, damit sie nicht zusammenhängen.
  */
-function demoProtocol(key: string, outcome: OutcomeType, forceCompetitor = false): CallProtocol {
+function demoProtocol(
+  key: string,
+  outcome: OutcomeType,
+  today: Date,
+  forceCompetitor = false,
+): CallProtocol {
   const share = (name: string) => hash(`${name}-${key}`) % 100;
   const roleShare = share('rolle') % 10;
   const solutionShare = share('loesung');
@@ -93,6 +112,7 @@ function demoProtocol(key: string, outcome: OutcomeType, forceCompetitor = false
           : 'other',
     solution,
     competitor,
+    contractEnd: solution === 'competitor' ? demoContractEnd(key, today) : null,
     companyDissolved: false,
     centralDecision,
     existingCustomer: share('bestand') < 2,
@@ -119,9 +139,10 @@ function call(
 ): TeamCall {
   return {
     id: `demo-gespraech-${lead.id}`,
-    leadId: null,
+    leadId: lead.id,
     leadName: lead.name,
     city: lead.city,
+    industry: lead.industry,
     hunterName,
     assistantName,
     recordedAt,
@@ -160,7 +181,7 @@ export function demoTeamCalls(
     used.add(lead.id);
     calls.push(
       call(lead, row.assistantName, row.hunterName, row.bookedAt, 'appointment', {
-        ...demoProtocol(lead.id, 'appointment'),
+        ...demoProtocol(lead.id, 'appointment', today),
         doNotCall: false,
       }),
     );
@@ -176,7 +197,8 @@ export function demoTeamCalls(
       used.add(lead.id);
       calls.push(
         call(lead, liveName, liveHunter, recall.createdAt, 'callback', {
-          ...demoProtocol(lead.id, 'callback', recall.reason === 'contractEnd'),
+          ...demoProtocol(lead.id, 'callback', today, recall.reason === 'contractEnd'),
+          ...(recall.contractEnd ? { contractEnd: recall.contractEnd } : {}),
           note: recall.note,
         }),
       );
@@ -211,6 +233,7 @@ export function demoTeamCalls(
           contactRole: null,
           solution: null,
           competitor: null,
+          contractEnd: null,
           companyDissolved: true,
           centralDecision: false,
           existingCustomer: false,
@@ -223,7 +246,7 @@ export function demoTeamCalls(
     const outcome: OutcomeType =
       hash(`ergebnis-${lead.id}`) % 100 < 52 ? 'callback' : 'not_interested';
     calls.push(
-      call(lead, assistant, lead.owner, recordedAt, outcome, demoProtocol(lead.id, outcome)),
+      call(lead, assistant, lead.owner, recordedAt, outcome, demoProtocol(lead.id, outcome, today)),
     );
   }
   return calls;

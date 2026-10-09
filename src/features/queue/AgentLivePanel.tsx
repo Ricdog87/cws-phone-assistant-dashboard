@@ -28,35 +28,39 @@ export function AgentLivePanel() {
   return (
     <section
       aria-label="Live-Maske Telefonassistenz"
-      className="border-b border-border bg-panel px-4 py-3 md:px-6"
+      className="border-b border-border bg-panel px-4 py-2.5 md:px-6"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-bold leading-tight">{greeting(agentName)}</h2>
-          <p className="text-sm text-muted">{motivationLine(progress)}</p>
+      <div className="grid items-center gap-x-8 gap-y-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+        <div className="min-w-0">
+          <h2 className="text-base font-bold leading-tight">
+            {greeting(agentName)}{' '}
+            <span className="text-xs font-normal capitalize text-muted">· {dateLabel}</span>
+          </h2>
+          <p className="truncate text-sm text-muted">{motivationLine(progress)}</p>
         </div>
-        <p className="text-xs capitalize text-muted">{dateLabel}</p>
-      </div>
-
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <GoalCard
-          title="Tagesziel"
-          subtitle="Anrufe heute"
-          progress={progress.callsToday}
-          barClassName={progress.callsToday.reached ? 'bg-brand-ink' : 'bg-brand-primary'}
-        />
-        <GoalCard
-          title="Wochenziel"
-          subtitle="Termine diese Woche"
-          progress={progress.appointmentsThisWeek}
-          barClassName={progress.appointmentsThisWeek.reached ? 'bg-brand-ink' : 'bg-brand-primary'}
-        />
+        <div className="grid grid-cols-2 gap-6">
+          <GoalCompact
+            title="Tagesziel"
+            subtitle="Anrufe heute"
+            progress={progress.callsToday}
+            barClassName={progress.callsToday.reached ? 'bg-brand-ink' : 'bg-brand-primary'}
+          />
+          <GoalCompact
+            title="Wochenziel"
+            subtitle="Termine diese Woche"
+            progress={progress.appointmentsThisWeek}
+            barClassName={
+              progress.appointmentsThisWeek.reached ? 'bg-brand-ink' : 'bg-brand-primary'
+            }
+          />
+        </div>
       </div>
     </section>
   );
 }
 
-function GoalCard({
+/** Ziel in einer Zeile: Titel und Stand, darunter der Balken mit dem Rest */
+function GoalCompact({
   title,
   subtitle,
   progress,
@@ -68,29 +72,25 @@ function GoalCard({
   barClassName: string;
 }) {
   return (
-    <div className="rounded border border-border bg-surface p-3">
+    <div className="min-w-0">
       <div className="flex items-baseline justify-between gap-2">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-wide text-muted">{title}</div>
-          <div className="text-xs text-muted">{subtitle}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold tabular-nums leading-none">
+        <span className="truncate text-xs font-bold uppercase tracking-wide text-muted">
+          {title}
+        </span>
+        <span className="whitespace-nowrap text-xs text-muted">
+          <strong className="text-lg tabular-nums leading-none text-brand-ink">
             {progress.current}
-            <span className="text-base font-normal text-muted"> / {progress.target}</span>
-          </div>
-          <div className="mt-0.5 text-xs tabular-nums text-muted">{progress.percent} %</div>
-        </div>
+          </strong>{' '}
+          / {progress.target} · {progress.percent} %
+        </span>
       </div>
-      <div className="mt-2">
-        <Meter
-          label={`${title}: ${subtitle}`}
-          value={progress.current}
-          max={Math.max(progress.target, 1)}
-          valueLabel={progress.reached ? 'Ziel erreicht' : `noch ${progress.remaining}`}
-          barClassName={barClassName}
-        />
-      </div>
+      <Meter
+        label={subtitle}
+        value={progress.current}
+        max={Math.max(progress.target, 1)}
+        valueLabel={progress.reached ? 'Ziel erreicht' : `noch ${progress.remaining}`}
+        barClassName={barClassName}
+      />
     </div>
   );
 }

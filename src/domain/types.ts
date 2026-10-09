@@ -123,6 +123,8 @@ export interface CallProtocol {
   solution: CallSolution | null;
   /** Anbieter bei Wettbewerb, Werte aus COMPETITORS */
   competitor: string | null;
+  /** Vertrag beim Wettbewerb läuft bis, YYYY-MM; nur bei Wettbewerb, sonst leer */
+  contractEnd: string | null;
   companyDissolved: boolean;
   centralDecision: boolean;
   existingCustomer: boolean;

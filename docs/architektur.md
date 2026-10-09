@@ -46,21 +46,36 @@ Salesforce-Kalender hat die Telefonassistenz ohnehin offen. `setTab` im Store un
 
 Teamleitung und Head of Sales bauen auf `features/dashboard/BoardSections.tsx` auf: oben
 die Kacheln Termine heute, Termine diese Woche, Anrufe heute und Wochenziel, darunter ein
-Bereich mit vier Ansichten statt vieler Blöcke untereinander. Team (Rang, Person, Hunter,
+Bereich mit drei Ansichten statt vieler Blöcke untereinander. Team (Rang, Person, Hunter,
 Termine heute und der Woche, Anrufe, Status; Klick öffnet rechts `MemberDetail` mit
 Werdegang und Hunter-Zuordnung, sonst die größten Lücken), Hunter (`HunterTable`, Gebiet
-und Zahl der Telefonassistenzen), Termine (`TeamAppointmentsTable`, heute oder Woche, mit
-Status in Salesforce) und Gespräche (`TeamCallsTable`, je Firma das jüngste Protokoll,
-Filter nach aktueller Lösung und Wettbewerber, Nettokontakte, CSV-Export über
-`callsToCsv`). „Termine heute“ springt zu den heutigen Terminen, die anderen Kacheln
+und Zahl der Telefonassistenzen) und Termine (`TeamAppointmentsTable`, heute oder Woche,
+mit Status in Salesforce). „Termine heute“ springt zu den heutigen Terminen, die anderen Kacheln
 filtern die Team-Ansicht. `dayAppointments` je Person kommt aus den Demo-Werten, bei der
 Live-Person aus den erfassten Anrufen.
+
+### Wettbewerb und Vertragsenden
+
+`features/market/MarketView.tsx` für alle Rollen. `useCalls.ts` sammelt die Gespräche:
+aus diesem Browser (`useLiveCalls`: Ergebnisse und offene Gespräche mit Protokoll) und mit
+Demo-Daten `demoTeamCalls` je Region; je Firma zählt das jüngste (`latestCallPerCompany`).
+`useMarketRows` schneidet nach Rolle zu, `useKnownCalls` liefert der Anrufliste den
+bekannten Stand je Lead. Die Fachlogik liegt rein in `domain/market.ts`: `toMarketRow`
+(Nachfass-Termin über `contractFollowUpDate` aus `domain/recall.ts`, Einordnung
+`followUpBucket`, erledigt bei Termin oder Sperre), `filterMarket` (mit `ignore`, damit
+eine Grafik alle Werte ihrer eigenen Dimension zeigt), `summarizeMarket`,
+`solutionBreakdown`, `contractEndsByQuarter`, `industryMatrix`, `sortForFollowUp`. Export
+über `marketToCsv`. Grafiken als schlichte Balken und Säulen mit Werten an der Spitze,
+Wettbewerber dunkel, übrige Lösungen grau, fälliges Nachfassen in der Markenfarbe.
 
 ### Gesprächsprotokoll, Termine und Wiedervorlagen
 
 - Gesprächsprotokoll und Ergebnis stehen fest unter dem Briefing
-  (`features/queue/OutcomeBar.tsx` mit `ProtocolPanel`): Gesprächspartner, Aktuelle Lösung,
-  Wettbewerber (`COMPETITORS` in `qualificationConfig.ts`), vier Häkchen, Notiz.
+  (`features/queue/OutcomeBar.tsx` mit `ProtocolPanel`), alles als Auswahl-Chips:
+  Gesprächspartner, Aktuelle Lösung, bei Wettbewerb Anbieter (`COMPETITORS` in
+  `qualificationConfig.ts`) und Vertragsende mit Nachfass-Termin, Hinweise, Notiz. Das
+  Protokoll scrollt bei Bedarf in sich, die Ergebnisleiste bleibt stehen. Der bekannte
+  Stand aus einem früheren Gespräch lässt sich mit `carryOverProtocol` übernehmen.
   Nettokontakt heißt Entscheider erreicht (`isNetContact`).
 - „Protokoll speichern“ (Strg+Enter) legt über `useSaveProtocol` ein `OpenCall` an oder
   ersetzt es (je Lead höchstens eines, `openCallFor()` in `domain/openCalls.ts`) und stellt

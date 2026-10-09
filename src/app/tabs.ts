@@ -15,6 +15,7 @@ export const TABS: readonly TabDefinition[] = [
   { id: 'queue', label: 'Anrufliste', roles: ['assistant'] },
   { id: 'recalls', label: 'Wiedervorlagen', roles: ['assistant'] },
   { id: 'dashboard', label: 'Dashboard', roles: ['assistant', ...LEADERSHIP] },
+  { id: 'market', label: 'Wettbewerb', roles: ['assistant', ...LEADERSHIP] },
   { id: 'map', label: 'Karte', roles: ['assistant', ...LEADERSHIP] },
   { id: 'scoring', label: 'Scoring', roles: LEADERSHIP },
   { id: 'data', label: 'Daten', roles: LEADERSHIP },

@@ -14,9 +14,22 @@ export function useScoredLeads(): ScoredLead[] {
   return useMemo(() => scoreLeads(leads, weights), [leads, weights]);
 }
 
-/** Warteschlange der gewählten Potenzialliste, ohne Bestandskunden */
-export function useQueue(): QueueEntry[] {
+/** Bewertete Leads der gewählten Branche, alle ohne Branchenfilter */
+function useIndustryLeads(): ScoredLead[] {
   const scored = useScoredLeads();
+  const industryFilter = useAppStore((s) => s.industryFilter);
+  return useMemo(
+    () =>
+      industryFilter
+        ? scored.filter((entry) => (entry.lead.industry || UNKNOWN_INDUSTRY) === industryFilter)
+        : scored,
+    [scored, industryFilter],
+  );
+}
+
+/** Warteschlange der gewählten Potenzialliste und Branche, ohne Bestandskunden */
+export function useQueue(): QueueEntry[] {
+  const scored = useIndustryLeads();
   const controlEnabled = useAppStore((s) => s.controlEnabled);
   const ownerFilter = useAppStore((s) => s.ownerFilter);
   const today = todayLocal();
@@ -26,12 +39,32 @@ export function useQueue(): QueueEntry[] {
   );
 }
 
-/** Accounts der gewählten Potenzialliste in der Sperrfrist */
+/** Accounts der gewählten Potenzialliste und Branche in der Sperrfrist */
 export function useCooldownCount(): number {
-  const scored = useScoredLeads();
+  const scored = useIndustryLeads();
   const ownerFilter = useAppStore((s) => s.ownerFilter);
   const today = todayLocal();
   return useMemo(() => cooldownCount(scored, ownerFilter, today), [scored, ownerFilter, today]);
+}
+
+/** Anzeige für Leads ohne Branche */
+export const UNKNOWN_INDUSTRY = 'Branche unbekannt';
+
+/** Branchen der gewählten Potenzialliste mit Zahl der Neukunden-Accounts, häufigste zuerst */
+export function useIndustryCounts(): { industry: string; count: number }[] {
+  const leads = useAppStore((s) => s.leads);
+  const ownerFilter = useAppStore((s) => s.ownerFilter);
+  return useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const lead of leads) {
+      if (lead.isCustomer || (ownerFilter && lead.owner !== ownerFilter)) continue;
+      const industry = lead.industry || UNKNOWN_INDUSTRY;
+      counts.set(industry, (counts.get(industry) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([industry, count]) => ({ industry, count }))
+      .sort((a, b) => b.count - a.count || a.industry.localeCompare(b.industry, 'de'));
+  }, [leads, ownerFilter]);
 }
 
 /** Hunter mit Zahl der Neukunden-Accounts für die Auswahl der Potenzialliste */

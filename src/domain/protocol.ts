@@ -1,4 +1,5 @@
 import { COMPETITORS } from './qualificationConfig';
+import { formatMonth } from './recall';
 import type { CallProtocol, CallSolution, ContactRole } from './types';
 
 /** Auswahl „Aktuelle Lösung“ in der Reihenfolge aus dem Vertrieb */
@@ -52,6 +53,7 @@ export function emptyProtocol(): CallProtocol {
     contactRole: null,
     solution: null,
     competitor: null,
+    contractEnd: null,
     companyDissolved: false,
     centralDecision: false,
     existingCustomer: false,
@@ -90,14 +92,40 @@ export function solutionText(protocol: CallProtocol | undefined): string | null 
   return CALL_SOLUTION_LABELS[protocol.solution];
 }
 
-/** Bereinigt Eingaben: Anbieter nur bei Wettbewerb, leere Notiz als null */
+/** Bereinigt Eingaben: Anbieter und Vertragsende nur bei Wettbewerb, leere Notiz als null */
 export function normalizeProtocol(protocol: CallProtocol): CallProtocol {
   const note = protocol.note?.trim().slice(0, PROTOCOL_NOTE_MAX_LENGTH) ?? '';
+  const competitor = protocol.solution === 'competitor';
+  // Ältere Protokolle kennen kein Vertragsende
+  const contractEnd = protocol.contractEnd ?? null;
   return {
     ...protocol,
-    competitor: protocol.solution === 'competitor' ? protocol.competitor : null,
+    competitor: competitor ? protocol.competitor : null,
+    contractEnd:
+      competitor && contractEnd && /^\d{4}-\d{2}$/.test(contractEnd) ? contractEnd : null,
     note: note ? note : null,
   };
+}
+
+/** Vertragsende beim Wettbewerb in Worten, etwa „Vertrag bis 03/2027“ */
+export function contractEndText(protocol: CallProtocol | undefined): string | null {
+  return protocol?.solution === 'competitor' && protocol.contractEnd
+    ? `Vertrag bis ${formatMonth(protocol.contractEnd)}`
+    : null;
+}
+
+/** Bekannter Stand, den ein neues Gespräch übernehmen kann: Lösung, Vertragsende, Merkmale */
+export function carryOverProtocol(current: CallProtocol, known: CallProtocol): CallProtocol {
+  return normalizeProtocol({
+    ...current,
+    solution: known.solution,
+    competitor: known.competitor,
+    contractEnd: known.contractEnd ?? null,
+    companyDissolved: known.companyDissolved,
+    centralDecision: known.centralDecision,
+    existingCustomer: known.existingCustomer,
+    doNotCall: known.doNotCall,
+  });
 }
 
 /** Gleicher Inhalt nach dem Bereinigen, etwa um ungespeicherte Änderungen zu erkennen */
@@ -105,4 +133,15 @@ export function sameProtocol(a: CallProtocol, b: CallProtocol): boolean {
   const left = normalizeProtocol(a);
   const right = normalizeProtocol(b);
   return (Object.keys(left) as (keyof CallProtocol)[]).every((key) => left[key] === right[key]);
+}
+
+/** Kurzfassung des Stands: Lösung mit Anbieter, Vertragsende und Hinweise */
+export function protocolSummary(protocol: CallProtocol): string {
+  return [
+    solutionText(protocol),
+    contractEndText(protocol),
+    ...protocolFlags(protocol).map((flag) => PROTOCOL_FLAG_LABELS[flag]),
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
 }

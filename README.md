@@ -43,7 +43,8 @@ Freischaltung arbeitet.
 | -------------- | ------------------------------------------------------------------------------- | -------------------------- |
 | Anrufliste     | Warteschlange links, Briefing rechts, Protokoll und Ergebnis unten (Taste 1–3)  | Telefonassistenz           |
 | Wiedervorlagen | Rückrufe und Vertragsenden nach Fälligkeit, Anrufen mit einem Klick             | Telefonassistenz           |
-| Dashboard      | Je Rolle: eigene Ziele; Führung mit Team, Hunter, Terminen und Gesprächen       | alle                       |
+| Dashboard      | Je Rolle: eigene Ziele; Führung mit Team, Hunter und Terminen                   | alle                       |
+| Wettbewerb     | Lösung und Wettbewerber je Firma, Vertragsenden, Nachfass-Liste, Filter, Export | alle                       |
 | Karte          | Leads der Potenzialliste nach Band, andere Hunter blass, Bestandskunden separat | alle                       |
 | Scoring        | Gewichte, Kontrollstichprobe, Briefing-Variante, Rangfolge, Kalibrierung        | Teamleitung, Head of Sales |
 | Daten          | Datenquelle wählen, CSV mit Spaltenzuordnung importieren                        | Teamleitung, Head of Sales |
@@ -53,11 +54,16 @@ sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sie
 Zuordnung, ändern kann sie sie nicht.
 
 Unter dem Briefing steht immer sichtbar das Gesprächsprotokoll mit dem Ergebnis, alles an
-einem Fleck: erst die Auswahlfelder Gesprächspartner (Entscheider, Zentrale, Sonstige),
-Aktuelle Lösung (kauft Berufskleidung, Mitarbeitende kaufen selbst, Wettbewerb, keine
-Berufskleidung) und Wettbewerber (MEWA, Bardusch, DBL, Alsco, Sonstiger), dazu die
-Häkchen Firma erloschen, Zentralentscheidung, Bestandskunde und Nicht mehr anrufen, dann
-die Notiz zum Telefonat. „Protokoll speichern“ (oder Strg+Enter) bestätigt das Protokoll,
+einem Fleck und per Klick: Gesprächspartner (Entscheider, Zentrale, Sonstige), Aktuelle
+Lösung (Firma kauft selbst, Mitarbeitende kaufen, Wettbewerb, keine Berufskleidung), bei
+Wettbewerb der Anbieter (MEWA, Bardusch, DBL, Alsco, Sonstiger, Unbekannt) und „Vertrag
+läuft bis“ mit dem Nachfass-Termin (erster Werktag neun Monate vorher), dazu die Hinweise
+Firma erloschen, Zentralentscheidung, Bestandskunde und Nicht mehr anrufen, dann die Notiz
+zum Telefonat. Ein zweiter Klick hebt eine Auswahl auf. Ist zur Firma schon etwas bekannt,
+etwa Wettbewerber und Vertragsende aus einem früheren Gespräch, steht es über dem
+Protokoll und lässt sich mit „Übernehmen“ einsetzen; die Warteschlange zeigt bekannte
+Wettbewerber mit Vertragsende, fällige rot. Über der Warteschlange filtert „Branche“ die
+Anrufliste. „Protokoll speichern“ (oder Strg+Enter) bestätigt das Protokoll,
 speichert es und schickt es sofort nach Salesforce; jede weitere Änderung aktualisiert
 dieselbe Aufgabe, es entsteht keine zweite. Ungespeicherte Änderungen zeigt die Maske an,
 und sie bleiben beim Wechsel des Leads erhalten. Darunter die Ergebnisse „Wiedervorlage“,
@@ -69,7 +75,8 @@ mit dem Entscheider zählt als Nettokontakt.
 
 Die Wiedervorlage fragt vor dem Buchen nach dem Grund: „Rückruf vereinbart“ mit Datum
 (Vorschlag nächster Werktag) und optionaler Uhrzeit, oder „Vertragsende bekannt“; bei
-Wettbewerb ist das Vertragsende vorgewählt. Die Notiz kommt aus dem Protokoll.
+Wettbewerb ist das Vertragsende vorgewählt und der Monat aus dem Protokoll übernommen. Die
+Notiz kommt aus dem Protokoll.
 Beim Vertragsende ergibt sich das Datum aus der bestehenden Regel (erster Werktag des
 Monats, neun Monate vorher); liegt das Ende zu nah, schlägt das Cockpit vor, jetzt einen
 Termin in Salesforce zu vereinbaren und ihn als gebucht zu erfassen. Escape bricht ab. Der Reiter Wiedervorlagen zeigt alle offenen
@@ -84,6 +91,17 @@ dort ohnehin offen und trägt Datum, Uhrzeit, Hunter und Einladung direkt ein. I
 zählt der kleine Knopf „Termin gebucht“ den Termin nur für die Kennzahlen (Wochenziel,
 Termine heute und diese Woche im Dashboard) und ergänzt das Anrufprotokoll um das
 Ergebnis „Termin vereinbart“. Einen Kalender-Link gibt es im Cockpit nicht.
+
+### Wettbewerb und Vertragsenden
+
+Der Reiter Wettbewerb wertet je Firma das jüngste Gespräch mit Protokoll aus: aktuelle
+Lösung, Wettbewerber, Vertragsende und daraus der Nachfass-Termin. Die Telefonassistenz
+sieht die Leadliste ihres Hunters, die Teamleitung ihre Region, der Head of Sales alle
+Regionen. Filter: Region (Head of Sales), Hunter (Führung), Branche, Aktuelle Lösung oder
+einzelner Wettbewerber, Nachfassen (jetzt, nächste 3 Monate, 3 bis 12 Monate, später,
+Vertragsende unbekannt, erledigt). „Jetzt nachfassen“ heißt: Vertrag endet in höchstens
+neun Monaten, kein Termin vereinbart und keine Sperre. Die Nachfass-Liste steht nach
+Dringlichkeit sortiert und geht als CSV in die Kampagnenplanung oder nach Salesforce.
 
 ### Übertragung an Salesforce
 
@@ -142,16 +160,19 @@ beim Neuladen bestehen.
    Einstiegssatz. Unten das Gesprächsprotokoll ausfüllen und mit „Protokoll speichern“
    (Strg+Enter) sofort nach Salesforce schicken, dann Taste 1 für eine Wiedervorlage mit
    Datum oder „Termin gebucht“, wenn der Termin in Salesforce steht. Der Reiter Wiedervorlagen zeigt mit Demo-Daten auch Wiedervorlagen aus früheren
-   Anrufen, jede mit Status in Salesforce.
+   Anrufen, jede mit Status in Salesforce. Der Reiter Wettbewerb zeigt die eigene Leadliste
+   mit Wettbewerbern und Vertragsenden; „Anrufen“ springt in die Anrufliste.
 4. Abmelden, als Martina Weidmann anmelden: oben Termine heute, Termine diese Woche,
-   Anrufe heute und Wochenziel, darunter ein Bereich mit den Ansichten Team, Hunter,
-   Termine und Gespräche. Team zeigt je Person Hunter, Termine heute und der Woche und
-   Anrufe; ein Klick öffnet rechts Werdegang und das Auswahlfeld „Arbeitet für Hunter“.
-   Termine zeigt heute oder die Woche mit Status in Salesforce, die Kachel „Termine heute“
-   springt dorthin. Gespräche listet je Firma das jüngste Protokoll, filterbar nach
-   aktueller Lösung und Wettbewerber, mit Nettokontakten und CSV-Export, etwa alle Firmen
-   bei MEWA für die gezielte Ansprache.
-5. Als Steffen Sixthor: dieselben Bausteine je Region, dazu der Regionsvergleich.
+   Anrufe heute und Wochenziel, darunter ein Bereich mit den Ansichten Team, Hunter und
+   Termine. Team zeigt je Person Hunter, Termine heute und der Woche und Anrufe; ein Klick
+   öffnet rechts Werdegang und das Auswahlfeld „Arbeitet für Hunter“. Termine zeigt heute
+   oder die Woche mit Status in Salesforce, die Kachel „Termine heute“ springt dorthin.
+   Reiter Wettbewerb: Filter nach Hunter, Branche, Lösung oder Wettbewerber und Nachfassen;
+   Kacheln Firmen mit Gespräch, beim Wettbewerb, jetzt nachfassen und Vertragsende fehlt;
+   Balken je Wettbewerber, Vertragsenden je Quartal, Branchen mal Wettbewerber und die
+   Nachfass-Liste mit CSV-Export, etwa alle Firmen bei MEWA mit Vertragsende 2027.
+5. Als Steffen Sixthor: dieselben Bausteine je Region, dazu der Regionsvergleich; im Reiter
+   Wettbewerb zusätzlich der Filter Region.
 
 Die erfassten Ergebnisse liegen nur im jeweiligen Browser. Jede Person, die den Link
 öffnet, startet mit eigenem Stand.

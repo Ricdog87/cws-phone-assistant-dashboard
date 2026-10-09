@@ -15,6 +15,17 @@ export interface SavedProtocolState {
   status: SyncStatus | undefined;
 }
 
+/** Stand aus einem früheren Gespräch zur Firma, etwa Wettbewerber und Vertragsende */
+export interface KnownState {
+  recordedAt: string;
+  assistantName: string;
+  /** Ergebnis des Gesprächs in Worten */
+  outcome: string;
+  summary: string;
+  /** Übernehmen ändert etwas am aktuellen Protokoll */
+  canCarryOver: boolean;
+}
+
 interface OutcomeBarProps {
   leadName: string;
   latest: CallOutcome | undefined;
@@ -24,6 +35,8 @@ interface OutcomeBarProps {
   recall: Recall | undefined;
   protocol: CallProtocol;
   onProtocolChange(protocol: CallProtocol): void;
+  known: KnownState | null;
+  onCarryOver(): void;
   /** Zuletzt gespeichertes Protokoll; null, solange zum Gespräch nichts gespeichert ist */
   saved: SavedProtocolState | null;
   /** Änderungen seit dem letzten Speichern */
@@ -34,9 +47,19 @@ interface OutcomeBarProps {
   /** Formular Wiedervorlage ist geöffnet */
   planning: boolean;
   today: Date;
+  /** today als YYYY-MM-DD */
+  todayIso: string;
   onRecord(outcome: OutcomeType): void;
   onRecallSave(draft: RecallDraft): void;
   onRecallCancel(): void;
+}
+
+function shortDay(iso: string): string {
+  return new Date(iso).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 const APPOINTMENT_HINT =
@@ -69,6 +92,8 @@ export function OutcomeBar({
   recall,
   protocol,
   onProtocolChange,
+  known,
+  onCarryOver,
   saved,
   dirty,
   saving,
@@ -76,6 +101,7 @@ export function OutcomeBar({
   busy,
   planning,
   today,
+  todayIso,
   onRecord,
   onRecallSave,
   onRecallCancel,
@@ -83,39 +109,67 @@ export function OutcomeBar({
   return (
     <section
       aria-label="Ergebnis erfassen"
-      className="space-y-3 border-t-2 border-brand-ink bg-panel px-6 py-3"
+      className="flex max-h-[68%] shrink-0 flex-col border-t-2 border-brand-ink bg-panel"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wide text-muted">Gesprächsprotokoll</h3>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-          <span role="status" className="flex flex-wrap items-center gap-2">
-            <ProtocolStatus saved={saved} dirty={dirty} />
-          </span>
-          <Button
-            size="sm"
-            variant={dirty ? 'primary' : 'secondary'}
-            disabled={!dirty || saving || busy}
-            onClick={onProtocolSave}
-            aria-keyshortcuts="Control+Enter"
-            title="Strg+Enter"
-          >
-            Protokoll speichern
-          </Button>
+      <div className="min-h-0 space-y-2.5 overflow-y-auto px-6 pb-2 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-wide text-brand-ink">
+            Gesprächsprotokoll
+          </h3>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span role="status" className="flex flex-wrap items-center gap-2">
+              <ProtocolStatus saved={saved} dirty={dirty} />
+            </span>
+            <Button
+              size="sm"
+              variant={dirty ? 'primary' : 'secondary'}
+              disabled={!dirty || saving || busy}
+              onClick={onProtocolSave}
+              aria-keyshortcuts="Control+Enter"
+              title="Strg+Enter"
+            >
+              Protokoll speichern
+            </Button>
+          </div>
         </div>
+        {known && (
+          <div
+            aria-label="Bekannter Stand"
+            className="flex items-center gap-3 rounded border border-border bg-surface px-3 py-1.5 text-xs"
+          >
+            <span className="whitespace-nowrap text-muted">
+              Bekannt seit {shortDay(known.recordedAt)} · {known.assistantName} · {known.outcome}
+            </span>
+            <strong className="min-w-0 flex-1 truncate text-brand-ink" title={known.summary}>
+              {known.summary}
+            </strong>
+            {known.canCarryOver && (
+              <button
+                type="button"
+                onClick={onCarryOver}
+                className="whitespace-nowrap font-bold text-brand-ink underline"
+              >
+                Übernehmen
+              </button>
+            )}
+          </div>
+        )}
+        <ProtocolPanel protocol={protocol} onChange={onProtocolChange} today={todayIso} />
+        {planning && (
+          <RecallForm
+            leadName={leadName}
+            defaultReason={protocol.solution === 'competitor' ? 'contractEnd' : 'callback'}
+            defaultContractEnd={protocol.contractEnd}
+            today={today}
+            busy={busy}
+            onSave={onRecallSave}
+            onCancel={onRecallCancel}
+            onBookAppointment={() => onRecord('appointment')}
+          />
+        )}
       </div>
-      <ProtocolPanel protocol={protocol} onChange={onProtocolChange} />
-      {planning ? (
-        <RecallForm
-          leadName={leadName}
-          defaultReason={protocol.solution === 'competitor' ? 'contractEnd' : 'callback'}
-          today={today}
-          busy={busy}
-          onSave={onRecallSave}
-          onCancel={onRecallCancel}
-          onBookAppointment={() => onRecord('appointment')}
-        />
-      ) : (
-        <div>
+      {!planning && (
+        <div className="shrink-0 border-t border-border px-6 pb-2.5 pt-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
               {KEYED_OUTCOMES.map((type, index) => (
@@ -124,7 +178,6 @@ export function OutcomeBar({
                   disabled={busy}
                   onClick={() => onRecord(type)}
                   aria-keyshortcuts={String(index + 1)}
-                  className="py-2.5"
                 >
                   <span className="mr-2 rounded border border-current px-1 text-xs">
                     {index + 1}
@@ -142,7 +195,7 @@ export function OutcomeBar({
               Termin gebucht
             </Button>
           </div>
-          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-muted">
+          <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-muted">
             <span>
               Tasten 1 bis 3 buchen das Ergebnis, Strg+Enter speichert das Protokoll, Pfeil hoch und
               runter wechselt den Lead.

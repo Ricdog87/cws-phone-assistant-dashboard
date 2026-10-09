@@ -3,7 +3,6 @@ import { useLatestOutcomes, useOwnerCounts, useScoredLeads, useSyncStatus } from
 import { useAppStore } from '@/app/store';
 import { demoHunterAssignments } from '@/data/demoAssignments';
 import { demoTeamAppointments } from '@/data/demoAppointments';
-import { demoTeamCalls } from '@/data/demoCalls';
 import { DEMO_REGIONS, LIVE_ASSISTANT_ID } from '@/data/demoTeam';
 import { DEMO_HUNTERS } from '@/data/hunters';
 import {
@@ -12,15 +11,11 @@ import {
   type TeamAppointment,
 } from '@/domain/appointments';
 import { hunterRows, type HunterAssignment, type HunterRow } from '@/domain/hunterBoard';
-import { hasProtocolInfo } from '@/domain/protocol';
 import type { MemberStanding } from '@/domain/standings';
-import { latestCallPerCompany, type TeamCall } from '@/domain/teamCalls';
 
 export interface RegionBoard {
   hunters: HunterRow[];
   appointments: TeamAppointment[];
-  /** Gespräche mit Protokoll, je Firma das jüngste */
-  calls: TeamCall[];
 }
 
 /** Gebuchte Termine aus diesem Browser mit dem Status ihres Anrufprotokolls in Salesforce */
@@ -43,43 +38,8 @@ export function useLiveAppointments(): TeamAppointment[] {
   }, [latest, agentName, syncStatus]);
 }
 
-/** Gespräche mit Protokoll aus diesem Browser, gespeicherte ohne Ergebnis eingeschlossen */
-export function useLiveCalls(): TeamCall[] {
-  const outcomes = useAppStore((s) => s.outcomes);
-  const openCalls = useAppStore((s) => s.openCalls);
-  const leads = useAppStore((s) => s.leads);
-  const agentName = useAppStore((s) => s.agentName);
-  const syncStatus = useSyncStatus();
-  return useMemo(() => {
-    const cityOf = new Map(leads.map((lead) => [lead.id, lead.city]));
-    const sources = [
-      ...outcomes,
-      ...openCalls.map((call) => ({ ...call, outcome: null, recordedAt: call.savedAt })),
-    ];
-    return sources.flatMap((source) =>
-      hasProtocolInfo(source.protocol)
-        ? [
-            {
-              id: source.id,
-              leadId: source.leadId,
-              leadName: source.leadName,
-              city: cityOf.get(source.leadId) ?? '',
-              hunterName: source.owner ?? 'nicht zugeordnet',
-              assistantName: agentName,
-              recordedAt: source.recordedAt,
-              outcome: source.outcome,
-              protocol: source.protocol,
-              status: syncStatus(source.id),
-              live: true,
-            },
-          ]
-        : [],
-    );
-  }, [outcomes, openCalls, leads, agentName, syncStatus]);
-}
-
 /**
- * Potenzialliste je Hunter, Termine und Gespräche einer Region. Mit Demo-Daten kommen
+ * Potenzialliste je Hunter und Termine einer Region. Mit Demo-Daten kommen
  * fiktive Kolleginnen und Kollegen dazu, mit importierten Daten nur die echten
  * Accountinhaber und die Einträge aus diesem Browser.
  */
@@ -90,7 +50,6 @@ export function useRegionBoard(regionId: string, members: readonly MemberStandin
   const owners = useOwnerCounts();
   const assignmentMap = useAppStore((s) => s.assignments);
   const live = useLiveAppointments();
-  const liveCalls = useLiveCalls();
   const demo = sourceId === 'mock';
   const hasLiveMember = DEMO_REGIONS.find((region) => region.id === regionId)?.members.some(
     (member) => member.id === LIVE_ASSISTANT_ID,
@@ -109,27 +68,11 @@ export function useRegionBoard(regionId: string, members: readonly MemberStandin
       ...(hasLiveMember ? live : []),
       ...(demo ? demoTeamAppointments(regionId, members, assignmentMap) : []),
     ];
-    const calls = latestCallPerCompany([
-      ...(hasLiveMember ? liveCalls : []),
-      ...(demo ? demoTeamCalls(regionId, members, assignmentMap) : []),
-    ]);
     return {
       hunters: hunterRows(assignments, scored, outcomes),
       appointments: sortTeamAppointments(appointments),
-      calls,
     };
-  }, [
-    demo,
-    regionId,
-    members,
-    owners,
-    assignmentMap,
-    live,
-    liveCalls,
-    hasLiveMember,
-    scored,
-    outcomes,
-  ]);
+  }, [demo, regionId, members, owners, assignmentMap, live, hasLiveMember, scored, outcomes]);
 }
 
 export interface HunterOption {

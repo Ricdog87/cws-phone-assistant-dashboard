@@ -7,18 +7,25 @@ export const RECALL_REASON_LABELS: Record<RecallReason, string> = {
   contractEnd: 'Vertragsende',
 };
 
-/** Erster des Monats, neun Monate vor Vertragsende, sonst der nächste Werktag. */
-export function suggestRecallDate(contractEnd: string, today: Date): string | 'bookNow' {
+/**
+ * Ab wann bei einem Vertrag beim Wettbewerb nachgefasst wird: erster Werktag des Monats,
+ * neun Monate vor Vertragsende (YYYY-MM). null bei ungültiger Angabe.
+ */
+export function contractFollowUpDate(contractEnd: string): string | null {
   const match = /^(\d{4})-(\d{2})$/.exec(contractEnd);
-  if (!match) return 'bookNow';
+  if (!match) return null;
   const year = Number(match[1]);
   const month = Number(match[2]);
-  if (!year || month < 1 || month > 12) return 'bookNow';
+  if (!year || month < 1 || month > 12) return null;
+  return formatIsoDate(nextWeekday(new Date(year, month - 1 - CONTRACT_RECALL_MONTHS_BEFORE, 1)));
+}
 
-  const recall = nextWeekday(new Date(year, month - 1 - CONTRACT_RECALL_MONTHS_BEFORE, 1));
-  const earliest = addBusinessDays(startOfDay(today), BOOKING_LEAD_DAYS_MIN);
-  if (recall < earliest) return 'bookNow';
-  return formatIsoDate(recall);
+/** Erster des Monats, neun Monate vor Vertragsende, sonst der nächste Werktag. */
+export function suggestRecallDate(contractEnd: string, today: Date): string | 'bookNow' {
+  const recall = contractFollowUpDate(contractEnd);
+  if (!recall) return 'bookNow';
+  const earliest = formatIsoDate(addBusinessDays(startOfDay(today), BOOKING_LEAD_DAYS_MIN));
+  return recall < earliest ? 'bookNow' : recall;
 }
 
 /** Werktag nach heute, Vorschlag für einen vereinbarten Rückruf */

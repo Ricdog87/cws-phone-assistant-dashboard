@@ -148,15 +148,13 @@ describe('QueueView', () => {
     const user = userEvent.setup();
     render(<QueueView />);
     const protocol = screen.getByRole('group', { name: 'Gesprächsprotokoll' });
-    expect(within(protocol).getByLabelText('Wettbewerber')).toBeDisabled();
+    // Wettbewerber und Vertragsende erst bei Wettbewerb
+    expect(within(protocol).queryByRole('radiogroup', { name: 'Wettbewerber' })).toBeNull();
 
-    await user.selectOptions(within(protocol).getByLabelText('Gesprächspartner'), 'Entscheider');
-    await user.selectOptions(
-      within(protocol).getByLabelText('Aktuelle Lösung'),
-      'Wettbewerb (Mietservice)',
-    );
-    await user.selectOptions(within(protocol).getByLabelText('Wettbewerber'), 'MEWA');
-    await user.click(within(protocol).getByLabelText('Zentralentscheidung'));
+    await user.click(within(protocol).getByRole('radio', { name: 'Entscheider' }));
+    await user.click(within(protocol).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
+    await user.click(within(protocol).getByRole('radio', { name: 'MEWA' }));
+    await user.click(within(protocol).getByRole('checkbox', { name: 'Zentralentscheidung' }));
     await user.type(within(protocol).getByLabelText('Notiz zum Telefonat'), 'Vertrag bis 2027');
     await user.click(screen.getByRole('button', { name: /Kein Interesse/ }));
 
@@ -165,6 +163,7 @@ describe('QueueView', () => {
       contactRole: 'decisionMaker',
       solution: 'competitor',
       competitor: 'MEWA',
+      contractEnd: null,
       companyDissolved: false,
       centralDecision: true,
       existingCustomer: false,
@@ -195,11 +194,8 @@ describe('QueueView', () => {
     const note = within(bar).getByLabelText('Notiz zum Telefonat');
     expect(saveButton).toBeDisabled();
 
-    await user.selectOptions(
-      within(bar).getByLabelText('Aktuelle Lösung'),
-      'Wettbewerb (Mietservice)',
-    );
-    await user.selectOptions(within(bar).getByLabelText('Wettbewerber'), 'DBL');
+    await user.click(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
+    await user.click(within(bar).getByRole('radio', { name: 'DBL' }));
     await user.type(note, 'Vertrag bis 2027');
     expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
     await user.click(saveButton);
@@ -251,13 +247,86 @@ describe('QueueView', () => {
     expect(useAppStore.getState().syncItems).toHaveLength(1);
   });
 
-  it('schlägt bei Wettbewerb das Vertragsende als Grund der Wiedervorlage vor', async () => {
+  it('erfasst das Vertragsende beim Wettbewerb und übernimmt es in die Wiedervorlage', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
-    await user.selectOptions(screen.getByLabelText('Aktuelle Lösung'), 'Wettbewerb (Mietservice)');
-    await user.click(screen.getByRole('button', { name: /Wiedervorlage/ }));
+    const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
+    await user.click(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
+    // Ein zweiter Klick hebt die Auswahl wieder auf
+    await user.click(within(bar).getByRole('radio', { name: 'MEWA' }));
+    await user.click(within(bar).getByRole('radio', { name: 'MEWA' }));
+    expect(within(bar).getByRole('radio', { name: 'MEWA' })).not.toBeChecked();
+    await user.click(within(bar).getByRole('radio', { name: 'Bardusch' }));
+
+    const contract = within(bar).getByLabelText('Vertrag läuft bis');
+    const months = within(contract).getAllByRole('option') as HTMLOptionElement[];
+    // In zwei Jahren: Nachfassen erst später
+    const later = months[24]?.value ?? '';
+    await user.selectOptions(contract, later);
+    expect(within(bar).getByText(/Nachfassen ab/)).toBeInTheDocument();
+    // Im nächsten Monat: Nachfassen jetzt
+    await user.selectOptions(contract, months[2]?.value ?? '');
+    expect(within(bar).getByText('Nachfassen jetzt möglich')).toBeInTheDocument();
+    await user.selectOptions(contract, later);
+
+    await user.click(within(bar).getByRole('button', { name: /Wiedervorlage/ }));
     const form = screen.getByRole('form', { name: 'Wiedervorlage planen' });
-    expect(within(form).getByLabelText('Vertragsende')).toBeInTheDocument();
+    expect(within(form).getByLabelText('Vertragsende')).toHaveValue(later);
+    await user.click(within(form).getByRole('button', { name: 'Wiedervorlage speichern' }));
+    await waitFor(() => expect(useAppStore.getState().outcomes).toHaveLength(1));
+    expect(useAppStore.getState().outcomes[0]?.protocol).toMatchObject({
+      solution: 'competitor',
+      competitor: 'Bardusch',
+      contractEnd: later,
+    });
+    await waitFor(() =>
+      expect(useAppStore.getState().syncItems[0]?.task.description).toContain(
+        `Wettbewerb: Bardusch, Vertrag bis ${later.slice(5)}/${later.slice(0, 4)}`,
+      ),
+    );
+  });
+
+  it('zeigt den bekannten Stand aus einem früheren Gespräch und übernimmt ihn', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const first = selectedName();
+    const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
+    await user.click(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
+    await user.click(within(bar).getByRole('radio', { name: 'Alsco' }));
+    await user.click(within(bar).getByRole('button', { name: /Kein Interesse/ }));
+    await waitFor(() => expect(selectedName()).not.toBe(first));
+
+    // Zurück zur ersten Firma: der Stand aus dem Gespräch steht oben
+    await user.click(
+      within(screen.getByRole('listbox', { name: 'Warteschlange' })).getByText(first),
+    );
+    // Der Stand aus diesem Browser löst den älteren aus den Demo-Gesprächen ab
+    await waitFor(() =>
+      expect(screen.getByLabelText('Bekannter Stand')).toHaveTextContent(
+        'Nele Faber · Kein Interesse',
+      ),
+    );
+    const known = screen.getByLabelText('Bekannter Stand');
+    expect(known).toHaveTextContent('Wettbewerb: Alsco');
+    expect(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' })).not.toBeChecked();
+    await user.click(within(known).getByRole('button', { name: 'Übernehmen' }));
+    expect(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' })).toBeChecked();
+    expect(within(bar).getByRole('radio', { name: 'Alsco' })).toBeChecked();
+    expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
+  });
+
+  it('filtert die Anrufliste nach Branche', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const select = screen.getByLabelText('Branche');
+    const options = within(select).getAllByRole('option') as HTMLOptionElement[];
+    const industry = options[1]?.value ?? '';
+    await user.selectOptions(select, industry);
+    const rows = queueOptions();
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(row).toHaveTextContent(industry);
+    await user.selectOptions(select, '');
+    expect(queueOptions().length).toBeGreaterThan(rows.length);
   });
 
   it('bricht die Wiedervorlage mit Escape ab, ohne zu buchen', async () => {

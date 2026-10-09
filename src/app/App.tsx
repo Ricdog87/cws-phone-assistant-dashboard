@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { DemoNotice } from '@/components/DemoNotice';
 import { dueRecallCount } from '@/domain/recall';
 import { DashboardView } from '@/features/dashboard/DashboardView';
+import { MarketView } from '@/features/market/MarketView';
 import { DataView } from '@/features/data/DataView';
 import { MapView } from '@/features/map/MapView';
 import { QueueView } from '@/features/queue/QueueView';
@@ -108,6 +109,11 @@ export function App() {
         {activeTab === 'dashboard' && (
           <TabPanel id="dashboard">
             <DashboardView />
+          </TabPanel>
+        )}
+        {activeTab === 'market' && (
+          <TabPanel id="market">
+            <MarketView />
           </TabPanel>
         )}
         {activeTab === 'scoring' && (

@@ -12,6 +12,7 @@ describe('Reiter je Rolle', () => {
       'Anrufliste',
       'Wiedervorlagen',
       'Dashboard',
+      'Wettbewerb',
       'Karte',
     ]);
   });
@@ -20,6 +21,7 @@ describe('Reiter je Rolle', () => {
     for (const level of ['teamLead', 'director'] as const) {
       expect(tabsFor(level).map((tab) => tab.label)).toEqual([
         'Dashboard',
+        'Wettbewerb',
         'Karte',
         'Scoring',
         'Daten',

@@ -1,5 +1,11 @@
 import { OUTCOME_LABELS } from './outcomes';
-import { CONTACT_ROLE_LABELS, PROTOCOL_FLAG_LABELS, protocolFlags, solutionText } from './protocol';
+import {
+  CONTACT_ROLE_LABELS,
+  PROTOCOL_FLAG_LABELS,
+  contractEndText,
+  protocolFlags,
+  solutionText,
+} from './protocol';
 import { recallReasonText } from './recall';
 import { salesforceObjectOf } from './salesforce';
 import type { CallProtocol, ContactUpdate, OutcomeType, Recall } from './types';
@@ -97,7 +103,9 @@ export function callLogTask(
   const lines = [
     `Ergebnis: ${call.outcome ? OUTCOME_LABELS[call.outcome] : 'noch offen'}`,
     protocol?.contactRole ? `Gesprächspartner: ${CONTACT_ROLE_LABELS[protocol.contactRole]}` : null,
-    solutionText(protocol) ? `Aktuelle Lösung: ${solutionText(protocol)}` : null,
+    solutionText(protocol)
+      ? `Aktuelle Lösung: ${[solutionText(protocol), contractEndText(protocol)].filter(Boolean).join(', ')}`
+      : null,
     flags.length > 0 ? `Hinweise: ${flags.join(', ')}` : null,
     ...contactLines(contact),
     protocol?.note ? `Notiz: ${protocol.note}` : null,

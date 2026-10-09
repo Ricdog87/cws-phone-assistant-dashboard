@@ -4,13 +4,16 @@ import { todayLocal, useCooldownCount, useLatestOutcomes, useQueue } from '@/app
 import { useAppStore } from '@/app/store';
 import { ACTIVITY_COOLDOWN_DAYS } from '@/domain/activity';
 import { openCallFor } from '@/domain/openCalls';
-import { emptyProtocol, sameProtocol } from '@/domain/protocol';
+import { callOutcomeText } from '@/domain/teamCalls';
+import { carryOverProtocol, emptyProtocol, protocolSummary, sameProtocol } from '@/domain/protocol';
 import type { CallProtocol, OutcomeType } from '@/domain/types';
+import { useKnownCalls } from '@/features/market/useCalls';
 import { useOpenRecalls } from '@/features/recalls/useRecalls';
 import { AgentLivePanel } from './AgentLivePanel';
 import { BriefingPanel } from './BriefingPanel';
 import { QueueList } from './QueueList';
 import { HunterSelect } from './HunterSelect';
+import { IndustrySelect } from './IndustrySelect';
 import { OutcomeBar } from './OutcomeBar';
 import { KEYED_OUTCOMES } from './outcomeKeys';
 import { useRecordOutcome, type RecallDraft } from './useRecordOutcome';
@@ -69,6 +72,21 @@ export function QueueView() {
   const latestOutcome = selectedLeadId ? latest.get(selectedLeadId) : undefined;
   const latestSync = latestOutcome ? statusOf(latestOutcome.id) : undefined;
   const saved = openCall ? { savedAt: openCall.savedAt, status: statusOf(openCall.id) } : null;
+  // Stand aus einem früheren Gespräch, etwa Wettbewerber und Vertragsende
+  const knownCalls = useKnownCalls();
+  const knownCall = selectedLeadId ? knownCalls.get(selectedLeadId) : undefined;
+  const knownSummary =
+    knownCall && knownCall.id !== openCall?.id ? protocolSummary(knownCall.protocol) : '';
+  const known =
+    knownCall && knownSummary
+      ? {
+          recordedAt: knownCall.recordedAt,
+          assistantName: knownCall.assistantName,
+          outcome: callOutcomeText(knownCall.outcome),
+          summary: knownSummary,
+          canCarryOver: !sameProtocol(carryOverProtocol(protocol, knownCall.protocol), protocol),
+        }
+      : null;
   const recalls = useOpenRecalls();
   const recallByLead = useMemo(
     () => new Map(recalls.map((recall) => [recall.leadId, recall])),
@@ -94,8 +112,13 @@ export function QueueView() {
         return;
       }
       setBusy(true);
+      // Vertragsende aus der Wiedervorlage gehört auch ins Protokoll
+      const withContract =
+        recall?.contractEnd && protocol.solution === 'competitor' && !protocol.contractEnd
+          ? { ...protocol, contractEnd: recall.contractEnd }
+          : protocol;
       try {
-        await recordOutcome(selected, outcome, { recall, protocol });
+        await recordOutcome(selected, outcome, { recall, protocol: withContract });
         dropDraft(selected.lead.id);
         setPlanningFor(null);
       } finally {
@@ -167,6 +190,7 @@ export function QueueView() {
               </span>
             </div>
             <HunterSelect />
+            <IndustrySelect />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <QueueList
@@ -174,6 +198,7 @@ export function QueueView() {
               selectedId={selectedId}
               latest={latest}
               recalls={recallByLead}
+              known={knownCalls}
               today={todayLocal()}
               onSelect={selectLead}
             />
@@ -195,6 +220,10 @@ export function QueueView() {
               recall={openRecall}
               protocol={protocol}
               onProtocolChange={setProtocol}
+              known={known}
+              onCarryOver={() =>
+                knownCall && setProtocol(carryOverProtocol(protocol, knownCall.protocol))
+              }
               saved={saved}
               dirty={dirty}
               saving={saving}
@@ -202,6 +231,7 @@ export function QueueView() {
               busy={busy}
               planning={planning}
               today={new Date()}
+              todayIso={todayLocal()}
               onRecord={(o) => void book(o)}
               onRecallSave={(draft) => void book('callback', draft)}
               onRecallCancel={() => setPlanningFor(null)}

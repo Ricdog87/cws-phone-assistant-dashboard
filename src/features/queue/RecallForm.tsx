@@ -15,6 +15,8 @@ interface RecallFormProps {
   leadName: string;
   /** Vorschlag für den Grund, etwa Vertragsende bei Wettbewerb */
   defaultReason?: RecallReason;
+  /** Vertragsende aus dem Gesprächsprotokoll, YYYY-MM */
+  defaultContractEnd?: string | null;
   today: Date;
   busy: boolean;
   onSave(draft: RecallDraft): void;
@@ -51,6 +53,7 @@ function monthOptions(today: Date): { value: string; label: string }[] {
 export function RecallForm({
   leadName,
   defaultReason = 'callback',
+  defaultContractEnd = null,
   today,
   busy,
   onSave,
@@ -63,7 +66,7 @@ export function RecallForm({
   const [reason, setReason] = useState<RecallReason>(defaultReason);
   const [dueDate, setDueDate] = useState(() => nextBusinessDay(today));
   const [dueTime, setDueTime] = useState('');
-  const [contractEnd, setContractEnd] = useState('');
+  const [contractEnd, setContractEnd] = useState(defaultContractEnd ?? '');
   const months = useMemo(() => monthOptions(today), [today]);
   const minDate = isoDate(today);
 
