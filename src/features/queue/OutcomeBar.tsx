@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Button } from '@/components/Button';
 import { formatDateTime, formatDay } from '@/components/format';
 import { SyncBadge } from '@/components/SyncBadge';
@@ -43,6 +44,9 @@ interface OutcomeBarProps {
   dirty: boolean;
   saving: boolean;
   onProtocolSave(): void;
+  /** Gesprächsprotokoll aufgeklappt; zugeklappt bleibt Platz für Briefing und Leitfaden */
+  open: boolean;
+  onToggle(): void;
   busy: boolean;
   /** Formular Wiedervorlage ist geöffnet */
   planning: boolean;
@@ -65,7 +69,12 @@ function shortDay(iso: string): string {
 const APPOINTMENT_HINT =
   'Termin in Salesforce gebucht? Hier erfassen, damit er im Wochenziel und im Dashboard zählt.';
 
-function ProtocolStatus({ saved, dirty }: Pick<OutcomeBarProps, 'saved' | 'dirty'>) {
+function ProtocolStatus({
+  saved,
+  dirty,
+  known,
+  open,
+}: Pick<OutcomeBarProps, 'saved' | 'dirty' | 'known' | 'open'>) {
   if (dirty) {
     return <span className="font-bold text-brand-primary">Ungespeicherte Änderungen</span>;
   }
@@ -77,13 +86,42 @@ function ProtocolStatus({ saved, dirty }: Pick<OutcomeBarProps, 'saved' | 'dirty
       </>
     );
   }
-  return <span>Speichern schickt das Protokoll sofort an Salesforce</span>;
+  if (known && !open) {
+    return (
+      <span className="min-w-0 truncate" title={known.summary}>
+        Bekannt: <strong className="text-brand-ink">{known.summary}</strong>
+      </span>
+    );
+  }
+  return (
+    <span>
+      {open ? 'Speichern schickt das Protokoll sofort an Salesforce' : 'Noch kein Protokoll'}
+    </span>
+  );
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  );
 }
 
 /**
- * Gesprächsprotokoll und Ergebnis an einem Fleck, immer sichtbar unter dem Briefing.
- * Das Protokoll geht beim Speichern sofort nach Salesforce, jede Änderung in dieselbe
- * Aufgabe; das Ergebnis ergänzt sie.
+ * Gesprächsprotokoll und Ergebnis unter dem Briefing. Zugeklappt nur eine schmale Leiste mit
+ * „Telefonat“, Stand und Ergebnis-Schaltflächen, damit Briefing und Leitfaden Platz haben;
+ * „Telefonat“ (Taste T) klappt das Protokoll auf. Es geht beim Speichern sofort nach
+ * Salesforce, jede Änderung in dieselbe Aufgabe; das Ergebnis ergänzt sie.
  */
 export function OutcomeBar({
   leadName,
@@ -98,6 +136,8 @@ export function OutcomeBar({
   dirty,
   saving,
   onProtocolSave,
+  open,
+  onToggle,
   busy,
   planning,
   today,
@@ -106,68 +146,89 @@ export function OutcomeBar({
   onRecallSave,
   onRecallCancel,
 }: OutcomeBarProps) {
+  const panelId = useId();
   return (
     <section
       aria-label="Ergebnis erfassen"
-      className="flex max-h-[68%] shrink-0 flex-col border-t-2 border-brand-ink bg-panel"
+      className="flex max-h-[72%] shrink-0 flex-col border-t-2 border-brand-ink bg-panel"
     >
-      <div className="min-h-0 space-y-2.5 overflow-y-auto px-6 pb-2 pt-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-xs font-bold uppercase tracking-wide text-brand-ink">
-            Gesprächsprotokoll
-          </h3>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span role="status" className="flex flex-wrap items-center gap-2">
-              <ProtocolStatus saved={saved} dirty={dirty} />
-            </span>
-            <Button
-              size="sm"
-              variant={dirty ? 'primary' : 'secondary'}
-              disabled={!dirty || saving || busy}
-              onClick={onProtocolSave}
-              aria-keyshortcuts="Control+Enter"
-              title="Strg+Enter"
-            >
-              Protokoll speichern
-            </Button>
-          </div>
-        </div>
-        {known && (
-          <div
-            aria-label="Bekannter Stand"
-            className="flex items-center gap-3 rounded border border-border bg-surface px-3 py-1.5 text-xs"
-          >
-            <span className="whitespace-nowrap text-muted">
-              Bekannt seit {shortDay(known.recordedAt)} · {known.assistantName} · {known.outcome}
-            </span>
-            <strong className="min-w-0 flex-1 truncate text-brand-ink" title={known.summary}>
-              {known.summary}
-            </strong>
-            {known.canCarryOver && (
-              <button
-                type="button"
-                onClick={onCarryOver}
-                className="whitespace-nowrap font-bold text-brand-ink underline"
-              >
-                Übernehmen
-              </button>
-            )}
-          </div>
-        )}
-        <ProtocolPanel protocol={protocol} onChange={onProtocolChange} today={todayIso} />
-        {planning && (
-          <RecallForm
-            leadName={leadName}
-            defaultReason={protocol.solution === 'competitor' ? 'contractEnd' : 'callback'}
-            defaultContractEnd={protocol.contractEnd}
-            today={today}
-            busy={busy}
-            onSave={onRecallSave}
-            onCancel={onRecallCancel}
-            onBookAppointment={() => onRecord('appointment')}
-          />
-        )}
+      <div className="flex shrink-0 items-center gap-3 px-6 py-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-keyshortcuts="T"
+          onClick={onToggle}
+          className={`inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm font-bold ${
+            open
+              ? 'border-brand-ink bg-brand-ink text-on-primary'
+              : 'border-brand-ink bg-panel text-brand-ink hover:bg-surface'
+          }`}
+        >
+          Telefonat
+          <Chevron open={open} />
+        </button>
+        <span
+          role="status"
+          className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-xs text-muted"
+        >
+          <ProtocolStatus saved={saved} dirty={dirty} known={known} open={open} />
+        </span>
+        <Button
+          size="sm"
+          variant={dirty ? 'primary' : 'secondary'}
+          disabled={!dirty || saving || busy}
+          onClick={onProtocolSave}
+          aria-keyshortcuts="Control+Enter"
+          title="Strg+Enter"
+        >
+          Protokoll speichern
+        </Button>
       </div>
+      {(open || planning) && (
+        <div
+          id={panelId}
+          className="min-h-0 space-y-2.5 overflow-y-auto border-t border-border px-6 pb-3 pt-3"
+        >
+          {open && known && (
+            <div
+              aria-label="Bekannter Stand"
+              className="flex items-center gap-3 rounded border border-border bg-surface px-3 py-1.5 text-xs"
+            >
+              <span className="whitespace-nowrap text-muted">
+                Bekannt seit {shortDay(known.recordedAt)} · {known.assistantName} · {known.outcome}
+              </span>
+              <strong className="min-w-0 flex-1 truncate text-brand-ink" title={known.summary}>
+                {known.summary}
+              </strong>
+              {known.canCarryOver && (
+                <button
+                  type="button"
+                  onClick={onCarryOver}
+                  className="whitespace-nowrap font-bold text-brand-ink underline"
+                >
+                  Übernehmen
+                </button>
+              )}
+            </div>
+          )}
+          {open && (
+            <ProtocolPanel protocol={protocol} onChange={onProtocolChange} today={todayIso} />
+          )}
+          {planning && (
+            <RecallForm
+              leadName={leadName}
+              defaultReason={protocol.solution === 'competitor' ? 'contractEnd' : 'callback'}
+              defaultContractEnd={protocol.contractEnd}
+              today={today}
+              busy={busy}
+              onSave={onRecallSave}
+              onCancel={onRecallCancel}
+              onBookAppointment={() => onRecord('appointment')}
+            />
+          )}
+        </div>
+      )}
       {!planning && (
         <div className="shrink-0 border-t border-border px-6 pb-2.5 pt-2.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -197,8 +258,8 @@ export function OutcomeBar({
           </div>
           <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-muted">
             <span>
-              Tasten 1 bis 3 buchen das Ergebnis, Strg+Enter speichert das Protokoll, Pfeil hoch und
-              runter wechselt den Lead.
+              T öffnet das Protokoll, 1 bis 3 buchen das Ergebnis, Strg+Enter speichert, Pfeil hoch
+              und runter wechselt den Lead.
             </span>
             {latest && (
               <span>

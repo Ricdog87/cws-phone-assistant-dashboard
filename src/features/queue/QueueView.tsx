@@ -44,6 +44,14 @@ export function QueueView() {
   const selected = selectedIndex >= 0 ? queue[selectedIndex] : undefined;
   const planning = selected !== undefined && planningFor === selected.lead.id;
   const selectedLeadId = selected?.lead.id;
+  // Protokoll ist zugeklappt, bis „Telefonat“ es öffnet; jeder Leadwechsel klappt es wieder
+  // zu, damit Briefing und Leitfaden Platz haben. Ungespeichertes bleibt als Entwurf.
+  const [protocolFor, setProtocolFor] = useState<string | null>(null);
+  const protocolOpen = selectedLeadId !== undefined && protocolFor === selectedLeadId;
+  useEffect(() => setProtocolFor(null), [selectedLeadId]);
+  const toggleProtocol = useCallback(() => {
+    if (selectedLeadId) setProtocolFor(protocolOpen ? null : selectedLeadId);
+  }, [selectedLeadId, protocolOpen]);
   // Gespeichertes Protokoll des offenen Gesprächs, darüber ungespeicherte Eingaben je Lead
   const openCall = selectedLeadId ? openCallFor(openCalls, selectedLeadId) : undefined;
   const savedProtocol = openCall?.protocol ?? EMPTY_PROTOCOL;
@@ -148,8 +156,17 @@ export function QueueView() {
         return;
       }
       if (event.altKey || event.ctrlKey || event.metaKey || isTypingTarget(event.target)) return;
+      if (event.key === 't' || event.key === 'T') {
+        event.preventDefault();
+        toggleProtocol();
+        return;
+      }
       if (planning) {
         if (event.key === 'Escape') setPlanningFor(null);
+        return;
+      }
+      if (event.key === 'Escape' && protocolOpen) {
+        setProtocolFor(null);
         return;
       }
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -169,7 +186,7 @@ export function QueueView() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [queue, selectedIndex, selectLead, book, save, planning]);
+  }, [queue, selectedIndex, selectLead, book, save, planning, toggleProtocol, protocolOpen]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -228,6 +245,8 @@ export function QueueView() {
               dirty={dirty}
               saving={saving}
               onProtocolSave={() => void save()}
+              open={protocolOpen}
+              onToggle={toggleProtocol}
               busy={busy}
               planning={planning}
               today={new Date()}

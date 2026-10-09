@@ -77,7 +77,10 @@ describe('QueueView', () => {
   it('bucht über die Schaltfläche', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
+    const first = selectedName();
     await user.click(screen.getByRole('button', { name: /Kein Interesse/ }));
+    // Buchen ist erst mit dem Sprung zum nächsten Lead ganz abgeschlossen
+    await waitFor(() => expect(selectedName()).not.toBe(first));
     expect(useAppStore.getState().outcomes[0]?.outcome).toBe('not_interested');
   });
 
@@ -111,6 +114,8 @@ describe('QueueView', () => {
     expect(useAppStore.getState().outcomes).toHaveLength(0);
     expect(within(form).getByLabelText('Datum')).toHaveValue(nextBusinessDay(new Date()));
 
+    // Notiz im Protokoll, das „Telefonat“ aufklappt
+    await user.click(screen.getByRole('button', { name: 'Telefonat' }));
     await user.type(screen.getByLabelText('Notiz zum Telefonat'), 'Einkauf entscheidet mit');
     await user.type(within(form).getByLabelText('Uhrzeit (optional)'), '14:00');
     await user.click(within(form).getByRole('button', { name: 'Wiedervorlage speichern' }));
@@ -144,17 +149,44 @@ describe('QueueView', () => {
     expect(selectedName()).not.toBe(first);
   });
 
+  it('klappt das Protokoll über Telefonat oder Taste T auf und mit Escape wieder zu', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
+    const toggle = within(bar).getByRole('button', { name: 'Telefonat' });
+    // Zugeklappt: Platz für Briefing und Leitfaden, nur die schmale Leiste
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('group', { name: 'Gesprächsprotokoll' })).toBeNull();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('group', { name: 'Gesprächsprotokoll' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'Gesprächsprotokoll' })).toBeNull();
+    await user.keyboard('t');
+    expect(screen.getByRole('group', { name: 'Gesprächsprotokoll' })).toBeInTheDocument();
+
+    // Ein anderer Lead beginnt wieder zugeklappt
+    await user.keyboard('{ArrowDown}');
+    expect(screen.queryByRole('group', { name: 'Gesprächsprotokoll' })).toBeNull();
+  });
+
   it('speichert das Gesprächsprotokoll mit dem Ergebnis und schickt es an Salesforce', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
+    await user.click(screen.getByRole('button', { name: 'Telefonat' }));
     const protocol = screen.getByRole('group', { name: 'Gesprächsprotokoll' });
     // Wettbewerber und Vertragsende erst bei Wettbewerb
-    expect(within(protocol).queryByRole('radiogroup', { name: 'Wettbewerber' })).toBeNull();
+    expect(within(protocol).getByLabelText('Wettbewerber')).toBeDisabled();
+    expect(within(protocol).getByLabelText('Vertrag läuft bis')).toBeDisabled();
 
-    await user.click(within(protocol).getByRole('radio', { name: 'Entscheider' }));
-    await user.click(within(protocol).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
-    await user.click(within(protocol).getByRole('radio', { name: 'MEWA' }));
-    await user.click(within(protocol).getByRole('checkbox', { name: 'Zentralentscheidung' }));
+    await user.selectOptions(within(protocol).getByLabelText('Gesprächspartner'), 'Entscheider');
+    await user.selectOptions(
+      within(protocol).getByLabelText('Aktuelle Lösung'),
+      'Wettbewerb (Mietservice)',
+    );
+    await user.selectOptions(within(protocol).getByLabelText('Wettbewerber'), 'MEWA');
+    await user.click(within(protocol).getByLabelText('Zentralentscheidung'));
     await user.type(within(protocol).getByLabelText('Notiz zum Telefonat'), 'Vertrag bis 2027');
     await user.click(screen.getByRole('button', { name: /Kein Interesse/ }));
 
@@ -179,10 +211,12 @@ describe('QueueView', () => {
     });
     expect(task?.description).toContain('Aktuelle Lösung: Wettbewerb: MEWA');
     expect(task?.description).toContain('Hinweise: Zentralentscheidung');
-    // Nächster Lead beginnt mit leerem Protokoll
+    // Nächster Lead beginnt zugeklappt und mit leerem Protokoll
     await waitFor(() =>
-      expect(within(protocol).getByLabelText('Notiz zum Telefonat')).toHaveValue(''),
+      expect(screen.queryByRole('group', { name: 'Gesprächsprotokoll' })).toBeNull(),
     );
+    await user.click(screen.getByRole('button', { name: 'Telefonat' }));
+    expect(screen.getByLabelText('Notiz zum Telefonat')).toHaveValue('');
   });
 
   it('speichert das Protokoll auf Bestätigung, schickt es sofort an Salesforce und aktualisiert bei jeder Änderung dieselbe Aufgabe', async () => {
@@ -191,12 +225,16 @@ describe('QueueView', () => {
     const first = selectedName();
     const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
     const saveButton = within(bar).getByRole('button', { name: 'Protokoll speichern' });
-    const note = within(bar).getByLabelText('Notiz zum Telefonat');
     expect(saveButton).toBeDisabled();
+    await user.click(within(bar).getByRole('button', { name: 'Telefonat' }));
+    const note = () => within(bar).getByLabelText('Notiz zum Telefonat');
 
-    await user.click(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
-    await user.click(within(bar).getByRole('radio', { name: 'DBL' }));
-    await user.type(note, 'Vertrag bis 2027');
+    await user.selectOptions(
+      within(bar).getByLabelText('Aktuelle Lösung'),
+      'Wettbewerb (Mietservice)',
+    );
+    await user.selectOptions(within(bar).getByLabelText('Wettbewerber'), 'DBL');
+    await user.type(note(), 'Vertrag bis 2027');
     expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
     await user.click(saveButton);
 
@@ -214,7 +252,7 @@ describe('QueueView', () => {
     expect(saveButton).toBeDisabled();
 
     // Änderung mit Strg+Enter: dieselbe Aufgabe, kein zweiter Eintrag
-    await user.type(note, ', Einkauf zentral');
+    await user.type(note(), ', Einkauf zentral');
     await user.keyboard('{Control>}{Enter}{/Control}');
     await waitFor(() =>
       expect(useAppStore.getState().syncItems[0]?.task.description).toContain(
@@ -224,13 +262,15 @@ describe('QueueView', () => {
     expect(useAppStore.getState().syncItems).toHaveLength(1);
     expect(useAppStore.getState().openCalls).toHaveLength(1);
 
-    // Ungespeichertes bleibt beim Wechsel des Leads erhalten, Gespeichertes sowieso
-    await user.type(note, ' (Entwurf)');
+    // Ungespeichertes bleibt beim Wechsel des Leads als Entwurf erhalten
+    await user.type(note(), ' (Entwurf)');
     await user.click(document.body);
     await user.keyboard('{ArrowDown}');
-    expect(note).toHaveValue('');
+    expect(within(bar).queryByLabelText('Notiz zum Telefonat')).toBeNull();
     await user.keyboard('{ArrowUp}');
-    expect(note).toHaveValue('Vertrag bis 2027, Einkauf zentral (Entwurf)');
+    expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
+    await user.keyboard('t');
+    expect(note()).toHaveValue('Vertrag bis 2027, Einkauf zentral (Entwurf)');
 
     // Das Ergebnis übernimmt das Gespräch und ergänzt dieselbe Aufgabe
     await user.click(within(bar).getByRole('button', { name: /Kein Interesse/ }));
@@ -240,7 +280,8 @@ describe('QueueView', () => {
       outcome: 'not_interested',
       protocol: { note: 'Vertrag bis 2027, Einkauf zentral (Entwurf)' },
     });
-    expect(useAppStore.getState().openCalls).toHaveLength(0);
+    // Das Schließen des offenen Gesprächs und die Übertragung laufen nach dem Buchen weiter
+    await waitFor(() => expect(useAppStore.getState().openCalls).toHaveLength(0));
     await waitFor(() =>
       expect(useAppStore.getState().syncItems[0]?.task.callDisposition).toBe('Kein Interesse'),
     );
@@ -250,30 +291,32 @@ describe('QueueView', () => {
   it('erfasst das Vertragsende beim Wettbewerb und übernimmt es in die Wiedervorlage', async () => {
     const user = userEvent.setup();
     render(<QueueView />);
+    const first = selectedName();
     const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
-    await user.click(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
-    // Ein zweiter Klick hebt die Auswahl wieder auf
-    await user.click(within(bar).getByRole('radio', { name: 'MEWA' }));
-    await user.click(within(bar).getByRole('radio', { name: 'MEWA' }));
-    expect(within(bar).getByRole('radio', { name: 'MEWA' })).not.toBeChecked();
-    await user.click(within(bar).getByRole('radio', { name: 'Bardusch' }));
+    await user.click(within(bar).getByRole('button', { name: 'Telefonat' }));
+    await user.selectOptions(
+      within(bar).getByLabelText('Aktuelle Lösung'),
+      'Wettbewerb (Mietservice)',
+    );
+    await user.selectOptions(within(bar).getByLabelText('Wettbewerber'), 'Bardusch');
 
     const contract = within(bar).getByLabelText('Vertrag läuft bis');
     const months = within(contract).getAllByRole('option') as HTMLOptionElement[];
     // In zwei Jahren: Nachfassen erst später
     const later = months[24]?.value ?? '';
     await user.selectOptions(contract, later);
-    expect(within(bar).getByText(/Nachfassen ab/)).toBeInTheDocument();
+    expect(within(bar).getByTitle(/^Nachfassen ab/)).toBeInTheDocument();
     // Im nächsten Monat: Nachfassen jetzt
     await user.selectOptions(contract, months[2]?.value ?? '');
-    expect(within(bar).getByText('Nachfassen jetzt möglich')).toBeInTheDocument();
+    expect(within(bar).getByText('Jetzt nachfassen')).toBeInTheDocument();
     await user.selectOptions(contract, later);
 
     await user.click(within(bar).getByRole('button', { name: /Wiedervorlage/ }));
     const form = screen.getByRole('form', { name: 'Wiedervorlage planen' });
     expect(within(form).getByLabelText('Vertragsende')).toHaveValue(later);
     await user.click(within(form).getByRole('button', { name: 'Wiedervorlage speichern' }));
-    await waitFor(() => expect(useAppStore.getState().outcomes).toHaveLength(1));
+    await waitFor(() => expect(selectedName()).not.toBe(first));
+    expect(useAppStore.getState().recalls).toHaveLength(1);
     expect(useAppStore.getState().outcomes[0]?.protocol).toMatchObject({
       solution: 'competitor',
       competitor: 'Bardusch',
@@ -291,15 +334,24 @@ describe('QueueView', () => {
     render(<QueueView />);
     const first = selectedName();
     const bar = screen.getByRole('region', { name: 'Ergebnis erfassen' });
-    await user.click(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' }));
-    await user.click(within(bar).getByRole('radio', { name: 'Alsco' }));
+    await user.click(within(bar).getByRole('button', { name: 'Telefonat' }));
+    await user.selectOptions(
+      within(bar).getByLabelText('Aktuelle Lösung'),
+      'Wettbewerb (Mietservice)',
+    );
+    await user.selectOptions(within(bar).getByLabelText('Wettbewerber'), 'Alsco');
     await user.click(within(bar).getByRole('button', { name: /Kein Interesse/ }));
     await waitFor(() => expect(selectedName()).not.toBe(first));
 
-    // Zurück zur ersten Firma: der Stand aus dem Gespräch steht oben
+    // Zurück zur ersten Firma: zugeklappt steht der Stand in der Leiste
     await user.click(
       within(screen.getByRole('listbox', { name: 'Warteschlange' })).getByText(first),
     );
+    // Zugeklappt steht der Stand in der Leiste, aufgeklappt mit „Übernehmen“
+    await waitFor(() =>
+      expect(within(bar).getByRole('status')).toHaveTextContent('Bekannt: Wettbewerb: Alsco'),
+    );
+    await user.click(within(bar).getByRole('button', { name: 'Telefonat' }));
     // Der Stand aus diesem Browser löst den älteren aus den Demo-Gesprächen ab
     await waitFor(() =>
       expect(screen.getByLabelText('Bekannter Stand')).toHaveTextContent(
@@ -308,10 +360,10 @@ describe('QueueView', () => {
     );
     const known = screen.getByLabelText('Bekannter Stand');
     expect(known).toHaveTextContent('Wettbewerb: Alsco');
-    expect(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' })).not.toBeChecked();
+    expect(within(bar).getByLabelText('Aktuelle Lösung')).toHaveValue('');
     await user.click(within(known).getByRole('button', { name: 'Übernehmen' }));
-    expect(within(bar).getByRole('radio', { name: 'Wettbewerb (Miete)' })).toBeChecked();
-    expect(within(bar).getByRole('radio', { name: 'Alsco' })).toBeChecked();
+    expect(within(bar).getByLabelText('Aktuelle Lösung')).toHaveValue('competitor');
+    expect(within(bar).getByLabelText('Wettbewerber')).toHaveValue('Alsco');
     expect(within(bar).getByRole('status')).toHaveTextContent('Ungespeicherte Änderungen');
   });
 
@@ -360,6 +412,7 @@ describe('QueueView', () => {
     expect(within(form).getByText(/Monate vor Vertragsende/)).toBeInTheDocument();
     await user.click(within(form).getByRole('button', { name: 'Wiedervorlage speichern' }));
     await waitFor(() => expect(useAppStore.getState().recalls).toHaveLength(1));
+    await waitFor(() => expect(useAppStore.getState().syncItems).toHaveLength(2));
 
     const recall = useAppStore.getState().recalls[0];
     expect(recall).toMatchObject({ reason: 'contractEnd', contractEnd: later, dueTime: null });

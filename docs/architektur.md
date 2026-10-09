@@ -71,8 +71,10 @@ Wettbewerber dunkel, übrige Lösungen grau, fälliges Nachfassen in der Markenf
 ### Gesprächsprotokoll, Termine und Wiedervorlagen
 
 - Gesprächsprotokoll und Ergebnis stehen fest unter dem Briefing
-  (`features/queue/OutcomeBar.tsx` mit `ProtocolPanel`), alles als Auswahl-Chips:
-  Gesprächspartner, Aktuelle Lösung, bei Wettbewerb Anbieter (`COMPETITORS` in
+  (`features/queue/OutcomeBar.tsx` mit `ProtocolPanel`). Zugeklappt nur eine schmale Leiste
+  mit „Telefonat“, Stand und Ergebnissen; „Telefonat“ (Taste T) klappt das Protokoll auf,
+  Escape und jeder Leadwechsel klappen es zu (`protocolFor` in `QueueView`). Darin
+  Auswahlfelder für Gesprächspartner, Aktuelle Lösung, Wettbewerber (`COMPETITORS` in
   `qualificationConfig.ts`) und Vertragsende mit Nachfass-Termin, Hinweise, Notiz. Das
   Protokoll scrollt bei Bedarf in sich, die Ergebnisleiste bleibt stehen. Der bekannte
   Stand aus einem früheren Gespräch lässt sich mit `carryOverProtocol` übernehmen.

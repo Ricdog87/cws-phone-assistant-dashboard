@@ -53,13 +53,15 @@ Einstellungen (Scoring, Daten) und die Zuordnung der Telefonassistenzen zu den H
 sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sieht ihre
 Zuordnung, ändern kann sie sie nicht.
 
-Unter dem Briefing steht immer sichtbar das Gesprächsprotokoll mit dem Ergebnis, alles an
-einem Fleck und per Klick: Gesprächspartner (Entscheider, Zentrale, Sonstige), Aktuelle
-Lösung (Firma kauft selbst, Mitarbeitende kaufen, Wettbewerb, keine Berufskleidung), bei
-Wettbewerb der Anbieter (MEWA, Bardusch, DBL, Alsco, Sonstiger, Unbekannt) und „Vertrag
-läuft bis“ mit dem Nachfass-Termin (erster Werktag neun Monate vorher), dazu die Hinweise
-Firma erloschen, Zentralentscheidung, Bestandskunde und Nicht mehr anrufen, dann die Notiz
-zum Telefonat. Ein zweiter Klick hebt eine Auswahl auf. Ist zur Firma schon etwas bekannt,
+Unter dem Briefing steht eine schmale Leiste mit „Telefonat“, dem Stand des Protokolls und
+den Ergebnissen; so bleibt Platz für Briefing und Leitfaden. „Telefonat“ (Taste T) klappt
+das Gesprächsprotokoll auf, Escape oder ein Leadwechsel klappt es wieder zu. Darin vier
+Auswahlfelder in einer Zeile: Gesprächspartner (Entscheider, Zentrale, Sonstige), Aktuelle
+Lösung (kauft Berufskleidung, Mitarbeitende kaufen selbst, Wettbewerb, keine
+Berufskleidung), Wettbewerber (MEWA, Bardusch, DBL, Alsco, Sonstiger, Unbekannt) und
+„Vertrag läuft bis“, die beiden letzten nur bei Wettbewerb, mit dem Nachfass-Termin (erster
+Werktag neun Monate vorher) neben dem Feld; dazu die Hinweise Firma erloschen,
+Zentralentscheidung, Bestandskunde und Nicht mehr anrufen und die Notiz zum Telefonat. Ist zur Firma schon etwas bekannt,
 etwa Wettbewerber und Vertragsende aus einem früheren Gespräch, steht es über dem
 Protokoll und lässt sich mit „Übernehmen“ einsetzen; die Warteschlange zeigt bekannte
 Wettbewerber mit Vertragsende, fällige rot. Über der Warteschlange filtert „Branche“ die
