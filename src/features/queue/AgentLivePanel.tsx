@@ -8,13 +8,13 @@ import {
   type GoalProgress,
 } from '@/domain/agentGoals';
 
-/** Live-Maske der Telefonassistenz: Begrüßung und Stand gegen Tages-/Wochenziel */
+/** Live-Maske der Telefonassistenz: Begrüßung und Stand gegen Tages- und Wochenziel, gut sichtbar */
 export function AgentLivePanel() {
   const agentName = useAppStore((s) => s.agentName);
   const goals = useAppStore((s) => s.agentGoals);
   const outcomes = useAppStore((s) => s.outcomes);
 
-  const { workday } = useCallDay();
+  const { workday, daysRemaining } = useCallDay();
   const progress = useMemo(() => computeAgentDayProgress(outcomes, goals), [outcomes, goals]);
   const dateLabel = useMemo(
     () =>
@@ -29,75 +29,89 @@ export function AgentLivePanel() {
   return (
     <section
       aria-label="Live-Maske Telefonassistenz"
-      className="border-b border-border bg-panel px-4 py-2 md:px-6"
+      className="border-b border-border bg-panel px-4 py-2.5 md:px-6"
     >
-      <div className="grid items-center gap-x-8 gap-y-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+      <div className="grid items-center gap-x-4 gap-y-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.3fr)]">
         <div className="min-w-0">
-          <h2 className="text-base font-bold leading-tight">
+          <h2 className="text-lg font-bold leading-tight">
             {greeting(agentName)}{' '}
             <span className="text-xs font-normal capitalize text-muted">· {dateLabel}</span>
           </h2>
-          <p className="truncate text-sm text-muted">{motivationLine(progress, workday)}</p>
+          <p className="mt-0.5 text-sm font-bold text-brand-ink">
+            {motivationLine(progress, workday)}
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-6">
-          <GoalCompact
-            title="Tagesziel"
-            subtitle="Anrufe heute"
-            progress={progress.callsToday}
-            barClassName={progress.callsToday.reached ? 'bg-brand-ink' : 'bg-brand-primary'}
-          />
-          <GoalCompact
-            title="Wochenziel"
-            subtitle="Termine diese Woche"
-            progress={progress.appointmentsThisWeek}
-            barClassName={
-              progress.appointmentsThisWeek.reached ? 'bg-brand-ink' : 'bg-brand-primary'
-            }
-          />
-        </div>
+        <GoalTile
+          title="Tagesziel"
+          unit="Anrufe heute"
+          progress={progress.callsToday}
+          note={workday ? `${progress.callsToday.percent} %` : 'Wochenende'}
+        />
+        <GoalTile
+          title="Wochenziel"
+          unit="Termine diese Woche"
+          progress={progress.appointmentsThisWeek}
+          note={
+            workday
+              ? `${daysRemaining} ${daysRemaining === 1 ? 'Arbeitstag' : 'Arbeitstage'} übrig`
+              : 'Woche abgeschlossen'
+          }
+        />
       </div>
     </section>
   );
 }
 
-/** Ziel in einer Zeile: Titel, Stand und Rest, darunter ein schmaler Balken */
-function GoalCompact({
+/** Ziel als Kachel: große Zahl, Rest als Markierung, darunter ein kräftiger Balken */
+function GoalTile({
   title,
-  subtitle,
+  unit,
   progress,
-  barClassName,
+  note,
 }: {
   title: string;
-  subtitle: string;
+  unit: string;
   progress: GoalProgress;
-  barClassName: string;
+  note: string;
 }) {
   const width = Math.min(100, (progress.current / Math.max(progress.target, 1)) * 100);
   return (
-    <div className="min-w-0">
-      <div className="flex items-baseline justify-between gap-2 text-xs text-muted">
-        <span className="min-w-0 truncate">
-          <span className="font-bold uppercase tracking-wide">{title}</span> · {subtitle}
-        </span>
-        <span className="whitespace-nowrap">
-          <strong className="text-base tabular-nums leading-none text-brand-ink">
+    <div className="min-w-0 rounded border border-border bg-surface px-4 py-2">
+      <div className="flex items-center gap-3">
+        <p className="whitespace-nowrap leading-none">
+          <strong className="text-3xl font-bold tabular-nums text-brand-ink">
             {progress.current}
-          </strong>{' '}
-          / {progress.target} ·{' '}
-          <span className="font-bold text-brand-ink">
-            {progress.reached ? 'Ziel erreicht' : `noch ${progress.remaining}`}
-          </span>
+          </strong>
+          <span className="text-base font-bold text-muted"> / {progress.target}</span>
+        </p>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-xs font-bold uppercase tracking-wide text-brand-ink">
+            {title}
+          </p>
+          <p className="truncate text-xs text-muted">
+            {unit} · {note}
+          </p>
+        </div>
+        <span
+          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold text-on-primary ${
+            progress.reached ? 'bg-brand-ink' : 'bg-brand-primary'
+          }`}
+        >
+          {progress.reached ? 'Ziel erreicht' : `noch ${progress.remaining}`}
         </span>
       </div>
       <div
-        className="mt-1 h-1.5 rounded bg-surface"
+        className="mt-2 h-2.5 rounded-full bg-border"
         role="meter"
-        aria-label={subtitle}
+        aria-label={unit}
         aria-valuemin={0}
         aria-valuemax={Math.max(progress.target, 1)}
         aria-valuenow={progress.current}
       >
-        <div className={`h-1.5 rounded ${barClassName}`} style={{ width: `${width}%` }} />
+        <div
+          className={`h-2.5 rounded-full ${progress.reached ? 'bg-brand-ink' : 'bg-brand-primary'}`}
+          style={{ width: `${width}%` }}
+        />
       </div>
     </div>
   );
