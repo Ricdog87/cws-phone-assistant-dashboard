@@ -80,6 +80,16 @@ eine Grafik alle Werte ihrer eigenen Dimension zeigt), `summarizeMarket`,
 über `marketToCsv`. Grafiken als schlichte Balken und Säulen mit Werten an der Spitze,
 Wettbewerber dunkel, übrige Lösungen grau, fälliges Nachfassen in der Markenfarbe.
 
+### Briefing in der Anrufliste
+
+`features/queue/BriefingPanel.tsx` teilt das Briefing in zwei Spalten: links Einstieg mit
+Aufhängern (`useBriefing`, Regeln oder Sprachmodell) und `CallGuidePanel` mit den Reitern
+Bedarf, Einwände, Termin, Abschluss und Zentrale; rechts Ansprechpartner, Firma und
+Bewertung. `callGuide()` in `domain/guide.ts` füllt die Phasen aus `content/leitfaden.ts`
+(ohne die Phase Einstieg, die das Briefing liefert) und die Einwände aus
+`content/objections.ts`; fehlende Werte werden zu Lücken (`ScriptPart.gap`). Die
+Einwandbehandlung des Sprachmodells steht vor den Standard-Einwänden.
+
 ### Gesprächsprotokoll, Termine und Wiedervorlagen
 
 - Gesprächsprotokoll und Ergebnis stehen fest unter dem Briefing

@@ -397,6 +397,36 @@ describe('QueueView', () => {
     expect(selectedName()).toBe(first);
   });
 
+  it('führt durch den Leitfaden mit Bedarf, Einwänden, Termin, Abschluss und Zentrale', async () => {
+    const user = userEvent.setup();
+    render(<QueueView />);
+    const guide = screen.getByRole('region', { name: 'Gesprächsleitfaden' });
+    const tabs = within(guide).getAllByRole('tab');
+    expect(tabs.map((tab) => tab.textContent?.replace(/\d+$/, ''))).toEqual([
+      'Bedarf',
+      'Einwände',
+      'Termin',
+      'Abschluss',
+      'Zentrale',
+    ]);
+    expect(within(guide).getByRole('tabpanel')).toHaveTextContent(
+      'Wie ist das Thema Arbeitskleidung bei Ihnen heute gelöst?',
+    );
+
+    await user.click(within(guide).getByRole('tab', { name: /Einwände/ }));
+    expect(within(guide).getByRole('tabpanel')).toHaveTextContent(
+      '„Wir haben schon einen Anbieter“',
+    );
+
+    // Wechsel des Leads beginnt wieder beim Bedarf
+    await user.keyboard('{ArrowDown}');
+    const next = screen.getByRole('region', { name: 'Gesprächsleitfaden' });
+    expect(within(next).getByRole('tab', { name: 'Bedarf' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
   it('filtert die Anrufliste nach Branche', async () => {
     const user = userEvent.setup();
     render(<QueueView />);

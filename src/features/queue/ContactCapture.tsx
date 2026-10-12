@@ -27,8 +27,8 @@ const FIELDS: { key: keyof ContactDraft; label: string; type: string; autoComple
 
 /**
  * Ansprechpartner aus dem Gespräch erfassen, ohne einen Kontakt in Salesforce anzulegen. Geht
- * mit dem Anrufprotokoll nach Salesforce, zusätzlich über den Kontakt-Export. Sitzt kompakt in
- * der Zeile Ansprechpartner; das Formular klappt darunter über die volle Breite auf.
+ * mit dem Anrufprotokoll nach Salesforce, zusätzlich über den Kontakt-Export. Sitzt in der Karte
+ * Ansprechpartner; das Formular klappt dort auf.
  */
 export function ContactCapture({ lead }: ContactCaptureProps) {
   const contacts = useAppStore((s) => s.contacts);
@@ -61,12 +61,9 @@ export function ContactCapture({ lead }: ContactCaptureProps) {
 
   if (!open) {
     return (
-      <section
-        aria-label="Kontakt erfassen"
-        className="ml-auto flex min-w-0 items-center gap-3 text-sm"
-      >
+      <section aria-label="Kontakt erfassen" className="space-y-2">
         {latest && (
-          <p className="min-w-0 truncate text-xs">
+          <p className="text-xs leading-snug">
             <span className="text-muted">Neu erfasst: </span>
             <strong>{[latest.name, latest.role].filter(Boolean).join(', ') || 'ohne Namen'}</strong>
             {latest.directDial && <> · {latest.directDial}</>}
@@ -78,7 +75,6 @@ export function ContactCapture({ lead }: ContactCaptureProps) {
           size="sm"
           onClick={() => setOpen(true)}
           title="Name, Funktion, Durchwahl oder E-Mail aus dem Gespräch. Steht im Anrufprotokoll in Salesforce, ohne einen Kontakt anzulegen."
-          className="shrink-0"
         >
           {latest ? 'Weiteren Kontakt erfassen' : 'Kontakt erfassen'}
         </Button>
@@ -87,12 +83,12 @@ export function ContactCapture({ lead }: ContactCaptureProps) {
   }
 
   return (
-    <section aria-label="Kontakt erfassen" className="basis-full border-t border-border pt-3">
-      <form onSubmit={(e) => void save(e)} noValidate className="space-y-3">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-3">
+    <section aria-label="Kontakt erfassen">
+      <form onSubmit={(e) => void save(e)} noValidate className="space-y-2.5">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-2">
           {FIELDS.map((field) => (
             <label key={field.key} className="text-sm">
-              <span className="mb-1 block text-xs text-muted">{field.label}</span>
+              <span className="mb-0.5 block text-xs text-muted">{field.label}</span>
               <input
                 id={`contact-${field.key}`}
                 type={field.type}

@@ -53,11 +53,14 @@ Einstellungen (Scoring, Daten) und die Zuordnung der Telefonassistenzen zu den H
 sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sieht ihre
 Zuordnung, ändern kann sie sie nicht.
 
-Das Briefing folgt dem Gespräch und passt ohne Scrollen auf einen Laptop-Bildschirm: oben
-Firma, Adresse und Kennzahlen (Mitarbeitende, Träger, Hunter, letzte Aktivität) mit Score,
-darunter eine Zeile mit Ansprechpartner, Telefon und „Kontakt erfassen“, dann der
-Vertriebsleitfaden mit Einstiegssatz und Aufhängern, zuletzt die Einwandbehandlung. Die
-Warteschlange nimmt ein Drittel der Breite, das Briefing zwei Drittel.
+Das Briefing ist zweigeteilt. Links steht, was gesagt wird: der Einstiegssatz mit den
+Aufhängern, darunter der Gesprächsleitfaden mit den Reitern Bedarf, Einwände, Termin,
+Abschluss und Zentrale. Die Sätze kommen aus `src/content/leitfaden.ts` und
+`src/content/objections.ts`; Name, Funktion und Hunter sind eingesetzt, was erst im
+Gespräch feststeht (Tag, Uhrzeit, Mitentscheider), ist als Lücke markiert. Rechts steht,
+wer und wo: Ansprechpartner mit Link nach Salesforce, Telefonnummer und „Kontakt erfassen“,
+darunter Firmendaten und Bewertung. Die Warteschlange nimmt ein Drittel der Breite, das
+Briefing zwei Drittel; unter 1280 Pixel Breite rückt die rechte Spalte unter den Leitfaden.
 
 Unter dem Briefing steht eine schmale Leiste mit „Telefonat“, dem Stand des Protokolls und
 den Ergebnissen; so bleibt Platz für Briefing und Leitfaden. „Telefonat“ (Taste T) klappt
