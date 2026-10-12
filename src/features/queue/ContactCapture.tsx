@@ -27,7 +27,8 @@ const FIELDS: { key: keyof ContactDraft; label: string; type: string; autoComple
 
 /**
  * Ansprechpartner aus dem Gespräch erfassen, ohne einen Kontakt in Salesforce anzulegen. Geht
- * mit dem Anrufprotokoll nach Salesforce, zusätzlich über den Kontakt-Export.
+ * mit dem Anrufprotokoll nach Salesforce, zusätzlich über den Kontakt-Export. Sitzt kompakt in
+ * der Zeile Ansprechpartner; das Formular klappt darunter über die volle Breite auf.
  */
 export function ContactCapture({ lead }: ContactCaptureProps) {
   const contacts = useAppStore((s) => s.contacts);
@@ -58,64 +59,65 @@ export function ContactCapture({ lead }: ContactCaptureProps) {
     }
   }
 
-  return (
-    <section aria-label="Kontakt erfassen" className="rounded border border-border bg-panel p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wide text-muted">
-          Neu erfasster Kontakt
-        </h3>
-        {!open && (
-          <Button onClick={() => setOpen(true)}>
-            {latest ? 'Weiteren Kontakt erfassen' : 'Kontakt erfassen'}
-          </Button>
+  if (!open) {
+    return (
+      <section
+        aria-label="Kontakt erfassen"
+        className="ml-auto flex min-w-0 items-center gap-3 text-sm"
+      >
+        {latest && (
+          <p className="min-w-0 truncate text-xs">
+            <span className="text-muted">Neu erfasst: </span>
+            <strong>{[latest.name, latest.role].filter(Boolean).join(', ') || 'ohne Namen'}</strong>
+            {latest.directDial && <> · {latest.directDial}</>}
+            {latest.email && <> · {latest.email}</>}
+            <span className="text-muted"> · {formatDateTime(latest.capturedAt)}</span>
+          </p>
         )}
-      </div>
+        <Button
+          size="sm"
+          onClick={() => setOpen(true)}
+          title="Name, Funktion, Durchwahl oder E-Mail aus dem Gespräch. Steht im Anrufprotokoll in Salesforce, ohne einen Kontakt anzulegen."
+          className="shrink-0"
+        >
+          {latest ? 'Weiteren Kontakt erfassen' : 'Kontakt erfassen'}
+        </Button>
+      </section>
+    );
+  }
 
-      {latest && !open && (
-        <p className="mt-2 text-sm">
-          <strong>{[latest.name, latest.role].filter(Boolean).join(', ') || 'ohne Namen'}</strong>
-          {latest.directDial && <> · {latest.directDial}</>}
-          {latest.email && <> · {latest.email}</>}
-          <span className="text-muted"> · erfasst {formatDateTime(latest.capturedAt)}</span>
-        </p>
-      )}
-      {!latest && !open && (
-        <p className="mt-2 text-sm text-muted">
-          Name, Funktion, Durchwahl oder E-Mail aus dem Gespräch. Steht im Anrufprotokoll in
-          Salesforce, ohne einen Kontakt anzulegen.
-        </p>
-      )}
-
-      {open && (
-        <form onSubmit={(e) => void save(e)} noValidate className="mt-3 space-y-3">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] gap-3">
-            {FIELDS.map((field) => (
-              <label key={field.key} className="text-sm">
-                <span className="mb-1 block text-xs text-muted">{field.label}</span>
-                <input
-                  id={`contact-${field.key}`}
-                  type={field.type}
-                  autoComplete={field.autoComplete}
-                  value={draft[field.key]}
-                  onChange={(e) => setDraft({ ...draft, [field.key]: e.target.value })}
-                  className="w-full rounded border border-border bg-panel px-2 py-1"
-                />
-              </label>
-            ))}
-          </div>
-          {error && (
-            <p role="alert" className="text-sm font-bold text-brand-primary">
-              {CONTACT_ERROR_LABELS[error]}
-            </p>
-          )}
-          <div className="flex gap-2">
-            <Button type="submit" variant="primary" disabled={saving}>
-              Kontakt speichern
-            </Button>
-            <Button onClick={close}>Abbrechen</Button>
-          </div>
-        </form>
-      )}
+  return (
+    <section aria-label="Kontakt erfassen" className="basis-full border-t border-border pt-3">
+      <form onSubmit={(e) => void save(e)} noValidate className="space-y-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-3">
+          {FIELDS.map((field) => (
+            <label key={field.key} className="text-sm">
+              <span className="mb-1 block text-xs text-muted">{field.label}</span>
+              <input
+                id={`contact-${field.key}`}
+                type={field.type}
+                autoComplete={field.autoComplete}
+                value={draft[field.key]}
+                onChange={(e) => setDraft({ ...draft, [field.key]: e.target.value })}
+                className="w-full rounded border border-border bg-panel px-2 py-1"
+              />
+            </label>
+          ))}
+        </div>
+        {error && (
+          <p role="alert" className="text-sm font-bold text-brand-primary">
+            {CONTACT_ERROR_LABELS[error]}
+          </p>
+        )}
+        <div className="flex gap-2">
+          <Button type="submit" size="sm" variant="primary" disabled={saving}>
+            Kontakt speichern
+          </Button>
+          <Button size="sm" onClick={close}>
+            Abbrechen
+          </Button>
+        </div>
+      </form>
     </section>
   );
 }

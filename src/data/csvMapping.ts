@@ -163,6 +163,21 @@ export const CSV_FIELDS: CsvFieldSpec[] = [
     aliases: ['funktion', 'position', 'rolle', 'title'],
   },
   {
+    field: 'contactId',
+    label: 'Kontakt-ID (Salesforce)',
+    required: false,
+    kind: 'text',
+    aliases: [
+      'kontakt-id',
+      'kontakt id',
+      'kontaktid',
+      'contact-id',
+      'contact id',
+      'contactid',
+      'ansprechpartner-id',
+    ],
+  },
+  {
     field: 'openPositions',
     label: 'Offene Stellen',
     required: false,

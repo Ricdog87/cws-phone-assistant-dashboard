@@ -60,8 +60,11 @@ Live-Person aus den erfassten Anrufen.
 Kontakt (Präfix der ID über `salesforceObjectOf`). `useSalesforceLink()` in
 `app/salesforceLinks.ts` nimmt die Adresse aus `services.ts` (`VITE_SALESFORCE_URL`, sonst
 die CWS-Adresse) und gibt Demo-Leads eine Platzhalter-ID (`demoAccountId`). Angezeigt wird
-der Link über `components/SalesforceLink.tsx`, in der Warteschlange nur als Symbol. Eine
-Suche per URL in Lightning ist nicht dokumentiert und wird deshalb nicht genutzt.
+der Link über `components/SalesforceLink.tsx`, in der Warteschlange nur als Symbol. Den
+Ansprechpartner verlinkt `useContactLink()` über `contactUrl()`: mit `contactId` (003…) der
+Kontakt, sonst beim Account dessen Kontaktliste (`/related/Contacts/view`), beim Lead der
+Lead selbst; Demo-Leads bekommen `demoContactId`. Eine Suche per URL in Lightning ist nicht
+dokumentiert und wird deshalb nicht genutzt.
 
 ### Wettbewerb und Vertragsenden
 

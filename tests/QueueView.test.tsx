@@ -378,6 +378,15 @@ describe('QueueView', () => {
       /^https:\/\/cws-workwear\.lightning\.force\.com\/lightning\/r\/Account\/001DEMO\d{8}\/view$/,
     );
 
+    // Der Ansprechpartner führt direkt auf seinen Kontakt
+    const contact = within(within(briefing).getByRole('region', { name: 'Ansprechpartner' }))
+      .getAllByRole('link')
+      .find((item) => item.getAttribute('href')?.includes('/Contact/'));
+    expect(contact?.getAttribute('href')).toMatch(
+      /^https:\/\/cws-workwear\.lightning\.force\.com\/lightning\/r\/Contact\/003DEMO\d{8}\/view$/,
+    );
+    expect(contact).toHaveAttribute('target', '_blank');
+
     // In der Warteschlange ein Symbol je Firma; der Klick wechselt nicht den Lead
     const icons = within(screen.getByRole('listbox', { name: 'Warteschlange' })).getAllByRole(
       'link',

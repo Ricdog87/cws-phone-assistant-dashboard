@@ -91,6 +91,27 @@ describe('validateCsvRows', () => {
 });
 
 describe('importCsvRows', () => {
+  it('übernimmt Ansprechpartner und Kontakt-ID für den Link nach Salesforce', async () => {
+    const csv = parseCsvText(
+      'Account-ID;Accountname;Ansprechpartner;Kontakt-ID\n001000000000001AAA;Beispiel GmbH;Frau Muster;003000000000001AAA\n',
+    );
+    const { leads } = await importCsvRows(
+      csv.rows,
+      {
+        id: 'Account-ID',
+        name: 'Accountname',
+        contactName: 'Ansprechpartner',
+        contactId: 'Kontakt-ID',
+      },
+      { geocoder: null },
+    );
+    expect(leads[0]).toMatchObject({
+      id: '001000000000001AAA',
+      contactName: 'Frau Muster',
+      contactId: '003000000000001AAA',
+    });
+  });
+
   it('schlägt fehlende Koordinaten nach und behält Leads ohne Kartenposition', async () => {
     const geocoder = fakeGeocoder();
     const progress: number[] = [];

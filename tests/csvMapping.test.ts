@@ -89,6 +89,15 @@ describe('suggestMapping für Salesforce-Berichte', () => {
     });
   });
 
+  it('erkennt die Kontakt-ID des Ansprechpartners neben dem Namen', () => {
+    expect(suggestMapping(['Account-ID', 'Accountname', 'Ansprechpartner', 'Kontakt-ID'])).toEqual({
+      id: 'Account-ID',
+      name: 'Accountname',
+      contactName: 'Ansprechpartner',
+      contactId: 'Kontakt-ID',
+    });
+  });
+
   it('bevorzugt die Lieferanschrift vor der Rechnungsanschrift', () => {
     const mapping = suggestMapping([
       'Straße (Rechnungsanschrift)',

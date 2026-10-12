@@ -25,6 +25,7 @@ export const CLAY_FIELD_MAPPING: FieldMapping = {
   hasDirectDial: 'Direct Phone (vorhanden ja/nein)',
   contactName: 'Contact Full Name',
   contactRole: 'Contact Job Title',
+  contactId: null, // kommt aus dem CRM
   openPositions: 'Open Jobs Count (gewerbliche Stellen)',
   certification: null, // offen: Quelle für Zertifizierungen klären
   siteExpansion: 'Signal Expansion',

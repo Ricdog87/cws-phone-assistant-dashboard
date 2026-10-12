@@ -53,6 +53,12 @@ Einstellungen (Scoring, Daten) und die Zuordnung der Telefonassistenzen zu den H
 sind der Teamleitung und dem Head of Sales vorbehalten. Die Telefonassistenz sieht ihre
 Zuordnung, ändern kann sie sie nicht.
 
+Das Briefing folgt dem Gespräch und passt ohne Scrollen auf einen Laptop-Bildschirm: oben
+Firma, Adresse und Kennzahlen (Mitarbeitende, Träger, Hunter, letzte Aktivität) mit Score,
+darunter eine Zeile mit Ansprechpartner, Telefon und „Kontakt erfassen“, dann der
+Vertriebsleitfaden mit Einstiegssatz und Aufhängern, zuletzt die Einwandbehandlung. Die
+Warteschlange nimmt ein Drittel der Breite, das Briefing zwei Drittel.
+
 Unter dem Briefing steht eine schmale Leiste mit „Telefonat“, dem Stand des Protokolls und
 den Ergebnissen; so bleibt Platz für Briefing und Leitfaden. „Telefonat“ (Taste T) klappt
 das Gesprächsprotokoll auf, Escape oder ein Leadwechsel klappt es wieder zu. Darin vier
@@ -100,9 +106,11 @@ Jeder Firmenname ist ein Link auf den Datensatz in Salesforce und öffnet ihn in
 Tab (`/lightning/r/Account/{ID}/view`, bei Leads `/lightning/r/Lead/{ID}/view`): im
 Briefing, in Wiedervorlagen, Wettbewerb, Terminen, Scoring und auf der Karte; in der
 Warteschlange über das Symbol neben dem Namen, damit der Klick auf die Zeile weiter den Lead
-wählt. Die ID kommt aus der Spalte Account-ID des Imports. Demo-Leads haben keine
-Salesforce-ID; ihr Link trägt eine Platzhalter-ID (`001DEMO…`), den Account gibt es in
-Salesforce nicht. Standard ist `https://cws-workwear.lightning.force.com`, eine andere
+wählt. Die ID kommt aus der Spalte Account-ID des Imports. Auch der Ansprechpartner im
+Briefing ist ein Link: mit der Spalte Kontakt-ID direkt auf den Kontakt
+(`/lightning/r/Contact/{ID}/view`), ohne sie auf die Kontaktliste des Accounts. Demo-Leads
+haben keine Salesforce-ID; ihre Links tragen Platzhalter-IDs (`001DEMO…`, `003DEMO…`), die es
+in Salesforce nicht gibt. Standard ist `https://cws-workwear.lightning.force.com`, eine andere
 Adresse, etwa eine Sandbox, steht in `VITE_SALESFORCE_URL`.
 
 ### Wettbewerb und Vertragsenden
@@ -137,7 +145,7 @@ Anmeldung (Entra ID) und der Zugriffsschutz der Vercel-Umgebung stehen; sonst k�
 mit dem Link Aufgaben anlegen oder ändern. Geändert werden nur Aufgaben (IDs mit 00T).
 
 Im Gespräch gewonnene Kontaktdaten (Name, Funktion, Durchwahl, E-Mail) werden im Briefing
-unter „Neu erfasster Kontakt“ gespeichert. Das Dashboard exportiert sie als eigene CSV mit
+über „Kontakt erfassen“ in der Zeile Ansprechpartner gespeichert. Das Dashboard exportiert sie als eigene CSV mit
 der Lead-ID als Schlüssel, damit sie per Import zurück an den Lead in Salesforce gehen;
 zusätzlich stehen sie als Ansprechpartner im Anrufprotokoll, ohne einen Kontakt anzulegen.
 Salesforce bleibt das führende System, das Cockpit hält nichts dauerhaft.

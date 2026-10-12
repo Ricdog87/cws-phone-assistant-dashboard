@@ -25,6 +25,7 @@ export const DNB_FIELD_MAPPING: FieldMapping = {
   hasDirectDial: null, // nicht in D&B, kommt aus Anreicherung oder CRM
   contactName: null, // offen: Kontaktdaten-Block gebucht?
   contactRole: null,
+  contactId: null, // kommt aus dem CRM
   openPositions: null, // nicht in D&B
   certification: null,
   siteExpansion: null,

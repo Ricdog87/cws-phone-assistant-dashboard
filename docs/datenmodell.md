@@ -19,6 +19,7 @@ Zentrales Modell aller Quellen, definiert in `src/domain/types.ts`.
 | `hasDirectDial`       | ja/nein        | Durchwahl zum Entscheider bekannt               | nein    |
 | `contactName`         | Text oder leer | Ansprechpartner                                 | nein    |
 | `contactRole`         | Text oder leer | Funktion des Ansprechpartners                   | nein    |
+| `contactId`           | Text oder leer | Salesforce-ID des Kontakts (003…), für den Link | nein    |
 | `openPositions`       | Zahl           | Offene gewerbliche Stellen                      | nein    |
 | `certification`       | Text oder leer | z. B. IFS Food, ISO 22000                       | nein    |
 | `siteExpansion`       | ja/nein        | Standorterweiterung angekündigt                 | nein    |
@@ -178,6 +179,7 @@ kommentiert. Übersicht:
 | `hasDirectDial`       | Durchwahl                 | Direct Phone             | nicht vorhanden                       | `Durchwahl_bekannt__c`         |
 | `contactName`         | Ansprechpartner           | Contact Full Name        | offen                                 | `FirstName` + `LastName`       |
 | `contactRole`         | Funktion                  | Contact Job Title        | offen                                 | `Title`                        |
+| `contactId`           | Kontakt-ID                | aus CRM                  | aus CRM                               | Kontakt-ID am Account          |
 | `openPositions`       | Offene Stellen            | Open Jobs Count          | nicht vorhanden                       | `Offene_Stellen__c`            |
 | `certification`       | Zertifizierung            | offen                    | nicht vorhanden                       | `Zertifizierung__c`            |
 | `siteExpansion`       | Standorterweiterung       | Signal Expansion         | nicht vorhanden                       | `Standorterweiterung__c`       |

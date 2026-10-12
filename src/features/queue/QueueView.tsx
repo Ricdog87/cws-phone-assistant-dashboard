@@ -191,11 +191,13 @@ export function QueueView() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <AgentLivePanel />
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(320px,2fr)_3fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(300px,1fr)_minmax(0,2fr)]">
         <aside className="flex min-h-0 flex-col border-r border-border bg-panel">
           <div className="space-y-2 border-b border-border px-3 py-2">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-sm font-bold">Warteschlange</h2>
+              <h2 className="text-sm font-bold" title="Pfeil hoch und runter wechselt den Lead">
+                Warteschlange
+              </h2>
               <span className="text-xs text-muted">
                 {openCount} offen von {queue.length}
                 {blocked > 0 && (
@@ -222,7 +224,7 @@ export function QueueView() {
           </div>
         </aside>
         <div className="flex min-h-0 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
             {selected ? (
               <BriefingPanel entry={selected} callerName={DEMO_USER.fullName} />
             ) : (

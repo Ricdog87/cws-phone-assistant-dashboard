@@ -27,6 +27,8 @@ export interface Lead {
   hasDirectDial: boolean;
   contactName: string | null;
   contactRole: string | null;
+  /** Salesforce-ID des Ansprechpartners (Kontakt, 003…), falls bekannt */
+  contactId?: string | null;
   openPositions: number;
   certification: string | null;
   siteExpansion: boolean;

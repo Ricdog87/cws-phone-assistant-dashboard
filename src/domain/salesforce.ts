@@ -40,15 +40,42 @@ export function recordUrl(baseUrl: string, recordId: string | null | undefined):
   return object && recordId ? `${baseUrl}/lightning/r/${object}/${recordId}/view` : null;
 }
 
+function demoDigits(key: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return String((h >>> 0) % 100_000_000).padStart(8, '0');
+}
+
 /**
  * Platzhalter im Format einer Account-ID für Demo-Leads ohne Salesforce-ID. Den Account gibt
  * es in Salesforce nicht; der Link zeigt nur, wohin er mit echten Daten führt.
  */
 export function demoAccountId(leadId: string): string {
-  let h = 2166136261;
-  for (let i = 0; i < leadId.length; i++) {
-    h ^= leadId.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+  return `001DEMO${demoDigits(leadId)}`;
+}
+
+/** Platzhalter im Format einer Kontakt-ID für den Ansprechpartner eines Demo-Leads */
+export function demoContactId(leadId: string): string {
+  return `003DEMO${demoDigits(`${leadId}:kontakt`)}`;
+}
+
+/**
+ * Link auf den Ansprechpartner: mit Kontakt-ID direkt der Kontakt. Ohne Kontakt-ID beim
+ * Account dessen Kontaktliste, beim Salesforce-Lead der Lead selbst, denn dort steht der
+ * Ansprechpartner im Datensatz. Sonst null.
+ */
+export function contactUrl(
+  baseUrl: string,
+  recordId: string | null | undefined,
+  contactId: string | null | undefined,
+): string | null {
+  if (salesforceObjectOf(contactId) === 'Contact') return recordUrl(baseUrl, contactId);
+  const object = salesforceObjectOf(recordId);
+  if (object === 'Account' && recordId) {
+    return `${baseUrl}/lightning/r/Account/${recordId}/related/Contacts/view`;
   }
-  return `001DEMO${String((h >>> 0) % 100_000_000).padStart(8, '0')}`;
+  return object === 'Lead' ? recordUrl(baseUrl, recordId) : null;
 }

@@ -24,6 +24,7 @@ export const SALESFORCE_FIELD_MAPPING: FieldMapping = {
   hasDirectDial: 'Durchwahl_bekannt__c',
   contactName: 'FirstName + LastName',
   contactRole: 'Title',
+  contactId: null, // beim Account-Export: Spalte Kontakt-ID des Hauptansprechpartners
   openPositions: 'Offene_Stellen__c',
   certification: 'Zertifizierung__c',
   siteExpansion: 'Standorterweiterung__c',

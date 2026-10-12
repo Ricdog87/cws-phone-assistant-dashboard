@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  contactUrl,
   demoAccountId,
+  demoContactId,
   normalizeSalesforceUrl,
   recordUrl,
   salesforceObjectOf,
@@ -39,6 +41,25 @@ describe('Links in die Salesforce-Oberfläche', () => {
     expect(salesforceObjectOf(id)).toBe('Account');
     expect(demoAccountId('DEMO-057')).toBe(id);
     expect(demoAccountId('DEMO-058')).not.toBe(id);
+  });
+
+  it('öffnet den Ansprechpartner als Kontakt, ohne Kontakt-ID die Kontakte des Accounts', () => {
+    const contact = '003000000000001AAA';
+    expect(contactUrl(BASE, ACCOUNT, contact)).toBe(`${BASE}/lightning/r/Contact/${contact}/view`);
+    expect(contactUrl(BASE, ACCOUNT, null)).toBe(
+      `${BASE}/lightning/r/Account/${ACCOUNT}/related/Contacts/view`,
+    );
+    // Beim Salesforce-Lead steht der Ansprechpartner im Lead selbst
+    expect(contactUrl(BASE, LEAD, undefined)).toBe(`${BASE}/lightning/r/Lead/${LEAD}/view`);
+    expect(contactUrl(BASE, 'DEMO-057', 'keine-id')).toBeNull();
+  });
+
+  it('gibt dem Ansprechpartner eines Demo-Leads eine Platzhalter-Kontakt-ID', () => {
+    const id = demoContactId('DEMO-057');
+    expect(id).toMatch(/^003DEMO\d{8}$/);
+    expect(salesforceObjectOf(id)).toBe('Contact');
+    expect(demoContactId('DEMO-057')).toBe(id);
+    expect(id.slice(3)).not.toBe(demoAccountId('DEMO-057').slice(3));
   });
 
   it('nimmt nur https-Adressen von Salesforce und kürzt auf die Domain', () => {

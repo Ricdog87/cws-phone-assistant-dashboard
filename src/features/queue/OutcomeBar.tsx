@@ -152,12 +152,13 @@ export function OutcomeBar({
       aria-label="Ergebnis erfassen"
       className="flex max-h-[72%] shrink-0 flex-col border-t-2 border-brand-ink bg-panel"
     >
-      <div className="flex shrink-0 items-center gap-3 px-6 py-2">
+      <div className="flex shrink-0 items-center gap-3 px-6 py-1.5">
         <button
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
           aria-keyshortcuts="T"
+          title="Taste T"
           onClick={onToggle}
           className={`inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm font-bold ${
             open
@@ -230,7 +231,7 @@ export function OutcomeBar({
         </div>
       )}
       {!planning && (
-        <div className="shrink-0 border-t border-border px-6 pb-2.5 pt-2.5">
+        <div className="shrink-0 border-t border-border px-6 py-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
               {KEYED_OUTCOMES.map((type, index) => (
@@ -239,6 +240,7 @@ export function OutcomeBar({
                   disabled={busy}
                   onClick={() => onRecord(type)}
                   aria-keyshortcuts={String(index + 1)}
+                  title={`Taste ${index + 1}`}
                 >
                   <span className="mr-2 rounded border border-current px-1 text-xs">
                     {index + 1}
@@ -256,21 +258,15 @@ export function OutcomeBar({
               Termin gebucht
             </Button>
           </div>
-          <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-muted">
-            <span>
-              T öffnet das Protokoll, 1 bis 3 buchen das Ergebnis, Strg+Enter speichert, Pfeil hoch
-              und runter wechselt den Lead.
-            </span>
-            {latest && (
-              <span>
-                Zuletzt erfasst:{' '}
-                <strong className="text-brand-ink">{OUTCOME_LABELS[latest.outcome]}</strong> am{' '}
-                {formatDateTime(latest.recordedAt)}
-                {recall && ` · fällig ${formatDay(recall.dueDate)}`}
-                {latestSync && ` · ${SYNC_STATUS_LABELS[latestSync]}`}
-              </span>
-            )}
-          </div>
+          {latest && (
+            <p className="mt-1.5 text-xs text-muted">
+              Zuletzt erfasst:{' '}
+              <strong className="text-brand-ink">{OUTCOME_LABELS[latest.outcome]}</strong> am{' '}
+              {formatDateTime(latest.recordedAt)}
+              {recall && ` · fällig ${formatDay(recall.dueDate)}`}
+              {latestSync && ` · ${SYNC_STATUS_LABELS[latestSync]}`}
+            </p>
+          )}
         </div>
       )}
     </section>

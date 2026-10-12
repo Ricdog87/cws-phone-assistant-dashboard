@@ -1,5 +1,12 @@
 import { useCallback } from 'react';
-import { demoAccountId, recordUrl, salesforceObjectOf } from '@/domain/salesforce';
+import {
+  contactUrl,
+  demoAccountId,
+  demoContactId,
+  recordUrl,
+  salesforceObjectOf,
+} from '@/domain/salesforce';
+import type { Lead } from '@/domain/types';
 import { salesforceUrl } from './services';
 import { useAppStore } from './store';
 
@@ -27,6 +34,41 @@ export function useSalesforceLink(): (
       const href = recordUrl(salesforceUrl, demoAccountId(recordId));
       return href
         ? { href, title: 'In Salesforce öffnen (Demo: diesen Account gibt es dort nicht)' }
+        : null;
+    },
+    [demo],
+  );
+}
+
+const CONTACT_TITLES = {
+  Contact: 'Kontakt in Salesforce öffnen',
+  Account: 'Kontakte des Accounts in Salesforce öffnen',
+  Lead: 'Lead in Salesforce öffnen',
+} as const;
+
+/**
+ * Link auf den Ansprechpartner eines Leads: der Kontakt selbst, ohne Kontakt-ID die
+ * Kontaktliste des Accounts. Demo-Leads bekommen eine Platzhalter-Kontakt-ID.
+ */
+export function useContactLink(): (
+  lead: Pick<Lead, 'id' | 'contactId' | 'contactName'>,
+) => SalesforceLinkTarget | null {
+  const demo = useAppStore((s) => s.sourceId) === 'mock';
+  return useCallback(
+    (lead) => {
+      if (!salesforceUrl || !lead.contactName) return null;
+      const href = contactUrl(salesforceUrl, lead.id, lead.contactId);
+      if (href) {
+        const object = salesforceObjectOf(lead.contactId) ?? salesforceObjectOf(lead.id);
+        return { href, title: object ? CONTACT_TITLES[object] : 'In Salesforce öffnen' };
+      }
+      if (!demo) return null;
+      const demoHref = recordUrl(salesforceUrl, demoContactId(lead.id));
+      return demoHref
+        ? {
+            href: demoHref,
+            title: 'Kontakt in Salesforce öffnen (Demo: diesen Kontakt gibt es dort nicht)',
+          }
         : null;
     },
     [demo],
