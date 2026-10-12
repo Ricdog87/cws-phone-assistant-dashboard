@@ -18,12 +18,14 @@ function hash(text: string): number {
 }
 
 /**
- * Buchungszeitpunkt: heute zwischen 8 Uhr und jetzt, sonst an einem früheren Werktag dieser
- * Woche zwischen 8 und 16 Uhr. Am Montag liegen alle Termine auf heute.
+ * Buchungszeitpunkt: heute zwischen 8 Uhr und jetzt, sonst an einem früheren Arbeitstag dieser
+ * Vertriebswoche (Montag bis Freitag) zwischen 8 und 16 Uhr. Am Montag gibt es noch keinen
+ * früheren Arbeitstag; dann liegt der Termin auf dem Freitag davor, damit „Heute“ nur die
+ * heutigen Termine zeigt.
  */
 function demoBookedAt(now: Date, seed: number, onToday: boolean): string {
   const weekday = now.getDay() === 0 ? 7 : now.getDay();
-  if (onToday || weekday === 1) {
+  if (onToday) {
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const start = midnight + 8 * 60 * 60_000;
     // Vor 8 Uhr liegen die Buchungen kurz vor jetzt, nie vor Mitternacht
@@ -33,8 +35,9 @@ function demoBookedAt(now: Date, seed: number, onToday: boolean): string {
     const span = Math.max(1, Math.floor((now.getTime() - start) / 60_000));
     return new Date(start + (seed % span) * 60_000).toISOString();
   }
-  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  date.setDate(date.getDate() - (1 + (seed % (weekday - 1))));
+  // Montag dieser Woche plus einer der Arbeitstage vor heute, nie Samstag oder Sonntag
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (weekday - 1));
+  date.setDate(date.getDate() + (weekday === 1 ? -3 : seed % Math.min(weekday - 1, 5)));
   date.setHours(8 + (Math.floor(seed / 8) % 8), (seed >>> 4) % 60);
   return date.toISOString();
 }

@@ -90,7 +90,7 @@ export function useGoalProgress(): GoalProgress {
   return useMemo(() => goalProgress(outcomes), [outcomes]);
 }
 
-/** Wochentag und restliche Tage bis Sonntag. Bewusst ohne Memo, damit Mitternacht zählt. */
+/** Wochentag und restliche Arbeitstage bis Freitag. Bewusst ohne Memo, damit Mitternacht zählt. */
 export function useCallDay(): CallDay {
   return callDay(new Date());
 }

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useCallDay } from '@/app/selectors';
 import { useAppStore } from '@/app/store';
 import { Meter } from '@/components/Meter';
 import {
@@ -14,6 +15,7 @@ export function AgentLivePanel() {
   const goals = useAppStore((s) => s.agentGoals);
   const outcomes = useAppStore((s) => s.outcomes);
 
+  const { workday } = useCallDay();
   const progress = useMemo(() => computeAgentDayProgress(outcomes, goals), [outcomes, goals]);
   const dateLabel = useMemo(
     () =>
@@ -36,7 +38,7 @@ export function AgentLivePanel() {
             {greeting(agentName)}{' '}
             <span className="text-xs font-normal capitalize text-muted">· {dateLabel}</span>
           </h2>
-          <p className="truncate text-sm text-muted">{motivationLine(progress)}</p>
+          <p className="truncate text-sm text-muted">{motivationLine(progress, workday)}</p>
         </div>
         <div className="grid grid-cols-2 gap-6">
           <GoalCompact

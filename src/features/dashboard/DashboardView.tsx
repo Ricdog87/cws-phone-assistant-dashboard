@@ -80,13 +80,15 @@ function AssistantDashboard() {
             weeklyGoal={goals.weeklyAppointmentGoal}
             weekday={today.weekday}
             dateLabel={today.dateLabel}
+            workday={today.workday}
             daysRemaining={today.daysRemaining}
             weekEndLabel={today.weekEndLabel}
+            nextWeekStartLabel={today.nextWeekStartLabel}
           />
           <p className="mt-4 text-xs text-muted">
-            Tagesziel: etwa {formatInt(goals.dailyCallGoal)} Anrufe. Wochenziel:{' '}
-            {formatInt(goals.weeklyAppointmentGoal)} vereinbarte Termine. Jeder erfasste Anruf
-            zählt. Die Woche beginnt am Montag.
+            Tagesziel: etwa {formatInt(goals.dailyCallGoal)} Anrufe je Arbeitstag. Wochenziel:{' '}
+            {formatInt(goals.weeklyAppointmentGoal)} vereinbarte Termine. Die Vertriebswoche läuft
+            von Montag bis Freitag. Jeder erfasste Anruf zählt.
           </p>
         </Panel>
 

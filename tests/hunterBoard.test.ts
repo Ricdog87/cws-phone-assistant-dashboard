@@ -116,6 +116,25 @@ describe('demoTeamAppointments', () => {
     }
   });
 
+  it('legt frühere Termine nur auf Arbeitstage und am Montag nur die heutigen auf heute', async () => {
+    const { demoTeamAppointments } = await import('@/data/demoAppointments');
+    const { bookedOn } = await import('@/domain/appointments');
+    const region = DEMO_REGIONS[0];
+    if (!region) throw new Error('Region fehlt');
+    const live = region.members.filter((member) => member.id !== 'nele-faber');
+    const today = live.reduce((sum, member) => sum + member.dayAppointments, 0);
+    // Montag 12. bis Sonntag 18. Oktober 2026
+    for (let day = 12; day <= 18; day += 1) {
+      const now = new Date(2026, 9, day, 15, 0);
+      const isoDay = `2026-10-${day}`;
+      const rows = demoTeamAppointments(region.id, region.members, {}, now);
+      expect(rows.filter((row) => bookedOn(row, isoDay))).toHaveLength(today);
+      for (const row of rows.filter((item) => !bookedOn(item, isoDay))) {
+        expect([0, 6]).not.toContain(new Date(row.bookedAt).getDay());
+      }
+    }
+  });
+
   it('bucht je Firma höchstens einen Termin, auch mit vielen Personen je Hunter', async () => {
     const { demoTeamAppointments } = await import('@/data/demoAppointments');
     const now = new Date('2026-10-08T12:00:00');

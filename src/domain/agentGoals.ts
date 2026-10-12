@@ -8,7 +8,7 @@ import type { CallOutcome } from './types';
 export interface AgentGoals {
   /** Anrufe, die an einem Arbeitstag erledigt werden sollen */
   dailyCalls: number;
-  /** Termine, die in der Kalenderwoche (Mo–So) vereinbart werden sollen */
+  /** Termine, die in der Vertriebswoche (Mo–Fr) vereinbart werden sollen */
   weeklyAppointments: number;
 }
 
@@ -47,7 +47,10 @@ export function localDayKeyFromDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Montag 00:00 lokal bis Sonntag 24:00 derselben ISO-Woche */
+/**
+ * Montag 00:00 lokal bis Montag 00:00 der Folgewoche. Die Vertriebswoche endet am Freitag;
+ * was ausnahmsweise am Wochenende erfasst wird, zählt noch zu ihr.
+ */
 export function startOfLocalWeek(date: Date): Date {
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const day = start.getDay(); // 0 So … 6 Sa
@@ -105,9 +108,15 @@ export function computeAgentDayProgress(
   };
 }
 
-/** Kurzer Motivationssatz für die Live-Maske */
-export function motivationLine(progress: AgentDayProgress): string {
+/** Kurzer Motivationssatz für die Live-Maske; workday ist Montag bis Freitag */
+export function motivationLine(progress: AgentDayProgress, workday = true): string {
   const { callsToday, appointmentsThisWeek } = progress;
+
+  if (!workday) {
+    return appointmentsThisWeek.reached
+      ? 'Wochenziel erreicht. Schönes Wochenende.'
+      : 'Wochenende. Die nächste Vertriebswoche beginnt am Montag.';
+  }
 
   if (callsToday.reached && appointmentsThisWeek.reached) {
     return 'Tages- und Wochenziel erreicht. Stark – weiter so.';

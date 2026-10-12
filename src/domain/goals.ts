@@ -1,7 +1,10 @@
 import type { CallOutcome } from './types';
 
-/** Vereinbarte Termine je Woche, Montag bis Sonntag. */
+/** Vereinbarte Termine je Vertriebswoche, Montag bis Freitag. */
 export const WEEKLY_APPOINTMENT_GOAL = 4;
+
+/** Arbeitstage der Vertriebswoche, Montag bis Freitag. */
+export const SALES_WEEK_DAYS = 5;
 
 /** Anrufe je Arbeitstag. Richtwert, kein Terminziel. */
 export const DAILY_CALL_GOAL = 50;
@@ -55,9 +58,14 @@ export interface CallDay {
   weekday: string;
   /** TT.MM.JJJJ */
   dateLabel: string;
-  /** Einschließlich heute, bis einschließlich Sonntag. */
+  /** Montag bis Freitag; Samstag und Sonntag gehören nicht zur Vertriebswoche. */
+  workday: boolean;
+  /** Arbeitstage einschließlich heute bis einschließlich Freitag, am Wochenende 0. */
   daysRemaining: number;
+  /** Freitag der laufenden Vertriebswoche, am Wochenende der gerade vergangene. */
   weekEndLabel: string;
+  /** Montag der nächsten Vertriebswoche. */
+  nextWeekStartLabel: string;
 }
 
 function formatDeDate(date: Date): string {
@@ -66,17 +74,19 @@ function formatDeDate(date: Date): string {
   return `${day}.${month}.${date.getFullYear()}`;
 }
 
-/** Kalendertag und restliche Tage der Woche bis Sonntag. */
+/** Kalendertag und restliche Arbeitstage der Vertriebswoche bis Freitag. */
 export function callDay(now: Date = new Date()): CallDay {
   const start = startOfLocalDay(now);
   const weekdayIndex = start.getDay();
-  const daysRemaining = weekdayIndex === 0 ? 1 : 8 - weekdayIndex;
-  const weekEnd = addDays(start, daysRemaining - 1);
+  const monday = startOfLocalWeek(now);
+  const workday = weekdayIndex >= 1 && weekdayIndex <= SALES_WEEK_DAYS;
   return {
     weekday: WEEKDAY_NAMES[weekdayIndex] ?? 'Sonntag',
     dateLabel: formatDeDate(start),
-    daysRemaining,
-    weekEndLabel: formatDeDate(weekEnd),
+    workday,
+    daysRemaining: workday ? SALES_WEEK_DAYS + 1 - weekdayIndex : 0,
+    weekEndLabel: formatDeDate(addDays(monday, SALES_WEEK_DAYS - 1)),
+    nextWeekStartLabel: formatDeDate(addDays(monday, 7)),
   };
 }
 
@@ -96,7 +106,10 @@ function countPeriod(outcomes: readonly CallOutcome[], fromMs: number, toMs: num
   return { calls, appointments };
 }
 
-/** Aktuelle Woche, Montag 00:00 bis Montag 00:00 Ortszeit, als Zeitstempel in Millisekunden */
+/**
+ * Zählfenster der Vertriebswoche, Montag 00:00 bis Montag 00:00 Ortszeit, als Zeitstempel in
+ * Millisekunden. Was ausnahmsweise am Wochenende erfasst wird, zählt zur Woche davor.
+ */
 export function localWeekRange(now: Date = new Date()): { from: number; to: number } {
   const start = startOfLocalWeek(now);
   return { from: start.getTime(), to: addDays(start, 7).getTime() };

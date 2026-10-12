@@ -7,26 +7,40 @@ function localIso(year: number, month: number, day: number, hour = 12, minute = 
 }
 
 describe('callDay', () => {
-  it('nennt Donnerstag und vier Tage bis Sonntag', () => {
-    expect(callDay(new Date(2026, 9, 1, 9, 15, 0, 0))).toEqual({
-      weekday: 'Donnerstag',
-      dateLabel: '01.10.2026',
-      daysRemaining: 4,
-      weekEndLabel: '04.10.2026',
+  it('rechnet die Vertriebswoche von Montag bis Freitag', () => {
+    expect(callDay(new Date(2026, 9, 12, 9, 0, 0, 0))).toEqual({
+      weekday: 'Montag',
+      dateLabel: '12.10.2026',
+      workday: true,
+      daysRemaining: 5,
+      weekEndLabel: '16.10.2026',
+      nextWeekStartLabel: '19.10.2026',
     });
   });
 
-  it('zählt den Sonntag als letzten Tag', () => {
-    expect(callDay(new Date(2026, 9, 4, 20, 0, 0, 0))).toEqual({
-      weekday: 'Sonntag',
-      dateLabel: '04.10.2026',
-      daysRemaining: 1,
-      weekEndLabel: '04.10.2026',
-    });
+  it('nennt am Donnerstag zwei Arbeitstage bis Freitag', () => {
+    const day = callDay(new Date(2026, 9, 1, 9, 15, 0, 0));
+    expect(day.weekday).toBe('Donnerstag');
+    expect(day.daysRemaining).toBe(2);
+    expect(day.weekEndLabel).toBe('02.10.2026');
   });
 
-  it('gibt der Woche am Montag sieben Tage', () => {
-    expect(callDay(new Date(2026, 8, 28, 8, 0, 0, 0)).daysRemaining).toBe(7);
+  it('zählt den Freitag als letzten Arbeitstag', () => {
+    const day = callDay(new Date(2026, 9, 16, 17, 0, 0, 0));
+    expect(day.workday).toBe(true);
+    expect(day.daysRemaining).toBe(1);
+    expect(day.weekEndLabel).toBe('16.10.2026');
+  });
+
+  it('kennt am Wochenende keine Arbeitstage und nennt den nächsten Montag', () => {
+    for (const weekend of [new Date(2026, 9, 17, 10), new Date(2026, 9, 18, 20)]) {
+      expect(callDay(weekend)).toMatchObject({
+        workday: false,
+        daysRemaining: 0,
+        weekEndLabel: '16.10.2026',
+        nextWeekStartLabel: '19.10.2026',
+      });
+    }
   });
 });
 
@@ -63,7 +77,7 @@ describe('goalProgress', () => {
     expect(progress.callsRemaining).toBe(48);
   });
 
-  it('zählt den Sonntag zur laufenden Woche', () => {
+  it('zählt Ergebnisse vom Wochenende zur Vertriebswoche davor', () => {
     const sunday = new Date(2026, 9, 4, 20, 0, 0, 0);
     const progress = goalProgress(
       [

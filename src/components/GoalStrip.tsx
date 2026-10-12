@@ -9,8 +9,11 @@ interface GoalStripProps {
   weeklyGoal: number;
   weekday: string;
   dateLabel: string;
+  /** Montag bis Freitag */
+  workday: boolean;
   daysRemaining: number;
   weekEndLabel: string;
+  nextWeekStartLabel: string;
   className?: string;
 }
 
@@ -28,19 +31,30 @@ function labeledCount(count: number, singular: string, plural: string): string {
   return `${formatInt(count)} ${count === 1 ? singular : plural}`;
 }
 
-function callDaySentence(
-  weekday: string,
-  dateLabel: string,
-  daysRemaining: number,
-  weekEndLabel: string,
-): string {
+function callDaySentence({
+  weekday,
+  dateLabel,
+  workday,
+  daysRemaining,
+  weekEndLabel,
+  nextWeekStartLabel,
+}: Pick<
+  GoalStripProps,
+  'weekday' | 'dateLabel' | 'workday' | 'daysRemaining' | 'weekEndLabel' | 'nextWeekStartLabel'
+>): string {
   const today = `Heute ist ${weekday}, der ${dateLabel}.`;
-  if (daysRemaining <= 1) return `${today} Letzter Tag für das Wochenziel.`;
-  return `${today} Noch ${daysRemaining} Tage bis Sonntag, ${weekEndLabel}.`;
+  if (!workday) {
+    return `${today} Wochenende, die nächste Vertriebswoche beginnt am Montag, ${nextWeekStartLabel}.`;
+  }
+  if (daysRemaining <= 1) return `${today} Letzter Arbeitstag für das Wochenziel.`;
+  return `${today} Noch ${daysRemaining} Arbeitstage bis Freitag, ${weekEndLabel}.`;
 }
 
-function weeklyGoalSentence(appointments: number, goal: number): string {
+function weeklyGoalSentence(appointments: number, goal: number, workday: boolean): string {
   if (appointments >= goal) return 'Wochenziel erreicht.';
+  if (!workday) {
+    return `Woche abgeschlossen mit ${formatInt(appointments)} von ${formatInt(goal)} Terminen.`;
+  }
   const remaining = goal - appointments;
   return remaining === 1
     ? 'Noch 1 Termin bis zum Wochenziel.'
@@ -94,21 +108,38 @@ export function GoalStrip({
   weeklyGoal,
   weekday,
   dateLabel,
+  workday,
   daysRemaining,
   weekEndLabel,
+  nextWeekStartLabel,
   className = '',
 }: GoalStripProps) {
   return (
     <section aria-label="Tages- und Wochenziel" className={className}>
-      <p className="text-sm">{callDaySentence(weekday, dateLabel, daysRemaining, weekEndLabel)}</p>
-      <p className="mt-1 text-sm font-bold">{weeklyGoalSentence(weekAppointments, weeklyGoal)}</p>
+      <p className="text-sm">
+        {callDaySentence({
+          weekday,
+          dateLabel,
+          workday,
+          daysRemaining,
+          weekEndLabel,
+          nextWeekStartLabel,
+        })}
+      </p>
+      <p className="mt-1 text-sm font-bold">
+        {weeklyGoalSentence(weekAppointments, weeklyGoal, workday)}
+      </p>
       <div className="mt-3 grid grid-cols-2 gap-6">
         <GoalColumn
           kicker="Heute"
           value={dayCalls}
           goal={dailyCallGoal}
           unit="Anrufe"
-          detail={`${labeledCount(dayAppointments, 'Termin', 'Termine')} heute`}
+          detail={
+            workday
+              ? `${labeledCount(dayAppointments, 'Termin', 'Termine')} heute`
+              : 'Wochenende, kein Tagesziel'
+          }
           meterLabel="Anrufe heute"
         />
         <GoalColumn

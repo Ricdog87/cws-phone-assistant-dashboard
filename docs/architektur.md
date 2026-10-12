@@ -152,11 +152,14 @@ Wettbewerber dunkel, übrige Lösungen grau, fälliges Nachfassen in der Markenf
    `useRecordOutcome` als Aufgabe in den Postausgang (`SyncItem`, `SyncRepository`),
    Wiedervorlagen `useRecordOutcome`; `flushSync()` im Store überträgt sie.
 6. `goalProgress()` in `src/domain/goals.ts` zählt daraus den Tages- und Wochenstand. Jedes
-   Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Woche läuft von Montag
-   0:00 bis zum nächsten Montag, Ortszeit. Das Wochenziel sind 4 vereinbarte Termine
-   (`WEEKLY_APPOINTMENT_GOAL`). Das Tagesziel sind etwa 50 Anrufe (`DAILY_CALL_GOAL`).
-   Anrufliste und Dashboard zeigen den Stand, dazu Wochentag, Datum und die restlichen
-   Tage bis Sonntag. Abgelegt wird das nicht im Store.
+   Ergebnis ist ein Anruf, „Termin vereinbart“ ist ein Termin. Die Vertriebswoche läuft von
+   Montag bis Freitag (`SALES_WEEK_DAYS`). Gezählt wird von Montag 0:00 bis zum nächsten
+   Montag, Ortszeit, damit nichts verloren geht: Was ausnahmsweise am Wochenende erfasst wird,
+   zählt zur Woche davor. Das Wochenziel sind 4 vereinbarte Termine
+   (`WEEKLY_APPOINTMENT_GOAL`). Das Tagesziel sind etwa 50 Anrufe je Arbeitstag
+   (`DAILY_CALL_GOAL`). Anrufliste und Dashboard zeigen den Stand, dazu Wochentag, Datum und
+   die restlichen Arbeitstage bis Freitag (`callDay()`); am Wochenende schließen sie die Woche
+   ab und nennen den nächsten Montag. Abgelegt wird das nicht im Store.
 
 ## Erweiterungspunkte
 

@@ -22,6 +22,7 @@
 - Warteschlange = Potenzialliste eines Hunters (Accountinhaber) oder aller Hunter. Bestandskunden nie in der Warteschlange.
 - Sperrfrist 14 Tage nach letzter Aktivität (ACTIVITY_COOLDOWN_DAYS). Branche aus NACE Ebene 2 über src/domain/nace.ts.
 - Kontrollstichprobe 8 % aus Band B und C, fester Seed, gleichmäßig eingestreut.
+- Vertriebswoche Montag bis Freitag (SALES_WEEK_DAYS). Wochentag, Arbeitstage und Zählfenster nur über callDay() und localWeekRange() aus src/domain/goals.ts.
 
 ## Daten, Briefing, Kalibrierung
 - Implementierungen (Repository, Geocoder, Briefing-Generator) werden nur in src/app/services.ts ausgewählt.

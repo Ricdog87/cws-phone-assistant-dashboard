@@ -7,7 +7,7 @@ interface BoardHeaderProps {
   subtitle: string;
 }
 
-/** Kopf der Führungsansichten mit Datum und Restlaufzeit der Woche */
+/** Kopf der Führungsansichten mit Datum und den restlichen Arbeitstagen der Vertriebswoche */
 export function BoardHeader({ eyebrow, title, subtitle }: BoardHeaderProps) {
   const today = useCallDay();
   return (
@@ -22,8 +22,14 @@ export function BoardHeader({ eyebrow, title, subtitle }: BoardHeaderProps) {
           {today.weekday}, {today.dateLabel}
         </p>
         <p className="text-muted">
-          Wochenziel bis {today.weekEndLabel} · noch {today.daysRemaining}{' '}
-          {noun(today.daysRemaining, 'Tag', 'Tage')}
+          {today.workday ? (
+            <>
+              Wochenziel bis Freitag, {today.weekEndLabel} · noch {today.daysRemaining}{' '}
+              {noun(today.daysRemaining, 'Arbeitstag', 'Arbeitstage')}
+            </>
+          ) : (
+            <>Wochenende · neue Vertriebswoche ab Montag, {today.nextWeekStartLabel}</>
+          )}
         </p>
       </div>
     </header>

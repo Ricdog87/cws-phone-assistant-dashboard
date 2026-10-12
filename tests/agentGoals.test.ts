@@ -122,4 +122,14 @@ describe('motivationLine', () => {
     });
     expect(line).toContain('erreicht');
   });
+
+  it('setzt am Wochenende kein Tagesziel', () => {
+    const open = { current: 0, target: 75, percent: 0, remaining: 75, reached: false };
+    const line = motivationLine(
+      { callsToday: open, appointmentsThisWeek: { ...open, target: 4, remaining: 4 } },
+      false,
+    );
+    expect(line).toBe('Wochenende. Die nächste Vertriebswoche beginnt am Montag.');
+    expect(line).not.toContain('Anrufe');
+  });
 });
